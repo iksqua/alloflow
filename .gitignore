@@ -41,5 +41,8 @@ next-env.d.ts
 # Vercel
 .vercel
 
+# Superpowers brainstorm sessions
+.superpowers/
+
 # Testing
 coverage/
