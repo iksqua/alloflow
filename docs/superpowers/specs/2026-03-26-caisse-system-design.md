@@ -220,7 +220,7 @@ Hérite de la structure de l'Écran 1. Changements notables :
 | Sous-titre "Table 4 · 7 articles · Thomas D." | Texte | — | Dynamique | Contexte de la commande |
 | Mode btn "💳 Carte bancaire" | Button 150×90px | Navigue vers Écran 5 (attente CB) | `default` / `hover` / `selected` | Border bleue + glow quand sélectionné |
 | Mode btn "💵 Espèces" | Button 150×90px | Navigue vers Écran 4 (numpad espèces) | `default` / `hover` / `selected` | — |
-| Mode btn "🎟 Ticket Resto" | Button 150×90px | Ouvre flow Ticket Restaurant | `default` / `hover` / `selected` | Flow à spécifier séparément |
+| Mode btn "🎟 Ticket Resto" | Button 150×90px | — | `disabled` | **V1 : désactivé.** Bouton visible mais `cursor: not-allowed`, opacity 0.4, aucune action. Flow Ticket Restaurant hors scope V1. |
 | Mode btn "✂️ Partager" | Button 150×90px | Navigue vers Écran 6 (split) | `default` / `hover` / `selected` | — |
 | Mini récap commande | Panel 500px | — | Statique | Résumé articles + montant total |
 
@@ -769,6 +769,11 @@ Body: {
   reason?: string
 }
 Response 200: { discount: OrderDiscount, order: OrderTotals }
+Effets — ordre de calcul :
+  1. Remises articles appliquées d'abord (réduisent le prix unitaire de chaque ligne)
+  2. Remise globale appliquée sur le sous-total HT post-remises articles
+  3. TVA recalculée par taux sur les montants remisés
+  4. total_ttc = sous-total HT remisé + somme TVA par taux
 Erreurs:
   400 discount_exceeds_limit (si rôle insuffisant)
   400 discount_value_invalid (pct > 100 ou montant > total)
@@ -950,6 +955,25 @@ Body: { phone: string }  -- Format E.164 (+33612345678)
 Response 200: { message_id: string }
 Erreurs: 400 invalid_phone, 422 order_not_paid
 Sécurité: caissier+
+```
+
+#### `POST /api/v1/receipts/z-report`
+Génère et imprime le rapport Z (clôture de caisse).
+
+```
+Body: { session_id: UUID }
+Response 200: { job_id: string }
+Erreurs: 404 session_not_found, 400 session_still_open, 503 printer_unavailable
+Sécurité: manager+
+```
+
+#### `GET /api/v1/cash-sessions/:id/report.pdf`
+Génère et télécharge le rapport Z en PDF.
+
+```
+Response 200: application/pdf (fichier binaire)
+Erreurs: 404 session_not_found
+Sécurité: manager+
 ```
 
 ---
@@ -1418,10 +1442,10 @@ Client POS ──── WebSocket ──── Backend ──── Terminal SDK
 
 **Protocole** : ESC/POS (standard industrie)
 
-**Intégration** :
-- Navigateur → `window.print()` avec CSS `@media print` optimisé thermique (option simple)
-- Ou backend → service d'impression via `node-escpos` ou `escpos-usb`
-- En production : imprimante connectée réseau (IP fixe) ou USB relayé par agent local
+**Intégration V1 (décision)** : `window.print()` côté navigateur avec CSS `@media print` optimisé thermique.
+- Avantage : zéro dépendance backend, fonctionne avec n'importe quelle imprimante réseau configurée comme imprimante système
+- Option V2 (hors scope) : service backend `node-escpos` pour protocole ESC/POS natif et impression réseau directe par IP
+- En production : imprimante configurée par défaut dans le navigateur (iPad ou PC caisse)
 
 **Format reçu thermique** :
 - Largeur : 80mm (48 caractères par ligne)

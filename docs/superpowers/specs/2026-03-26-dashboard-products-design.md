@@ -21,11 +21,13 @@ Le Dashboard Produits est le module central de gestion du catalogue pour un rest
 ```
 
 ### Rôles autorisés
-| Rôle | Accès en lecture | Création | Modification | Suppression | Gestion catégories |
-|------|-----------------|----------|--------------|-------------|-------------------|
-| Admin | Oui | Oui | Oui | Oui | Oui |
-| Manager | Oui | Oui | Oui | Non | Oui |
-| Staff | Non | Non | Non | Non | Non |
+| Rôle | Lecture | Créer produit | Modifier produit | Supprimer produit | Créer/renommer catégorie | Supprimer catégorie |
+|------|---------|---------------|-----------------|-------------------|--------------------------|---------------------|
+| Admin | Oui | Oui | Oui | Oui | Oui | Oui |
+| Manager | Oui | Oui | Oui | Non | Oui | Non |
+| Staff | Non | Non | Non | Non | Non | Non |
+
+> **Note implémentation :** Dans la modale Gestion catégories, le bouton "Supprimer" est masqué pour les Managers. Créer et renommer sont accessibles. La colonne "Gestion catégories" de l'ancienne table = Créer/renommer uniquement.
 
 ---
 
@@ -697,14 +699,14 @@ Cas d'usage particuliers :
 **Body :** Tout champ de POST (tous optionnels).
 
 Cas d'usage particulier — réorganisation par drag & drop :
-```json
-{ "sort_order": 2 }
-```
-Ou réorganisation complète en batch :
+
+**Décision V1 : endpoint batch `PATCH /api/categories/reorder`**
 ```
 PATCH /api/categories/reorder
-Body: { "order": ["uuid1", "uuid2", "uuid3"] }
+Body: { "order": ["uuid1", "uuid2", "uuid3"] }  -- IDs dans le nouvel ordre
+Response 200: { categories: Category[] }
 ```
+Justification : le drag-and-drop repositionne plusieurs éléments simultanément. Un endpoint batch met à jour tous les `sort_order` en une transaction atomique, sans N requêtes individuelles. L'endpoint `PATCH /api/categories/:id` reste disponible pour la modification de nom/couleur/icône, pas pour le réordonnancement.
 
 **Réponse 200 :** La catégorie mise à jour.
 

@@ -729,7 +729,7 @@ Zone droite (`.topbar-right`) — de gauche à droite :
 | Breakpoint | Comportement |
 |---|---|
 | > 1024px (desktop) | Layout complet : sidebar 220px + main |
-| 768–1024px (tablette) | À définir — sidebar réductible ou masquable |
+| 768–1024px (tablette) | Sidebar réduite à icônes 64px (hover = tooltip nom) — **pas de hamburger** |
 | < 768px (mobile) | Hors scope pour le Dashboard Admin |
 
 ---
@@ -1107,13 +1107,13 @@ Menus                           🍝 Tagliatelles 14,30€    ──────
   │
   ├─ Clic "Ouvrir la caisse ↗" (topbar)
   │      │
-  │      ├─ Si pas de commande en cours dans l'onglet courant :
-  │      │   Ouvre /caisse/commande [nouvel onglet OU navigation directe]
+  │      ├─ **Décision V1 : nouvel onglet** (`target="_blank"`)
+  │      │   Ouvre /caisse/pos dans un nouvel onglet
   │      │   → Écran Splash (S2) → Caisse vue Admin (S3)
-  │      │
-  │      └─ Comportement d'ouverture : selon spec technique
-  │          Option A : nouvel onglet (tooltip "La caisse tourne en parallèle")
-  │          Option B : même onglet avec navigation
+  │      │   Justification : Dashboard et Caisse sont deux contextes distincts ;
+  │      │   l'Admin peut monitorer le dashboard pendant le service sans perdre
+  │      │   la caisse. Le tooltip "La caisse tourne en parallèle" confirme cette intention.
+  │      │   Le bouton "← Dashboard admin" dans la caisse = ferme l'onglet caisse (window.close())
   │
   ▼ (dans la caisse)
 /caisse/commande (vue Admin)
@@ -1246,9 +1246,10 @@ Layout cible dans les mockups. Tout s'affiche comme spécifié.
 
 ### 8.2 Tablette (768–1024px)
 
-**Dashboard (à définir) :**
-- Sidebar réductible à icônes (64px) ou via hamburger
-- Tableau : masquer colonnes secondaires (TVA, référence)
+**Dashboard (décision V1 : sidebar icônes 64px) :**
+- Sidebar réduite à 64px avec icônes centrées ; hover sur une icône affiche un tooltip avec le nom de la section
+- Pas de hamburger — le Dashboard Admin est rarement utilisé sur tablette, la sidebar icônes est le bon équilibre
+- Tableau : masquer colonnes secondaires (TVA, référence) via CSS `hidden md:table-cell`
 - Topbar : conserver le bouton caisse (critique)
 - Stats bar : scroll horizontal ou grid 2 colonnes
 
