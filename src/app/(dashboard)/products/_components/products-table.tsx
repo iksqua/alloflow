@@ -5,15 +5,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-
-type Product = {
-  id: string
-  name: string
-  price: number
-  category: string
-  tva_rate: number
-  active: boolean
-}
+import type { Product } from './types'
 
 type Props = {
   products: Product[]

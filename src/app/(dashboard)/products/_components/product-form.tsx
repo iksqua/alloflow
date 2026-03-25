@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,15 +10,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-
-type Product = {
-  id: string
-  name: string
-  price: number
-  category: string
-  tva_rate: number
-  active: boolean
-}
+import type { Product } from './types'
 
 type Props = {
   open: boolean
@@ -37,6 +29,16 @@ export function ProductForm({ open, onClose, onSave, product }: Props) {
   const [tvaRate, setTvaRate] = useState(String(product?.tva_rate ?? '10'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setName(product?.name ?? '')
+      setPrice(String(product?.price ?? ''))
+      setCategory(product?.category ?? 'plat')
+      setTvaRate(String(product?.tva_rate ?? '10'))
+      setError(null)
+    }
+  }, [open, product])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

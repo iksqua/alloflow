@@ -5,15 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ProductsTable } from './products-table'
 import { ProductForm } from './product-form'
-
-type Product = {
-  id: string
-  name: string
-  price: number
-  category: string
-  tva_rate: number
-  active: boolean
-}
+import type { Product } from './types'
 
 export function ProductsPageClient({ initialProducts }: { initialProducts: Product[] }) {
   const [products, setProducts] = useState(initialProducts)
@@ -39,6 +31,8 @@ export function ProductsPageClient({ initialProducts }: { initialProducts: Produ
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Erreur lors de la modification')
+      const updated: Product = await res.json()
+      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
     } else {
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -46,6 +40,8 @@ export function ProductsPageClient({ initialProducts }: { initialProducts: Produ
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Erreur lors de la création')
+      const created: Product = await res.json()
+      setProducts((prev) => [...prev, created])
     }
     router.refresh()
     setModalOpen(false)

@@ -3,11 +3,23 @@ import { ProductsPageClient } from './_components/products-page-client'
 
 export default async function ProductsPage() {
   const supabase = await createClient()
-  const { data: products = [] } = await supabase
-    .from('products')
-    .select('*')
-    .eq('active', true)
-    .order('name')
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id, role')
+    .eq('id', user.id)
+    .single()
+
+  let query = supabase.from('products').select('*').eq('active', true)
+
+  if (profile?.role !== 'super_admin' && profile?.establishment_id) {
+    query = query.eq('establishment_id', profile.establishment_id)
+  }
+
+  const { data: products = [] } = await query.order('name')
 
   return (
     <div>
