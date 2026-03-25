@@ -89,7 +89,7 @@ export function ProductForm({ open, onClose, onSave, product }: Props) {
           </div>
           <div>
             <Label>Catégorie</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(v) => v && setCategory(v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {CATEGORIES.map((c) => (
@@ -100,7 +100,7 @@ export function ProductForm({ open, onClose, onSave, product }: Props) {
           </div>
           <div>
             <Label>TVA</Label>
-            <Select value={tvaRate} onValueChange={setTvaRate}>
+            <Select value={tvaRate} onValueChange={(v) => v && setTvaRate(v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {TVA_RATES.map((r) => (
