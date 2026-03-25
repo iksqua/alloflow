@@ -60,23 +60,38 @@ Row Level Security activé : chaque utilisateur ne voit que les données de son 
 
 ### Migration 003 — Catalogue
 ```sql
-products (id, name, price, category, tva_rate: 5.5|10|20,
-          establishment_id, active, created_at)
+products (id, name, price, category: 'entree'|'plat'|'dessert'|'boisson'|'autre',
+          tva_rate: 5.5|10|20, establishment_id, active, created_at)
 ```
 
-### Migration 004 — Commandes & transactions *(tables vides, Phase 2)*
+### Migration 004 — Commandes & transactions *(Phase 2)*
 ```sql
-orders, order_items, transactions
+orders (id uuid PK, establishment_id → establishments, total numeric,
+        payment_method text, status text, customer_id → customers nullable, created_at)
+order_items (id uuid PK, order_id → orders, product_id → products,
+             quantity int, unit_price numeric)
+transactions (id uuid PK, order_id → orders, amount numeric,
+              type text, tpe_ref text, created_at)
 ```
 
-### Migration 005 — Stocks & recettes *(tables vides, Phase 3)*
+### Migration 005 — Stocks & recettes *(Phase 3)*
 ```sql
-stock_items, recipes, sops
+stock_items (id uuid PK, establishment_id → establishments,
+             ingredient text, quantity numeric, unit text, alert_threshold numeric)
+recipes (id uuid PK, establishment_id → establishments,
+         title text, content text, media_urls text[], version int)
+sops (id uuid PK, establishment_id → establishments,
+      title text, content text, media_urls text[], version int)
 ```
 
-### Migration 006 — CRM fidélité *(tables vides, Phase 4)*
+### Migration 006 — CRM fidélité *(Phase 4)*
 ```sql
-customers, loyalty_rewards, loyalty_transactions
+customers (id uuid PK, establishment_id → establishments,
+           name text, phone text, email text, points int, tier text)
+loyalty_rewards (id uuid PK, establishment_id → establishments,
+                 name text, points_required int, discount_type text, discount_value numeric)
+loyalty_transactions (id uuid PK, customer_id → customers, order_id → orders,
+                      points int, type text, created_at)
 ```
 
 ---
@@ -88,7 +103,7 @@ customers, loyalty_rewards, loyalty_transactions
 - Rôles :
   - `super_admin` — accès tous établissements
   - `admin` — accès son établissement uniquement
-  - `caissier` — pas d'accès dashboard en Phase 1
+  - `caissier` — redirigé vers `/login` avec message d'erreur "Accès non autorisé" en Phase 1
 - Déconnexion depuis le header du dashboard
 
 ---
