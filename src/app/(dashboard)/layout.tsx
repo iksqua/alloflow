@@ -26,6 +26,10 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .single()
 
+  if (!profile) redirect('/login?error=profile_not_found')
+
+  if (profile.role === 'caissier') redirect('/login?error=unauthorized')
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b px-6 py-3 flex items-center justify-between">
