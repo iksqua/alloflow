@@ -34,6 +34,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
     "jsdom": "^29.0.1",
+    "supabase": "^2.84.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.1"
