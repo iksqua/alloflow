@@ -5,8 +5,7 @@ import { CaisseButton } from './_components/caisse-button'
 
 async function signOut() {
   'use server'
-  const { createClient: createServerClient } = await import('@/lib/supabase/server')
-  const supabase = await createServerClient()
+  const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/login')
 }

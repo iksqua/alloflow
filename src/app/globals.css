@@ -55,7 +55,7 @@
   --bg-tabs:          #060e1a;    /* Barre la plus sombre */
   --surface:          #1e293b;    /* Cards, tables, sidebars */
   --surface2:         #263348;    /* Hover rows, dropdowns */
-  --border:           #334155;
+  --border-color:     #334155;
   --border-active:    #475569;
 
   /* Text */
@@ -91,7 +91,7 @@
   --secondary-foreground: var(--text2);
   --muted:            var(--surface);
   --muted-foreground: var(--text3);
-  --border:           var(--border);
+  --border:           var(--border-color);
   --input:            var(--surface2);
   --ring:             var(--blue);
   --destructive:      var(--red);
