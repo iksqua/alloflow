@@ -55,17 +55,34 @@ export function ProductsPageClient({ initialProducts }: { initialProducts: Produ
     router.refresh()
   }
 
+  async function handleToggleStatus(id: string, active: boolean) {
+    const res = await fetch(`/api/products/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active }),
+    })
+    if (!res.ok) return
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, active } : p)))
+  }
+
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={openCreate}>+ Nouveau produit</Button>
+        <Button
+          onClick={openCreate}
+          className="h-9 px-4 text-sm font-semibold text-white rounded-lg"
+          style={{ background: 'var(--blue)' }}
+        >
+          + Nouveau produit
+        </Button>
       </div>
 
-      <div className="bg-white rounded-lg border">
+      <div className="rounded-lg border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
         <ProductsTable
           products={products}
           onEdit={openEdit}
           onDelete={handleDelete}
+          onToggleStatus={handleToggleStatus}
         />
       </div>
 
