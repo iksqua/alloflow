@@ -46,7 +46,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const { error } = await supabase
     .from('products')
-    .update({ active: false })
+    .update({ is_active: false })
     .eq('id', id)
 
   if (error) {
