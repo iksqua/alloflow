@@ -64,9 +64,17 @@
   --text3:            #94a3b8;    /* Labels secondaires */
   --text4:            #475569;    /* Désactivé */
 
+  /* Aliases sémantiques (compatibilité mockups) */
+  --text-primary:     var(--text1);
+  --text-secondary:   var(--text2);
+  --text-muted:       var(--text3);
+  --text-disabled:    var(--text4);
+  --surface-raised:   var(--surface2);
+  --blue-hover:       #1e40af;
+
   /* Actions */
   --blue:             #1d4ed8;
-  --blue-light:       rgba(29, 78, 216, 0.12);
+  --blue-light:       #1e3a5f;
   --blue-glow:        rgba(29, 78, 216, 0.35);
   --green:            #10b981;
   --green-bg:         rgba(16, 185, 129, 0.1);
@@ -76,6 +84,12 @@
   --red-bg:           rgba(239, 68, 68, 0.1);
   --orange:           #f97316;
   --orange-bg:        rgba(249, 115, 22, 0.12);
+
+  /* Semi-transparents supplémentaires */
+  --blue-bg:          rgba(29, 78, 216, 0.12);
+  --selection-bg:     rgba(29, 78, 216, 0.06);
+  --row-edit-bg:      rgba(29, 78, 216, 0.1);
+  --overlay-bg:       rgba(0, 0, 0, 0.6);
 
   /* Radius */
   --radius:           0.75rem;
