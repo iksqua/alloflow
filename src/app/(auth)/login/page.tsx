@@ -36,12 +36,12 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-6 text-center">Alloflow</h1>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <div className="w-full max-w-md p-8 rounded-xl border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+        <h1 className="text-2xl font-bold mb-6 text-center text-[var(--text1)]">Alloflow</h1>
 
         {unauthorized && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+          <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'var(--red-bg)', border: '1px solid var(--red)', color: 'var(--red)' }}>
             Accès non autorisé. Contactez votre administrateur.
           </div>
         )}
@@ -72,7 +72,7 @@ function LoginForm() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm" style={{ color: 'var(--red)' }}>{error}</p>
           )}
 
           <Button type="submit" className="w-full" disabled={loading}>
