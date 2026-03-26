@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ProductsPageClient } from './_components/products-page-client'
-import type { Category } from './_components/types'
+import type { Product, Category } from './_components/types'
 
 export default async function ProductsPage() {
   const supabase = await createClient()
@@ -37,7 +37,7 @@ export default async function ProductsPage() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Produits</h2>
       </div>
-      <ProductsPageClient initialProducts={products ?? []} categories={categories} />
+      <ProductsPageClient initialProducts={(products ?? []) as unknown as Product[]} initialCategories={categories} />
     </div>
   )
 }

@@ -4,10 +4,19 @@ import { createProductSchema, updateProductSchema } from './product'
 describe('createProductSchema', () => {
   it('valide un produit correct', () => {
     const result = createProductSchema.safeParse({
-      name: 'Burger Classic',
-      price: 12.50,
-      category: 'plat',
+      name: 'Latte Vanille',
+      price: 4.50,
       tva_rate: 10,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('valide un produit avec category_id', () => {
+    const result = createProductSchema.safeParse({
+      name: 'Cookie Choco',
+      price: 2.50,
+      tva_rate: 5.5,
+      category_id: 'some-uuid',
     })
     expect(result.success).toBe(true)
   })
@@ -16,7 +25,6 @@ describe('createProductSchema', () => {
     const result = createProductSchema.safeParse({
       name: 'Burger',
       price: -5,
-      category: 'plat',
       tva_rate: 10,
     })
     expect(result.success).toBe(false)
@@ -26,18 +34,7 @@ describe('createProductSchema', () => {
     const result = createProductSchema.safeParse({
       name: 'Burger',
       price: 10,
-      category: 'plat',
       tva_rate: 15,
-    })
-    expect(result.success).toBe(false)
-  })
-
-  it('rejette une catégorie invalide', () => {
-    const result = createProductSchema.safeParse({
-      name: 'Burger',
-      price: 10,
-      category: 'sandwich',
-      tva_rate: 10,
     })
     expect(result.success).toBe(false)
   })
@@ -46,7 +43,6 @@ describe('createProductSchema', () => {
     const result = createProductSchema.safeParse({
       name: '',
       price: 10,
-      category: 'plat',
       tva_rate: 10,
     })
     expect(result.success).toBe(false)
@@ -56,6 +52,11 @@ describe('createProductSchema', () => {
 describe('updateProductSchema', () => {
   it('accepte une mise à jour partielle', () => {
     const result = updateProductSchema.safeParse({ price: 15.00 })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepte is_active seul', () => {
+    const result = updateProductSchema.safeParse({ is_active: false })
     expect(result.success).toBe(true)
   })
 

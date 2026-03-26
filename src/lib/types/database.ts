@@ -39,6 +39,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          color_hex: string
+          establishment_id: string
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          color_hex: string
+          establishment_id: string
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          color_hex?: string
+          establishment_id?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           email: string | null
@@ -293,36 +328,58 @@ export type Database = {
       }
       products: {
         Row: {
-          active: boolean
-          category: Database["public"]["Enums"]["product_category"]
+          category_id: string | null
           created_at: string
+          deleted_at: string | null
+          description: string | null
+          emoji: string | null
           establishment_id: string
           id: string
+          is_active: boolean
           name: string
           price: number
+          sort_order: number
           tva_rate: number
+          updated_at: string
         }
         Insert: {
-          active?: boolean
-          category: Database["public"]["Enums"]["product_category"]
+          category_id?: string | null
           created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          emoji?: string | null
           establishment_id: string
           id?: string
+          is_active?: boolean
           name: string
           price: number
+          sort_order?: number
           tva_rate: number
+          updated_at?: string
         }
         Update: {
-          active?: boolean
-          category?: Database["public"]["Enums"]["product_category"]
+          category_id?: string | null
           created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          emoji?: string | null
           establishment_id?: string
           id?: string
+          is_active?: boolean
           name?: string
           price?: number
+          sort_order?: number
           tva_rate?: number
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_establishment_id_fkey"
             columns: ["establishment_id"]
