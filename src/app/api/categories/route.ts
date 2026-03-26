@@ -13,7 +13,15 @@ export async function GET(_req: NextRequest) {
     .order('sort_order')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ categories: data })
+
+  // Supabase retourne products: [{count: N}] — on normalise en products_count: N
+  const categories = (data ?? []).map((cat) => ({
+    ...cat,
+    products_count: (cat.products as Array<{ count: number }>)?.[0]?.count ?? 0,
+    products: undefined,
+  }))
+
+  return NextResponse.json({ categories })
 }
 
 export async function POST(req: NextRequest) {

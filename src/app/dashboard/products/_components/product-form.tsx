@@ -48,7 +48,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) { setError('Le nom est requis'); return }
-    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) { setError('Prix invalide'); return }
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) { setError('Prix invalide'); return }
 
     setLoading(true)
     setError(null)
@@ -57,7 +57,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
         name: name.trim(),
         emoji: emoji.trim() || null,
         description: description.trim() || null,
-        price: parseFloat(price),
+        price: parseFloat(priceHt as string),
         tva_rate: tvaRate,
         category_id: categoryId || null,
         is_active: isActive,

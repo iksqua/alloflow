@@ -49,14 +49,13 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
       if (!res.ok) throw new Error()
       const { session: closedSession } = await res.json()
       toast.success('Session clôturée')
-      // Déclencher impression rapport Z
-      await fetch('/api/receipts/z-report', {
+      onClose(closedSession)
+      // Rapport Z en best-effort — ne bloque pas la clôture
+      fetch('/api/receipts/z-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: session.id }),
-      })
-      window.print()
-      onClose(closedSession)
+      }).catch(() => null)
     } catch {
       toast.error('Erreur clôture session')
     } finally {

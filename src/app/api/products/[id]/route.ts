@@ -24,7 +24,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .from('products')
     .update(result.data)
     .eq('id', id)
-    .select()
+    .select('*, category:categories(id, name, color_hex, icon)')
     .single()
 
   if (error) {

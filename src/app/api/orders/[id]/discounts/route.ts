@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const discountedHt = subtotalHt - discountAmount
-  const ratio = discountedHt / subtotalHt  // facteur de réduction
+  const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1  // facteur de réduction
   const newTax55 = order.tax_5_5 * ratio
   const newTax10 = order.tax_10 * ratio
   const newTax20 = order.tax_20 * ratio
