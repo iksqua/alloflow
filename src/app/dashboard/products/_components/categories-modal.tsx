@@ -115,7 +115,6 @@ export function CategoriesModal({ categories, onClose, onCreate, onRename, onDel
               placeholder="☕"
               className="w-12 h-9 text-center rounded-lg text-sm border border-[var(--border)] text-[var(--text1)] focus:outline-none focus:border-[var(--blue)]"
               style={{ background: 'var(--surface2)' }}
-              maxLength={2}
             />
             <input
               value={newName}
