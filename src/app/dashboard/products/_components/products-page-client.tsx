@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ProductsTable } from './products-table'
 import { ProductForm } from './product-form'
-import type { Product } from './types'
+import type { Product, Category } from './types'
 
-export function ProductsPageClient({ initialProducts }: { initialProducts: Product[] }) {
+export function ProductsPageClient({ initialProducts, categories }: { initialProducts: Product[], categories: Category[] }) {
   const [products, setProducts] = useState(initialProducts)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -23,7 +23,7 @@ export function ProductsPageClient({ initialProducts }: { initialProducts: Produ
     setModalOpen(true)
   }
 
-  async function handleSave(data: Omit<Product, 'id' | 'active'>) {
+  async function handleSave(data: Omit<Product, 'id' | 'is_active'>) {
     if (editingProduct) {
       const res = await fetch(`/api/products/${editingProduct.id}`, {
         method: 'PATCH',
@@ -55,14 +55,14 @@ export function ProductsPageClient({ initialProducts }: { initialProducts: Produ
     router.refresh()
   }
 
-  async function handleToggleStatus(id: string, active: boolean) {
+  async function handleToggleStatus(id: string, is_active: boolean) {
     const res = await fetch(`/api/products/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active }),
+      body: JSON.stringify({ is_active }),
     })
     if (!res.ok) return
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, active } : p)))
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active } : p)))
   }
 
   return (
