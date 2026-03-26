@@ -49,80 +49,62 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Backgrounds */
+  --bg:               #0f172a;    /* Dashboard Admin */
+  --bg-caisse:        #0a1628;    /* Interface Caisse */
+  --bg-tabs:          #060e1a;    /* Barre la plus sombre */
+  --surface:          #1e293b;    /* Cards, tables, sidebars */
+  --surface2:         #263348;    /* Hover rows, dropdowns */
+  --border:           #334155;
+  --border-active:    #475569;
+
+  /* Text */
+  --text1:            #f8fafc;    /* Titres, prix */
+  --text2:            #e2e8f0;    /* Contenu standard */
+  --text3:            #94a3b8;    /* Labels secondaires */
+  --text4:            #475569;    /* Désactivé */
+
+  /* Actions */
+  --blue:             #1d4ed8;
+  --blue-light:       rgba(29, 78, 216, 0.12);
+  --blue-glow:        rgba(29, 78, 216, 0.35);
+  --green:            #10b981;
+  --green-bg:         rgba(16, 185, 129, 0.1);
+  --amber:            #f59e0b;
+  --amber-bg:         rgba(245, 158, 11, 0.12);
+  --red:              #ef4444;
+  --red-bg:           rgba(239, 68, 68, 0.1);
+  --orange:           #f97316;
+  --orange-bg:        rgba(249, 115, 22, 0.12);
+
+  /* Radius */
+  --radius:           0.75rem;
+
+  /* Shadcn overrides → dark mode */
+  --background:       var(--bg);
+  --foreground:       var(--text1);
+  --card:             var(--surface);
+  --card-foreground:  var(--text1);
+  --primary:          var(--blue);
+  --primary-foreground: #ffffff;
+  --secondary:        var(--surface2);
+  --secondary-foreground: var(--text2);
+  --muted:            var(--surface);
+  --muted-foreground: var(--text3);
+  --border:           var(--border);
+  --input:            var(--surface2);
+  --ring:             var(--blue);
+  --destructive:      var(--red);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--bg);
+    color: var(--text1);
   }
   html {
     @apply font-sans;
