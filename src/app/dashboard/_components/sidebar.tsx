@@ -3,11 +3,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
+  { href: '/dashboard', label: 'Dashboard', icon: '📊', exact: true },
   { href: '/dashboard/products', label: 'Produits', icon: '🍽️' },
-  { href: '/dashboard/analytics', label: 'Analytique', icon: '📊', disabled: true },
+  { href: '/dashboard/orders', label: 'Commandes', icon: '📋', disabled: true },
+  { href: '/dashboard/analytics', label: 'Analytique', icon: '📈', disabled: true },
   { href: '/dashboard/stock', label: 'Stocks', icon: '📦', disabled: true },
   { href: '/dashboard/crm', label: 'CRM', icon: '👥', disabled: true },
 ]
+
+const SETTINGS_ITEM = { href: '/dashboard/settings', label: 'Paramètres', icon: '⚙️', disabled: true }
 
 interface SidebarProps {
   userName: string
@@ -46,14 +50,17 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex flex-col flex-1 p-3 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+          const isActive = item.exact
+            ? pathname === item.href
+            : pathname.startsWith(item.href)
           if (item.disabled) {
             return (
               <div
                 key={item.href}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--text4)] cursor-not-allowed"
+                title={item.label}
               >
                 <span>{item.icon}</span>
                 <span className="hidden xl:block">{item.label}</span>
@@ -71,15 +78,27 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
               className={[
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                 isActive
-                  ? 'bg-[var(--blue-light)] text-[var(--text1)] border-l-2 border-[var(--blue)] pl-[10px]'
+                  ? 'text-white'
                   : 'text-[var(--text2)] hover:bg-[var(--surface2)]',
               ].join(' ')}
+              style={isActive ? { background: 'var(--blue)' } : undefined}
             >
               <span>{item.icon}</span>
               <span className="hidden xl:block">{item.label}</span>
             </Link>
           )
         })}
+
+        {/* Spacer pour pousser Paramètres en bas */}
+        <div className="flex-1" />
+        {/* Paramètres */}
+        <div
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--text4)] cursor-not-allowed"
+          title={SETTINGS_ITEM.label}
+        >
+          <span>{SETTINGS_ITEM.icon}</span>
+          <span className="hidden xl:block">{SETTINGS_ITEM.label}</span>
+        </div>
       </nav>
 
       {/* Footer */}
