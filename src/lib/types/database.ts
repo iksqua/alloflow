@@ -221,27 +221,108 @@ export type Database = {
           },
         ]
       }
+      cash_sessions: {
+        Row: {
+          id: string
+          establishment_id: string
+          opened_by: string
+          opened_at: string
+          closed_by: string | null
+          closed_at: string | null
+          opening_float: number
+          closing_float: number | null
+          total_cash: number | null
+          total_card: number | null
+          total_sales: number | null
+          status: string
+        }
+        Insert: {
+          id?: string
+          establishment_id: string
+          opened_by: string
+          opened_at?: string
+          closed_by?: string | null
+          closed_at?: string | null
+          opening_float?: number
+          closing_float?: number | null
+          total_cash?: number | null
+          total_card?: number | null
+          total_sales?: number | null
+          status?: string
+        }
+        Update: {
+          id?: string
+          establishment_id?: string
+          opened_by?: string
+          opened_at?: string
+          closed_by?: string | null
+          closed_at?: string | null
+          opening_float?: number
+          closing_float?: number | null
+          total_cash?: number | null
+          total_card?: number | null
+          total_sales?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_sessions_opened_by_fkey"
+            columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           id: string
           order_id: string
           product_id: string
-          quantity: number
+          product_name: string
+          emoji: string | null
           unit_price: number
+          tva_rate: number
+          quantity: number
+          discount_pct: number | null
+          line_total: number
+          note: string | null
+          created_at: string
         }
         Insert: {
           id?: string
           order_id: string
           product_id: string
-          quantity: number
+          product_name: string
+          emoji?: string | null
           unit_price: number
+          tva_rate: number
+          quantity?: number
+          discount_pct?: number | null
+          line_total: number
+          note?: string | null
+          created_at?: string
         }
         Update: {
           id?: string
           order_id?: string
           product_id?: string
-          quantity?: number
+          product_name?: string
+          emoji?: string | null
           unit_price?: number
+          tva_rate?: number
+          quantity?: number
+          discount_pct?: number | null
+          line_total?: number
+          note?: string | null
+          created_at?: string
         }
         Relationships: [
           {
@@ -262,42 +343,200 @@ export type Database = {
       }
       orders: {
         Row: {
-          created_at: string
-          customer_id: string | null
-          establishment_id: string
           id: string
-          payment_method: string | null
+          establishment_id: string
+          session_id: string | null
+          table_id: string | null
+          cashier_id: string
           status: string
-          total: number
+          subtotal_ht: number
+          tax_5_5: number
+          tax_10: number
+          tax_20: number
+          discount_type: string | null
+          discount_value: number | null
+          discount_amount: number
+          total_ttc: number
+          note: string | null
+          created_at: string
+          updated_at: string
         }
         Insert: {
-          created_at?: string
-          customer_id?: string | null
-          establishment_id: string
           id?: string
-          payment_method?: string | null
+          establishment_id: string
+          session_id?: string | null
+          table_id?: string | null
+          cashier_id: string
           status?: string
-          total?: number
+          subtotal_ht?: number
+          tax_5_5?: number
+          tax_10?: number
+          tax_20?: number
+          discount_type?: string | null
+          discount_value?: number | null
+          discount_amount?: number
+          total_ttc?: number
+          note?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Update: {
-          created_at?: string
-          customer_id?: string | null
-          establishment_id?: string
           id?: string
-          payment_method?: string | null
+          establishment_id?: string
+          session_id?: string | null
+          table_id?: string | null
+          cashier_id?: string
           status?: string
-          total?: number
+          subtotal_ht?: number
+          tax_5_5?: number
+          tax_10?: number
+          tax_20?: number
+          discount_type?: string | null
+          discount_value?: number | null
+          discount_amount?: number
+          total_ttc?: number
+          note?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "orders_customer_id_fkey"
-            columns: ["customer_id"]
+            foreignKeyName: "orders_establishment_id_fkey"
+            columns: ["establishment_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "establishments"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "orders_establishment_id_fkey"
+            foreignKeyName: "orders_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_cashier_id_fkey"
+            columns: ["cashier_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          id: string
+          order_id: string
+          method: string
+          amount: number
+          cash_given: number | null
+          change_due: number | null
+          tpe_ref: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          method: string
+          amount: number
+          cash_given?: number | null
+          change_due?: number | null
+          tpe_ref?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          method?: string
+          amount?: number
+          cash_given?: number | null
+          change_due?: number | null
+          tpe_ref?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_tables: {
+        Row: {
+          id: string
+          establishment_id: string
+          room_id: string | null
+          name: string
+          seats: number
+          status: string
+          current_order_id: string | null
+          x_pos: number
+          y_pos: number
+        }
+        Insert: {
+          id?: string
+          establishment_id: string
+          room_id?: string | null
+          name: string
+          seats?: number
+          status?: string
+          current_order_id?: string | null
+          x_pos?: number
+          y_pos?: number
+        }
+        Update: {
+          id?: string
+          establishment_id?: string
+          room_id?: string | null
+          name?: string
+          seats?: number
+          status?: string
+          current_order_id?: string | null
+          x_pos?: number
+          y_pos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_tables_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_tables_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          id: string
+          establishment_id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          establishment_id: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          id?: string
+          establishment_id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_establishment_id_fkey"
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "establishments"
