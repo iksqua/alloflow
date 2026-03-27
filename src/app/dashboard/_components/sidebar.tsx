@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/orders', label: 'Commandes', icon: '📋', disabled: true },
   { href: '/dashboard/analytics', label: 'Analytique', icon: '📈', disabled: true },
   { href: '/dashboard/stocks', label: 'Stocks', icon: '📦' },
+  { href: '/dashboard/recettes', label: 'Recettes', icon: '📖' },
   { href: '/dashboard/fiscal', label: 'Journal fiscal', icon: '📋' },
   { href: '/dashboard/crm', label: 'CRM', icon: '👥', disabled: true },
 ]
