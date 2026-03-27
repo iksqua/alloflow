@@ -60,7 +60,7 @@ recipe_id    uuid REFERENCES recipes(id) ON DELETE SET NULL          -- nullable
 active       boolean NOT NULL DEFAULT true
 ```
 
-Les colonnes existantes `title`, `content`, `media_urls`, `version` sont conservées. `content` est utilisé pour les notes générales du SOP (hors étapes).
+Les colonnes existantes `title`, `content`, `version` sont conservées. `content` est utilisé pour les notes générales du SOP (hors étapes). `media_urls` est conservé pour des photos de couverture ou visuels de présentation du SOP (pas des vidéos d'étapes) — non exposé dans l'UI V1 mais présent en base pour éviter une migration destructive.
 
 ### Nouvelle table `sop_steps`
 
@@ -94,7 +94,7 @@ Accessible depuis `Paramètres > SOPs` ou depuis un lien dans la liste SOPs.
 
 1. Gérant clique **+ Nouveau SOP**
 2. Remplit : titre, catégorie (sélecteur peuplé depuis `sop_categories`), fréquence/contexte (texte libre optionnel)
-3. Si catégorie = "Recettes & Production" → champ **Lier une recette** apparaît (optionnel — picker `recipes`)
+3. Le champ **Lier une recette** est toujours disponible, quelle que soit la catégorie — il reste optionnel. Il s'affiche dans une section dédiée sous les infos générales.
 4. Ajoute les étapes une par une :
    - Titre + description (obligatoires)
    - Timer optionnel (en secondes, affiché en mm:ss)
@@ -108,7 +108,7 @@ Accessible depuis `Paramètres > SOPs` ou depuis un lien dans la liste SOPs.
 - Modifier le titre → `sops.title` mis à jour
 - Ajouter / modifier / supprimer / réordonner des étapes via les routes dédiées
 - Changer de catégorie → `sops.category_id` mis à jour
-- Délier / relierl une recette → `sops.recipe_id` mis à jour
+- Délier / relier une recette → `sops.recipe_id` mis à jour
 
 ### Mode cuisine (lecture)
 
@@ -164,7 +164,7 @@ DELETE /api/sop-categories/[id]                     → supprimer (sops.category
 
 -- SOPs
 GET    /api/sops                                    → liste des SOPs actifs (filtrables par category_id, recipe_id)
-                                                      Retourne : { id, title, category, recipe_id, step_count, total_duration_seconds, has_video }
+                                                      Retourne : { id, title, category: { id, name, emoji }, recipe_id, step_count, total_duration_seconds, has_video }
 POST   /api/sops                                    → créer SOP + étapes (transaction atomique)
                                                       Body : { title, category_id?, recipe_id?, content?, steps[] }
                                                       steps[] : [{ title, description, sort_order, duration_seconds?, media_url?, note_type?, note_text? }]
