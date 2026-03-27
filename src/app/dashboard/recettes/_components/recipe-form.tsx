@@ -18,8 +18,10 @@ interface IngredientLine {
   stock_item_id: string
   name: string
   quantity: string
-  unit: string
-  unit_cost: string
+  unit: string          // unit used in THIS recipe (e.g. 'g')
+  unit_cost: string     // €/recipe_unit — auto-computed, editable
+  _stock_unit: string        // base unit of the stock item (not saved)
+  _stock_unit_price: number  // stock item's price per stock unit (not saved)
 }
 
 interface Props {
@@ -32,8 +34,40 @@ interface Props {
 
 const TVA_OPTIONS = [{ value: 5.5, label: '5,5%' }, { value: 10, label: '10%' }, { value: 20, label: '20%' }]
 
+// Unit conversion tables
+const WEIGHT_TO_G: Record<string, number> = { g: 1, kg: 1000 }
+const VOLUME_TO_ML: Record<string, number> = { mL: 1, cL: 10, L: 1000 }
+
+/** Returns units compatible (convertible) with stockUnit */
+function compatibleUnits(stockUnit: string): string[] {
+  if (stockUnit in WEIGHT_TO_G) return Object.keys(WEIGHT_TO_G)   // ['g', 'kg']
+  if (stockUnit in VOLUME_TO_ML) return Object.keys(VOLUME_TO_ML) // ['mL', 'cL', 'L']
+  return [stockUnit]
+}
+
+/** Cost per 1 recipeUnit, given stockUnitPrice per 1 stockUnit */
+function costPerUnit(stockUnitPrice: number, stockUnit: string, recipeUnit: string): number {
+  if (!stockUnitPrice || stockUnit === recipeUnit) return stockUnitPrice
+  if (WEIGHT_TO_G[stockUnit] !== undefined && WEIGHT_TO_G[recipeUnit] !== undefined) {
+    return stockUnitPrice * WEIGHT_TO_G[recipeUnit] / WEIGHT_TO_G[stockUnit]
+  }
+  if (VOLUME_TO_ML[stockUnit] !== undefined && VOLUME_TO_ML[recipeUnit] !== undefined) {
+    return stockUnitPrice * VOLUME_TO_ML[recipeUnit] / VOLUME_TO_ML[stockUnit]
+  }
+  return stockUnitPrice
+}
+
 function toLine(i: RecipeIngredient): IngredientLine {
-  return { id: i.id, stock_item_id: '', name: i.name, quantity: String(i.quantity), unit: i.unit, unit_cost: String(i.unit_cost) }
+  return {
+    id: i.id,
+    stock_item_id: '',
+    name: i.name,
+    quantity: String(i.quantity),
+    unit: i.unit,
+    unit_cost: String(i.unit_cost),
+    _stock_unit: i.unit,
+    _stock_unit_price: i.unit_cost,
+  }
 }
 
 export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props) {
@@ -76,10 +110,18 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
       setIngredients(prev => prev.map(ing => {
         if (ing.stock_item_id) return ing
         const match = items.find(s => s.name.toLowerCase() === ing.name.toLowerCase())
-        return match ? { ...ing, stock_item_id: match.id, unit: match.unit, unit_cost: String(match.unit_price) } : ing
+        if (!match) return ing
+        return {
+          ...ing,
+          stock_item_id: match.id,
+          _stock_unit: match.unit,
+          _stock_unit_price: match.unit_price,
+          // Only update unit_cost if it seems wrong (0 or default)
+          unit_cost: ing.unit_cost !== '0' ? ing.unit_cost : String(costPerUnit(match.unit_price, match.unit, ing.unit)),
+        }
       }))
 
-      // Distinct recipe categories for the combobox
+      // Distinct recipe categories for combobox
       const cats = (recipesJson.recipes ?? [])
         .map((r: { category: string | null }) => r.category)
         .filter((c: string | null): c is string => !!c)
@@ -98,23 +140,43 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
     : null
 
   function addIngredient() {
-    setIngredients(prev => [...prev, { stock_item_id: '', name: '', quantity: '1', unit: 'kg', unit_cost: '0' }])
+    setIngredients(prev => [...prev, {
+      stock_item_id: '', name: '', quantity: '1',
+      unit: 'g', unit_cost: '0',
+      _stock_unit: 'g', _stock_unit_price: 0,
+    }])
   }
 
   function selectStockItem(idx: number, stockItemId: string) {
     const item = stockItems.find(s => s.id === stockItemId)
     if (!item) {
       setIngredients(prev => prev.map((ing, i) => i === idx
-        ? { ...ing, stock_item_id: '', name: '', unit: 'kg', unit_cost: '0' }
+        ? { ...ing, stock_item_id: '', name: '', unit: 'g', unit_cost: '0', _stock_unit: 'g', _stock_unit_price: 0 }
         : ing))
       return
     }
     setIngredients(prev => prev.map((ing, i) => i === idx
-      ? { ...ing, stock_item_id: item.id, name: item.name, unit: item.unit, unit_cost: String(item.unit_price) }
+      ? {
+          ...ing,
+          stock_item_id:     item.id,
+          name:              item.name,
+          unit:              item.unit,
+          unit_cost:         String(item.unit_price),
+          _stock_unit:       item.unit,
+          _stock_unit_price: item.unit_price,
+        }
       : ing))
   }
 
-  function updateIngredient(idx: number, field: keyof IngredientLine, value: string) {
+  function changeIngredientUnit(idx: number, newUnit: string) {
+    setIngredients(prev => prev.map((ing, i) => {
+      if (i !== idx) return ing
+      const newCost = costPerUnit(ing._stock_unit_price, ing._stock_unit, newUnit)
+      return { ...ing, unit: newUnit, unit_cost: String(newCost) }
+    }))
+  }
+
+  function updateIngredient(idx: number, field: 'quantity' | 'unit_cost', value: string) {
     setIngredients(prev => prev.map((ing, i) => i === idx ? { ...ing, [field]: value } : ing))
   }
 
@@ -192,7 +254,6 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Catégorie recette</label>
-              {/* Native combobox: free text + suggestions from existing categories */}
               <input
                 value={category}
                 onChange={e => setCategory(e.target.value)}
@@ -223,9 +284,14 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
           {/* Ingrédients */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Ingrédients</label>
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Ingrédients</label>
+                <p className="text-[10px] text-[var(--text4)] mt-0.5">
+                  Sélectionnez depuis l&apos;inventaire — l&apos;unité et le coût sont convertis automatiquement
+                </p>
+              </div>
               <button type="button" onClick={addIngredient}
-                className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
+                className="text-xs font-semibold flex-shrink-0" style={{ color: 'var(--blue)' }}>
                 + Ajouter
               </button>
             </div>
@@ -236,69 +302,91 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
               </p>
             )}
 
-            {ingredients.length > 0 && (
-              <div className="grid grid-cols-[1fr_68px_60px_68px_68px_20px] gap-1.5 px-1 mb-1">
-                <span className="text-[10px] text-[var(--text4)]">Ingrédient (inventaire)</span>
-                <span className="text-[10px] text-[var(--text4)] text-right">Quantité</span>
-                <span className="text-[10px] text-[var(--text4)]">Unité</span>
-                <span className="text-[10px] text-[var(--text4)] text-right">Coût/u.</span>
-                <span className="text-[10px] text-[var(--text4)] text-right">Sous-total</span>
-                <span />
-              </div>
-            )}
-
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {ingredients.map((ing, idx) => {
-                const lineCost = (parseFloat(ing.quantity) || 0) * (parseFloat(ing.unit_cost) || 0)
+                const qty      = parseFloat(ing.quantity) || 0
+                const cost     = parseFloat(ing.unit_cost) || 0
+                const lineCost = qty * cost
+                const units    = ing.stock_item_id ? compatibleUnits(ing._stock_unit) : ['g', 'kg', 'mL', 'cL', 'L', 'u.']
+
                 return (
-                  <div key={idx} className="space-y-0.5">
-                    <div className="grid grid-cols-[1fr_68px_60px_68px_68px_20px] gap-1.5 items-center">
-                      {/* Stock item selector */}
+                  <div key={idx} className="rounded-xl border border-[var(--border)] p-3 space-y-2"
+                       style={{ background: 'var(--bg)' }}>
+                    {/* Row 1: stock item selector + remove */}
+                    <div className="flex items-center gap-2">
                       <select
                         value={ing.stock_item_id}
                         onChange={e => selectStockItem(idx, e.target.value)}
-                        className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                        className="flex-1 px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
                         style={{ background: 'var(--surface2)' }}
                       >
-                        <option value="">— Choisir —</option>
+                        <option value="">— Choisir dans l&apos;inventaire —</option>
                         {stockItems.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({s.unit} · {s.unit_price > 0 ? `${s.unit_price.toFixed(4)} €/${s.unit}` : 'coût non défini'})
+                          </option>
                         ))}
                       </select>
-
-                      {/* Quantity */}
-                      <input type="number" step="0.001" value={ing.quantity}
-                        onChange={e => updateIngredient(idx, 'quantity', e.target.value)}
-                        placeholder="Qté"
-                        className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs text-right focus:outline-none focus:border-[var(--blue)] transition-colors"
-                        style={{ background: 'var(--surface2)' }} />
-
-                      {/* Unit — auto-filled but editable */}
-                      <input value={ing.unit}
-                        onChange={e => updateIngredient(idx, 'unit', e.target.value)}
-                        className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
-                        style={{ background: 'var(--surface2)' }} />
-
-                      {/* Unit cost — auto-filled but editable */}
-                      <input type="number" step="0.0001" value={ing.unit_cost}
-                        onChange={e => updateIngredient(idx, 'unit_cost', e.target.value)}
-                        placeholder="0.00"
-                        className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs text-right focus:outline-none focus:border-[var(--blue)] transition-colors"
-                        style={{ background: 'var(--surface2)' }} />
-
-                      {/* Per-line food cost */}
-                      <span className="text-xs text-right text-[var(--text3)] whitespace-nowrap">
-                        {lineCost > 0 ? `${lineCost.toFixed(3)} €` : '—'}
-                      </span>
-
                       <button type="button" onClick={() => removeIngredient(idx)}
-                        className="text-red-500/60 hover:text-red-400 text-sm font-bold text-center">×</button>
+                        className="text-red-500/60 hover:text-red-400 text-base font-bold flex-shrink-0">×</button>
                     </div>
 
-                    {/* Show legacy name when no stock item matched */}
+                    {/* Row 2: quantity + unit + computed cost */}
+                    <div className="grid grid-cols-[80px_80px_1fr_auto] gap-2 items-end">
+                      <div>
+                        <label className="block text-[10px] text-[var(--text4)] mb-1">Quantité</label>
+                        <input
+                          type="number" step="0.001" value={ing.quantity}
+                          onChange={e => updateIngredient(idx, 'quantity', e.target.value)}
+                          placeholder="20"
+                          className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs text-right focus:outline-none focus:border-[var(--blue)] transition-colors"
+                          style={{ background: 'var(--surface2)' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] text-[var(--text4)] mb-1">Unité</label>
+                        <select
+                          value={ing.unit}
+                          onChange={e => changeIngredientUnit(idx, e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                          style={{ background: 'var(--surface2)' }}
+                        >
+                          {units.map(u => <option key={u}>{u}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] text-[var(--text4)] mb-1">
+                          Coût/{ing.unit} (€)
+                          {ing.stock_item_id && ing._stock_unit !== ing.unit && (
+                            <span className="ml-1 text-[var(--blue)]">converti</span>
+                          )}
+                        </label>
+                        <input
+                          type="number" step="0.00001" value={ing.unit_cost}
+                          onChange={e => updateIngredient(idx, 'unit_cost', e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs text-right focus:outline-none focus:border-[var(--blue)] transition-colors"
+                          style={{ background: 'var(--surface2)' }}
+                        />
+                      </div>
+
+                      {/* Line cost */}
+                      <div className="text-right pb-1.5">
+                        {lineCost > 0 ? (
+                          <span className="text-sm font-semibold" style={{ color: 'var(--blue)' }}>
+                            {lineCost.toFixed(3)} €
+                          </span>
+                        ) : (
+                          <span className="text-xs text-[var(--text4)]">— €</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Legacy ingredient warning */}
                     {!ing.stock_item_id && ing.name && (
-                      <p className="text-[10px] text-amber-400/70 pl-2">
-                        ⚠ Nom actuel : {ing.name} — sélectionnez un article de l&apos;inventaire pour le lier
+                      <p className="text-[10px] text-amber-400/70">
+                        ⚠ &quot;{ing.name}&quot; — non lié à l&apos;inventaire. Sélectionnez un article ci-dessus.
                       </p>
                     )}
                   </div>
