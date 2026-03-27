@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Fiche Client</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+.layout { display: flex; min-height: 100vh; background: #0a1628; color: #f1f5f9; }
+.sidebar { width: 220px; background: #0f2744; border-right: 1px solid rgba(255,255,255,0.06); padding: 20px 12px; flex-shrink: 0; }
+.logo { font-size: 15px; font-weight: 800; color: #f1f5f9; margin-bottom: 28px; padding: 0 8px; }
+.nav-section { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: .1em; padding: 0 8px; margin: 16px 0 6px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #94a3b8; margin-bottom: 2px; cursor: pointer; }
+.nav-item.active { background: rgba(139,92,246,0.12); color: #a78bfa; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #0f2744; flex-shrink: 0; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+.breadcrumb span.active { color: #f1f5f9; font-weight: 600; }
+.breadcrumb .sep { color: #334155; }
+.content { padding: 24px; overflow-y: auto; flex: 1; }
+.two-col { display: grid; grid-template-columns: 60fr 40fr; gap: 20px; align-items: start; }
+
+/* Cards */
+.card { background: #0f2744; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
+.card-header { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.card-body { padding: 20px; }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.gold { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.silver { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
+.standard { background: rgba(100,116,139,0.15); color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
+
+/* Avatar */
+.avatar-lg { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; flex-shrink: 0; background: rgba(251,191,36,0.15); color: #fbbf24; border: 2px solid rgba(251,191,36,0.3); }
+
+/* Stat row */
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+.stat-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px; }
+.stat-box .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+.stat-box .value { font-size: 20px; font-weight: 700; color: #f1f5f9; }
+.stat-box .sub { font-size: 10px; color: #475569; margin-top: 2px; }
+
+/* Table */
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: left; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .06em; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.table td { padding: 11px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12px; color: #cbd5e1; vertical-align: top; }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: rgba(255,255,255,0.02); }
+.pts-earned { display: inline-flex; align-items: center; gap: 3px; background: rgba(139,92,246,0.1); color: #a78bfa; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+
+/* Points bar */
+.pts-track { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; margin: 6px 0; }
+.pts-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #8b5cf6, #fbbf24); }
+
+/* Timeline */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.tl-item:last-child { border-bottom: none; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.tl-dot.earned { background: #8b5cf6; }
+.tl-dot.spent { background: #f59e0b; }
+.tl-dot.bonus { background: #10b981; }
+
+/* Reward list */
+.reward-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; }
+.reward-item.available { border-color: rgba(16,185,129,0.2); background: rgba(16,185,129,0.04); }
+.reward-item.locked { opacity: .5; }
+
+/* Notes */
+textarea { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #f1f5f9; font-size: 12px; padding: 12px; resize: vertical; min-height: 80px; outline: none; font-family: -apple-system, sans-serif; line-height: 1.5; }
+textarea:focus { border-color: rgba(139,92,246,0.4); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+.btn-purple { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.25); }
+.btn-purple:hover { background: rgba(139,92,246,0.25); }
+.btn-outline { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }
+.btn-green { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.25); }
+.btn-primary { background: #8b5cf6; color: white; }
+
+/* Level indicators */
+.level-track { display: flex; gap: 8px; margin-bottom: 16px; }
+.level-item { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); text-align: center; }
+.level-item.active-level { border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.06); }
+.level-item .level-name { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+.level-item .level-pts { font-size: 10px; color: #64748b; }
+
+/* Section title */
+.section-title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">🍪 Allocookie</div>
+    <div class="nav-section">Caisse</div>
+    <div class="nav-item">🧾 POS</div>
+    <div class="nav-section">Back-office</div>
+    <div class="nav-item">📦 Produits</div>
+    <div class="nav-item">🏪 Stocks</div>
+    <div class="nav-item">📖 Recettes</div>
+    <div class="nav-item">📊 Analytics</div>
+    <div class="nav-item active">👥 CRM Fidélité</div>
+    <div class="nav-section">Admin</div>
+    <div class="nav-item">⚙️ Paramètres</div>
+  </div>
+
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span>CRM Fidélité</span>
+        <span class="sep">›</span>
+        <span class="active">Marie Laurent</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline">← Retour liste</button>
+        <button class="btn btn-green">📱 Envoyer QR</button>
+        <button class="btn btn-purple">✏️ Modifier</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="two-col">
+
+        <!-- LEFT PANEL -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Profile header card -->
+          <div class="card">
+            <div class="card-body">
+              <div style="display:flex;align-items:center;gap:16px;">
+                <div class="avatar-lg">ML</div>
+                <div style="flex:1;">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                    <div style="font-size:20px;font-weight:800;color:#f1f5f9;">Marie Laurent</div>
+                    <span class="badge gold">⭐ Gold</span>
+                  </div>
+                  <div style="display:flex;gap:16px;">
+                    <div style="font-size:12px;color:#64748b;">📱 +33 6 12 34 56 78</div>
+                    <div style="font-size:12px;color:#64748b;">✉️ marie.l@gmail.com</div>
+                    <div style="font-size:12px;color:#64748b;">📅 Client depuis jan. 2025</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stats row -->
+              <div class="stat-row">
+                <div class="stat-box">
+                  <div class="label">CA total</div>
+                  <div class="value">487 €</div>
+                  <div class="sub">sur 28 visites</div>
+                </div>
+                <div class="stat-box">
+                  <div class="label">Nb visites</div>
+                  <div class="value">28</div>
+                  <div class="sub">dernière : auj. 09:14</div>
+                </div>
+                <div class="stat-box">
+                  <div class="label">Ticket moyen</div>
+                  <div class="value">17,40 €</div>
+                  <div class="sub">+2,30 € vs moy.</div>
+                </div>
+                <div class="stat-box">
+                  <div class="label">Points actuels</div>
+                  <div class="value" style="color:#fbbf24;">342 pts</div>
+                  <div class="sub">statut Gold</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Purchase history -->
+          <div class="card">
+            <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:13px;font-weight:600;">Historique des achats</div>
+              <div style="font-size:11px;color:#64748b;">20 dernières commandes</div>
+            </div>
+            <div style="overflow:auto;">
+              <table class="table">
+                <thead>
+                  <tr style="background:rgba(255,255,255,0.02);">
+                    <th>Date</th>
+                    <th>Produits</th>
+                    <th>Montant</th>
+                    <th>Points gagnés</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">Auj. 09:14</td>
+                    <td>
+                      <div>☕ Latte Vanille</div>
+                      <div style="color:#64748b;font-size:11px;">🍪 Cookie Choco ×2</div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">10,10 €</td>
+                    <td><span class="pts-earned">+10 pts</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">26 mars 15:32</td>
+                    <td>
+                      <div>🍵 Matcha Latte</div>
+                      <div style="color:#64748b;font-size:11px;">🥐 Croissant ×1</div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">8,50 €</td>
+                    <td><span class="pts-earned">+8 pts</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">24 mars 08:55</td>
+                    <td>
+                      <div>☕ Espresso ×2</div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">5,00 €</td>
+                    <td><span class="pts-earned">+5 pts</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">22 mars 12:10</td>
+                    <td>
+                      <div>🧁 Muffin Myrtille</div>
+                      <div style="color:#64748b;font-size:11px;">☕ Cappuccino</div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">9,80 €</td>
+                    <td><span class="pts-earned">+9 pts</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">20 mars 09:00</td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <span>☕ Café offert</span>
+                        <span style="font-size:10px;background:rgba(245,158,11,0.12);color:#f59e0b;padding:1px 6px;border-radius:4px;font-weight:700;">Récompense</span>
+                      </div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">0,00 €</td>
+                    <td><span style="font-size:11px;color:#f59e0b;font-weight:700;">−0 pts</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">18 mars 14:20</td>
+                    <td>
+                      <div>🍪 Cookie Choco ×4</div>
+                      <div style="color:#64748b;font-size:11px;">☕ Latte Vanille ×2</div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">22,40 €</td>
+                    <td><span class="pts-earned">+22 pts</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">15 mars 11:05</td>
+                    <td>
+                      <div>🥤 Smoothie Fraise</div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">6,50 €</td>
+                    <td><span class="pts-earned">+6 pts</span></td>
+                  </tr>
+                  <tr>
+                    <td style="color:#94a3b8;white-space:nowrap;">12 mars 08:30</td>
+                    <td>
+                      <div>☕ Latte Vanille</div>
+                      <div style="color:#64748b;font-size:11px;">🍰 Tarte Citron</div>
+                    </td>
+                    <td style="font-weight:600;color:#f1f5f9;">13,20 €</td>
+                    <td><span class="pts-earned">+13 pts</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="padding:12px 20px;border-top:1px solid rgba(255,255,255,0.04);text-align:center;">
+              <button class="btn btn-outline" style="font-size:11px;">Voir les 20 commandes →</button>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="card">
+            <div class="card-header">
+              <div style="font-size:13px;font-weight:600;">Notes caissier</div>
+            </div>
+            <div class="card-body">
+              <textarea>Préfère le lait d'avoine. Allergique aux noix. Cliente très fidèle, vient tous les matins avant le travail. A demandé une carte cadeau en janv.</textarea>
+              <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+                <button class="btn btn-purple">Sauvegarder</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Points & niveau card -->
+          <div class="card">
+            <div class="card-header">
+              <div style="font-size:13px;font-weight:600;">Points & Niveau</div>
+            </div>
+            <div class="card-body">
+              <!-- Level indicators -->
+              <div class="level-track">
+                <div class="level-item">
+                  <div class="level-name" style="color:#64748b;">Standard</div>
+                  <div class="level-pts">0 pts</div>
+                </div>
+                <div class="level-item">
+                  <div class="level-name" style="color:#94a3b8;">Silver</div>
+                  <div class="level-pts">200 pts</div>
+                </div>
+                <div class="level-item active-level">
+                  <div class="level-name" style="color:#fbbf24;">⭐ Gold</div>
+                  <div class="level-pts">500 pts</div>
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
+                <span>342 pts actuels</span>
+                <span>500 pts pour Gold confirmé</span>
+              </div>
+              <div class="pts-track">
+                <div class="pts-fill" style="width:68%;"></div>
+              </div>
+              <div style="font-size:11px;color:#64748b;margin-top:4px;text-align:center;">158 pts manquants pour le niveau suivant</div>
+
+              <!-- Points summary -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
+                <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:18px;font-weight:800;color:#a78bfa;">342</div>
+                  <div style="font-size:10px;color:#64748b;">Points disponibles</div>
+                </div>
+                <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:10px;text-align:center;">
+                  <div style="font-size:18px;font-weight:800;color:#f59e0b;">1 240</div>
+                  <div style="font-size:10px;color:#64748b;">Points cumulés (total)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Récompenses disponibles -->
+          <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:13px;font-weight:600;">Récompenses disponibles</div>
+              <span style="font-size:11px;background:rgba(16,185,129,0.12);color:#10b981;padding:2px 8px;border-radius:6px;font-weight:700;">2 actives</span>
+            </div>
+            <div class="card-body">
+              <div class="reward-item available">
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:#f1f5f9;">☕ Café offert</div>
+                  <div style="font-size:10px;color:#64748b;margin-top:2px;">0 pts · Boisson au choix jusqu'à 4,50 €</div>
+                </div>
+                <button class="btn btn-green" style="font-size:11px;padding:5px 10px;">Appliquer</button>
+              </div>
+              <div class="reward-item available">
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:#f1f5f9;">🎁 10% de remise</div>
+                  <div style="font-size:10px;color:#64748b;margin-top:2px;">300 pts · Sur toute la commande</div>
+                </div>
+                <button class="btn btn-green" style="font-size:11px;padding:5px 10px;">Appliquer</button>
+              </div>
+              <div class="reward-item locked">
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:#f1f5f9;">🍰 Dessert offert</div>
+                  <div style="font-size:10px;color:#64748b;margin-top:2px;">500 pts requis · Il manque 158 pts</div>
+                </div>
+                <span style="font-size:11px;color:#475569;">Verrouillé</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Historique points -->
+          <div class="card">
+            <div class="card-header">
+              <div style="font-size:13px;font-weight:600;">Historique des points</div>
+            </div>
+            <div class="card-body">
+              <div class="timeline">
+                <div class="tl-item">
+                  <div class="tl-dot earned"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                      <span style="font-size:12px;color:#cbd5e1;">Achat · 10,10 €</span>
+                      <span style="font-size:12px;font-weight:700;color:#a78bfa;">+10 pts</span>
+                    </div>
+                    <div style="font-size:10px;color:#475569;margin-top:1px;">Aujourd'hui 09:14</div>
+                  </div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot earned"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                      <span style="font-size:12px;color:#cbd5e1;">Achat · 8,50 €</span>
+                      <span style="font-size:12px;font-weight:700;color:#a78bfa;">+8 pts</span>
+                    </div>
+                    <div style="font-size:10px;color:#475569;margin-top:1px;">26 mars 15:32</div>
+                  </div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot spent"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                      <span style="font-size:12px;color:#cbd5e1;">Récompense utilisée · Café offert</span>
+                      <span style="font-size:12px;font-weight:700;color:#f59e0b;">−0 pts</span>
+                    </div>
+                    <div style="font-size:10px;color:#475569;margin-top:1px;">20 mars 09:00</div>
+                  </div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot earned"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                      <span style="font-size:12px;color:#cbd5e1;">Achat · 22,40 €</span>
+                      <span style="font-size:12px;font-weight:700;color:#a78bfa;">+22 pts</span>
+                    </div>
+                    <div style="font-size:10px;color:#475569;margin-top:1px;">18 mars 14:20</div>
+                  </div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot bonus"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                      <span style="font-size:12px;color:#cbd5e1;">Bonus inscription</span>
+                      <span style="font-size:12px;font-weight:700;color:#10b981;">+50 pts</span>
+                    </div>
+                    <div style="font-size:10px;color:#475569;margin-top:1px;">15 jan. 2025</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Envoyer QR -->
+          <div class="card" style="border-color:rgba(16,185,129,0.2);">
+            <div class="card-body">
+              <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:6px;">📱 Portail fidélité client</div>
+              <div style="font-size:11px;color:#64748b;margin-bottom:14px;">Envoyer le lien du portail QR pour que la cliente consulte ses points et récompenses.</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-green" style="flex:1;justify-content:center;">📱 SMS</button>
+                <button class="btn btn-outline" style="flex:1;justify-content:center;">✉️ Email</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
