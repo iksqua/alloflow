@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { StockItemsTable } from './stock-items-table'
 import { StockItemForm } from './stock-item-form'
 import { PurchaseOrderForm } from './purchase-order-form'
+import { ReceiveDeliveryModal } from './receive-delivery-modal'
 import type { StockItem, PurchaseOrder } from './types'
 
 interface Props {
@@ -18,6 +19,7 @@ export function StocksPageClient({ initialItems, initialOrders }: Props) {
   const [showItemForm, setShowItemForm] = useState(false)
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [editingItem, setEditingItem] = useState<StockItem | null>(null)
+  const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null)
 
   const alerts    = items.filter(i => i.status === 'alert').length
   const outOfStock = items.filter(i => i.status === 'out_of_stock').length
@@ -136,6 +138,19 @@ export function StocksPageClient({ initialItems, initialOrders }: Props) {
                     }`}>
                       {order.status === 'draft' ? 'Brouillon' : order.status === 'sent' ? 'Envoyé' : order.status === 'received' ? 'Reçu' : 'Partiel'}
                     </span>
+                    {(order.status === 'sent' || order.status === 'partial') && (
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(`/api/purchase-orders/${order.id}`)
+                          const detail = await res.json()
+                          setReceivingOrder(detail)
+                        }}
+                        className="text-xs px-2 py-1 rounded-lg font-semibold text-white"
+                        style={{ background: 'var(--blue)' }}
+                      >
+                        Réceptionner
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -155,6 +170,12 @@ export function StocksPageClient({ initialItems, initialOrders }: Props) {
         items={items}
         onClose={() => setShowOrderForm(false)}
         onSave={async () => { setShowOrderForm(false); await reloadOrders() }}
+      />
+      <ReceiveDeliveryModal
+        open={receivingOrder !== null}
+        order={receivingOrder}
+        onClose={() => setReceivingOrder(null)}
+        onSave={async () => { setReceivingOrder(null); await Promise.all([reloadItems(), reloadOrders()]) }}
       />
     </div>
   )
