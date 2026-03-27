@@ -103,21 +103,24 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
 
       if (sop) {
         // Update metadata
-        await fetch(`/api/sops/${sop.id}`, {
+        const patchRes = await fetch(`/api/sops/${sop.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title: payload.title, content: payload.content, category_id: payload.category_id, recipe_id: payload.recipe_id }),
         })
+        if (!patchRes.ok) { const j = await patchRes.json(); throw new Error(j.error ?? 'Erreur mise à jour SOP') }
         // Replace all steps: delete existing, insert new
         for (const oldStep of sop.steps) {
-          await fetch(`/api/sops/${sop.id}/steps/${oldStep.id}`, { method: 'DELETE' })
+          const delRes = await fetch(`/api/sops/${sop.id}/steps/${oldStep.id}`, { method: 'DELETE' })
+          if (!delRes.ok) throw new Error('Erreur suppression étape')
         }
         for (const step of payload.steps) {
-          await fetch(`/api/sops/${sop.id}/steps`, {
+          const addRes = await fetch(`/api/sops/${sop.id}/steps`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(step),
           })
+          if (!addRes.ok) { const j = await addRes.json(); throw new Error(j.error ?? 'Erreur ajout étape') }
         }
       } else {
         const res = await fetch('/api/sops', {
