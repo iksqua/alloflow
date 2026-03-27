@@ -2,15 +2,16 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import './print-receipt.css'
-import type { Order } from '../types'
+import type { Order, LoyaltyCustomer } from '../types'
 
 interface ReceiptModalProps {
   order: Order
+  linkedCustomer: LoyaltyCustomer | null
   onClose: () => void
   onNewOrder: () => void
 }
 
-export function ReceiptModal({ order, onClose, onNewOrder }: ReceiptModalProps) {
+export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: ReceiptModalProps) {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState<'email' | 'sms' | null>(null)
@@ -106,6 +107,23 @@ export function ReceiptModal({ order, onClose, onNewOrder }: ReceiptModalProps) 
               {order.total_ttc.toFixed(2).replace('.', ',')} €
             </p>
           </div>
+
+          {linkedCustomer && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4"
+              style={{ background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.2)' }}>
+              <div className="w-9 h-9 rounded-full bg-[var(--green)] flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                {linkedCustomer.first_name[0].toUpperCase()}
+              </div>
+              <div>
+                <div className="text-sm font-bold text-[var(--green)]">
+                  +{Math.floor(order.total_ttc)} pts crédités !
+                </div>
+                <div className="text-xs text-[var(--text4)]">
+                  {linkedCustomer.first_name} · {linkedCustomer.points + Math.floor(order.total_ttc)} pts au total
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Actions reçu */}
           <div className="space-y-3 mb-6">

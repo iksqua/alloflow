@@ -9,7 +9,8 @@ import { ReceiptModal } from './receipt-modal'
 import { DiscountModal } from './discount-modal'
 import { FloorPlanModal } from './floor-plan-modal'
 import { SessionModal } from './session-modal'
-import type { LocalTicket, LocalItem, CashSession, Order } from '../types'
+import { LoyaltyModal } from './loyalty-modal'
+import type { LocalTicket, LocalItem, CashSession, Order, LoyaltyCustomer, LoyaltyReward } from '../types'
 
 interface PosShellProps {
   initialProducts: Array<{
@@ -49,6 +50,10 @@ export function PosShell({
   const [showDiscount, setShowDiscount] = useState(false)
   const [showFloorPlan, setShowFloorPlan] = useState(false)
   const [showSession, setShowSession] = useState(!session)
+  const [linkedCustomer, setLinkedCustomer] = useState<LoyaltyCustomer | null>(null)
+  const [linkedReward,   setLinkedReward]   = useState<LoyaltyReward | null>(null)
+  const [loyaltyDone,    setLoyaltyDone]    = useState(false)
+  const [showLoyalty,    setShowLoyalty]    = useState(false)
 
   const addItem = (product: typeof initialProducts[0]) => {
     setTicket((prev) => {
@@ -86,7 +91,12 @@ export function PosShell({
     setTicket((prev) => ({ ...prev, items: prev.items.filter((i) => i.productId !== productId) }))
   }
 
-  const clearTicket = () => setTicket(EMPTY_TICKET)
+  const clearTicket = () => {
+    setTicket(EMPTY_TICKET)
+    setLinkedCustomer(null)
+    setLinkedReward(null)
+    setLoyaltyDone(false)
+  }
 
   const filteredProducts = selectedCategoryId
     ? initialProducts.filter((p) => p.category_id === selectedCategoryId)
@@ -167,6 +177,11 @@ export function PosShell({
           onDiscount={() => setShowDiscount(true)}
           onPay={() => session ? setShowPayment(true) : setShowSession(true)}
           sessionOpen={!!session}
+          linkedCustomer={linkedCustomer}
+          linkedReward={linkedReward}
+          loyaltyDone={loyaltyDone}
+          onLoyaltyTrigger={() => setShowLoyalty(true)}
+          onLoyaltySkip={() => setLoyaltyDone(true)}
         />
       </div>
 
@@ -177,12 +192,14 @@ export function PosShell({
           session={session}
           cashierId={cashierId}
           isOffline={isOffline}
+          linkedCustomer={linkedCustomer}
+          linkedReward={linkedReward}
           onClose={() => setShowPayment(false)}
           onSuccess={(order) => {
             setCompletedOrder(order)
             setShowPayment(false)
             setShowReceipt(true)
-            setTicket(EMPTY_TICKET)
+            clearTicket()
           }}
         />
       )}
@@ -190,6 +207,7 @@ export function PosShell({
       {showReceipt && completedOrder && (
         <ReceiptModal
           order={completedOrder}
+          linkedCustomer={linkedCustomer}
           onClose={() => { setShowReceipt(false); setCompletedOrder(null) }}
           onNewOrder={() => { setShowReceipt(false); setCompletedOrder(null) }}
         />
@@ -224,6 +242,24 @@ export function PosShell({
           onClose={(closedSession) => { setSession(closedSession); setShowSession(false) }}
           onDismiss={() => setShowSession(false)}
           userRole={userRole}
+        />
+      )}
+
+      {showLoyalty && (
+        <LoyaltyModal
+          open={showLoyalty}
+          orderTotal={ticket.items.reduce((sum, i) => sum + i.unitPriceHt * i.quantity * (1 + i.tvaRate / 100), 0)}
+          onClose={() => setShowLoyalty(false)}
+          onConfirm={(customer, reward) => {
+            setLinkedCustomer(customer)
+            setLinkedReward(reward)
+            setLoyaltyDone(true)
+            setShowLoyalty(false)
+          }}
+          onSkip={() => {
+            setLoyaltyDone(true)
+            setShowLoyalty(false)
+          }}
         />
       )}
     </div>

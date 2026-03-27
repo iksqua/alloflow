@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import type { LocalTicket, CashSession, Order, PaymentMode } from '../types'
+import type { LocalTicket, CashSession, Order, PaymentMode, LoyaltyCustomer, LoyaltyReward } from '../types'
 
 type TpeStep = 'idle' | 'waiting' | 'pin' | 'approved' | 'refused'
 
@@ -10,11 +10,13 @@ interface PaymentModalProps {
   session: CashSession | null
   cashierId: string
   isOffline: boolean
+  linkedCustomer: LoyaltyCustomer | null
+  linkedReward: LoyaltyReward | null
   onClose: () => void
   onSuccess: (order: Order) => void
 }
 
-function computeTotal(ticket: LocalTicket): number {
+function computeTotal(ticket: LocalTicket, loyaltyReward: LoyaltyReward | null): number {
   let subtotalHt = 0
   let totalTax = 0
   for (const item of ticket.items) {
@@ -30,11 +32,19 @@ function computeTotal(ticket: LocalTicket): number {
   }
   const discountedHt = subtotalHt - discount
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-  return discountedHt + totalTax * ratio
+  let total = discountedHt + totalTax * ratio
+
+  if (loyaltyReward) {
+    const loyaltyDiscount = loyaltyReward.discount_type === 'percent'
+      ? Math.round(total * (loyaltyReward.discount_value / 100) * 100) / 100
+      : loyaltyReward.discount_value
+    total = Math.max(0, total - loyaltyDiscount)
+  }
+  return total
 }
 
-export function PaymentModal({ ticket, session, cashierId, isOffline, onClose, onSuccess }: PaymentModalProps) {
-  const total = computeTotal(ticket)
+export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCustomer, linkedReward, onClose, onSuccess }: PaymentModalProps) {
+  const total = computeTotal(ticket, linkedReward)
   const [mode, setMode] = useState<PaymentMode>(isOffline ? 'cash' : 'card')
   const [cashGiven, setCashGiven] = useState('')
   const [splitCard, setSplitCard] = useState('')
@@ -59,12 +69,21 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, onClose, o
   async function handlePay() {
     setIsPaying(true)
     try {
+      const loyaltyDiscountAmount = linkedReward
+        ? linkedReward.discount_type === 'percent'
+          ? Math.round(total * (linkedReward.discount_value / 100) * 100) / 100
+          : linkedReward.discount_value
+        : 0
+
       const orderRes = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: session?.id,
           table_id: ticket.tableId,
+          customer_id:            linkedCustomer?.id ?? undefined,
+          reward_id:              linkedReward?.id   ?? undefined,
+          reward_discount_amount: loyaltyDiscountAmount > 0 ? loyaltyDiscountAmount : undefined,
           items: ticket.items.map((i) => ({
             product_id: i.productId,
             product_name: i.productName,
