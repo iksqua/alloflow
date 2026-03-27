@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { OrderRow, TvaBreakdown } from '@/lib/analytics/types'
+import type { OrderRow } from '@/lib/analytics/types'
 import { ordersToCSV, downloadCSV } from '@/lib/analytics/csv'
 
 type SortKey = 'createdAt' | 'amountHt' | 'amountTtc'
@@ -10,7 +10,6 @@ type SortDir = 'asc' | 'desc'
 interface ReportTableProps {
   rows: OrderRow[]
   total: number
-  tvaBreakdown: TvaBreakdown[]
   totalHt: number
   totalTva: number
   totalTtc: number

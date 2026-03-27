@@ -78,7 +78,6 @@ export default async function ReportPage({
           <ReportTable
             rows={rows}
             total={total}
-            tvaBreakdown={tvaBreakdown}
             totalHt={totalHt}
             totalTva={totalTva}
             totalTtc={totalTtc}
