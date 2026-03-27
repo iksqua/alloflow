@@ -177,9 +177,9 @@ export interface Database {
         ]
       }
       loyalty_rewards: {
-        Row: { id: string; establishment_id: string; name: string; points_required: number; type: string; value: number; active: boolean }
-        Insert: { id?: string; establishment_id: string; name: string; points_required: number; type: string; value?: number; active?: boolean }
-        Update: { id?: string; establishment_id?: string; name?: string; points_required?: number; type?: string; value?: number; active?: boolean }
+        Row: { id: string; establishment_id: string; name: string; points_required: number; type: string; value: number; level_required: string; active: boolean }
+        Insert: { id?: string; establishment_id: string; name: string; points_required: number; type: string; value?: number; level_required?: string; active?: boolean }
+        Update: { id?: string; establishment_id?: string; name?: string; points_required?: number; type?: string; value?: number; level_required?: string; active?: boolean }
         Relationships: [
           { foreignKeyName: "loyalty_rewards_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: false; referencedRelation: "establishments"; referencedColumns: ["id"] }
         ]

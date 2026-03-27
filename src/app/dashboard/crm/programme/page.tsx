@@ -28,11 +28,14 @@ export default async function ProgrammePage() {
     .eq('establishment_id', profile.establishment_id)
     .single()
 
-  const { data: rewards } = await supabase
+  const { data: rewardsRaw } = await supabase
     .from('loyalty_rewards')
     .select('id, name, points_required, type, value, active')
     .eq('establishment_id', profile.establishment_id)
     .order('points_required', { ascending: true })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rewardsWithLevel = rewardsRaw as any[]
 
   const initialConfig = {
     active:           config?.active ?? true,
@@ -41,13 +44,13 @@ export default async function ProgrammePage() {
     ptsValidityDays:  config?.pts_validity_days ?? 365,
     minRedemptionPts: config?.min_redemption_pts ?? 100,
     levels:           (config?.levels as typeof DEFAULT_LEVELS) ?? DEFAULT_LEVELS,
-    rewards: (rewards ?? []).map(r => ({
+    rewards: (rewardsWithLevel ?? []).map((r: any) => ({
       id:            r.id as string,
       name:          r.name as string,
       ptsRequired:   r.points_required as number,
       type:          r.type as string,
       value:         Number(r.value),
-      levelRequired: 'standard',
+      levelRequired: (r.level_required as string) ?? 'standard',
       active:        r.active as boolean,
     })),
   }

@@ -49,7 +49,7 @@ export async function GET() {
   // Fetch rewards
   const { data: rewards } = await supabase
     .from('loyalty_rewards')
-    .select('id, name, points_required, type, value, active')
+    .select('id, name, points_required, type, value, level_required, active')
     .eq('establishment_id', establishmentId)
     .order('points_required', { ascending: true })
 
@@ -62,7 +62,7 @@ export async function GET() {
         ptsRequired:   r.points_required,
         type:          r.type,
         value:         Number(r.value),
-        levelRequired: 'standard',
+        levelRequired: r.level_required ?? 'standard',
         active:        r.active,
       })),
     })
@@ -81,7 +81,7 @@ export async function GET() {
       ptsRequired:   r.points_required,
       type:          r.type,
       value:         Number(r.value),
-      levelRequired: 'standard',
+      levelRequired: r.level_required ?? 'standard',
       active:        r.active,
     })),
   })
@@ -97,17 +97,28 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json()
 
+  const { ptsPerEuro, signupBonus, ptsValidityDays, minRedemptionPts, active, levels, rewards } = body
+
+  if (typeof ptsPerEuro !== 'number' || ptsPerEuro < 0)
+    return NextResponse.json({ error: 'ptsPerEuro invalide' }, { status: 400 })
+  if (typeof signupBonus !== 'number' || signupBonus < 0)
+    return NextResponse.json({ error: 'signupBonus invalide' }, { status: 400 })
+  if (!Array.isArray(levels) || levels.length === 0)
+    return NextResponse.json({ error: 'levels invalide' }, { status: 400 })
+  if (!Array.isArray(rewards))
+    return NextResponse.json({ error: 'rewards invalide' }, { status: 400 })
+
   // Upsert loyalty_config
   const { error: configError } = await supabase
     .from('loyalty_config')
     .upsert({
       establishment_id:   establishmentId,
-      active:             body.active ?? true,
-      pts_per_euro:       body.ptsPerEuro ?? 1,
-      signup_bonus:       body.signupBonus ?? 50,
-      pts_validity_days:  body.ptsValidityDays ?? 365,
-      min_redemption_pts: body.minRedemptionPts ?? 100,
-      levels:             body.levels ?? DEFAULT_LEVELS,
+      active:             active ?? true,
+      pts_per_euro:       ptsPerEuro,
+      signup_bonus:       signupBonus,
+      pts_validity_days:  ptsValidityDays ?? 365,
+      min_redemption_pts: minRedemptionPts ?? 100,
+      levels:             levels,
       updated_at:         new Date().toISOString(),
     }, { onConflict: 'establishment_id' })
 
@@ -121,7 +132,7 @@ export async function PUT(req: NextRequest) {
 
   if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
 
-  const rewards = (body.rewards ?? []) as Array<{
+  const rewardsList = rewards as Array<{
     name: string
     ptsRequired: number
     type: string
@@ -130,15 +141,16 @@ export async function PUT(req: NextRequest) {
     active: boolean
   }>
 
-  if (rewards.length > 0) {
+  if (rewardsList.length > 0) {
     const { error: insertError } = await supabase
       .from('loyalty_rewards')
-      .insert(rewards.map(r => ({
+      .insert(rewardsList.map(r => ({
         establishment_id: establishmentId,
         name:             r.name,
         points_required:  r.ptsRequired,
         type:             r.type,
         value:            r.value,
+        level_required:   r.levelRequired ?? 'standard',
         active:           r.active ?? true,
       })))
 

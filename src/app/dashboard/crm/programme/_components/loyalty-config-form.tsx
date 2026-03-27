@@ -12,6 +12,7 @@ interface Level {
 
 interface Reward {
   id?: string
+  _key?: string
   name: string
   ptsRequired: number
   type: string
@@ -59,7 +60,7 @@ const TIER_BADGE: Record<string, string> = {
 }
 
 function emptyReward(): Reward {
-  return { name: '', ptsRequired: 100, type: 'produit_offert', value: 0, levelRequired: 'standard', active: true }
+  return { name: '', ptsRequired: 100, type: 'produit_offert', value: 0, levelRequired: 'standard', active: true, _key: crypto.randomUUID() }
 }
 
 export function LoyaltyConfigForm({ initialConfig }: Props) {
@@ -69,7 +70,9 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
   const [ptsValidityDays,  setPtsValidityDays]  = useState(String(initialConfig.ptsValidityDays))
   const [minRedemptionPts, setMinRedemptionPts] = useState(String(initialConfig.minRedemptionPts))
   const [levels,           setLevels]           = useState<Level[]>(initialConfig.levels)
-  const [rewards,          setRewards]          = useState<Reward[]>(initialConfig.rewards)
+  const [rewards,          setRewards]          = useState<Reward[]>(
+    initialConfig.rewards.map(r => ({ ...r, _key: r.id ?? crypto.randomUUID() }))
+  )
   const [saving,           setSaving]           = useState(false)
   const [toast,            setToast]            = useState<{ msg: string; ok: boolean } | null>(null)
 
@@ -274,7 +277,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
             </div>
 
             {rewards.map((reward, idx) => (
-              <div key={idx} className="grid grid-cols-[1fr_80px_120px_80px_120px_36px] gap-2 items-center">
+              <div key={reward._key} className="grid grid-cols-[1fr_80px_120px_80px_120px_36px] gap-2 items-center">
                 <input
                   type="text"
                   value={reward.name}
