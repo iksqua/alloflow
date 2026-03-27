@@ -39,6 +39,9 @@ export default async function StocksPage() {
       : i.quantity < i.alert_threshold
       ? 'alert'
       : 'ok',
+    // New columns added in migration 20260327000006 — fallback until Supabase types regenerated
+    purchase_price: (i as unknown as Record<string, number>).purchase_price ?? 0,
+    purchase_qty:   (i as unknown as Record<string, number>).purchase_qty   ?? 0,
   }))
 
   return (

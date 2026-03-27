@@ -13,6 +13,8 @@ export interface StockItem {
   order_quantity: number
   supplier: string | null
   supplier_ref: string | null
+  purchase_price: number
+  purchase_qty: number
   active: boolean
   status: StockStatus
 }

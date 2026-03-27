@@ -10,6 +10,8 @@ export const createStockItemSchema = z.object({
   order_quantity: z.number().min(0).default(0),
   supplier:       z.string().max(100).nullable().optional(),
   supplier_ref:   z.string().max(100).nullable().optional(),
+  purchase_price: z.number().min(0).default(0),
+  purchase_qty:   z.number().min(0).default(0),
 })
 
 export const updateStockItemSchema = createStockItemSchema.partial().extend({

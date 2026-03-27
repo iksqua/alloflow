@@ -37,8 +37,9 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
       setUnitPrice(String(item?.unit_price ?? 0))
       setOrderQuantity(String(item?.order_quantity ?? 0))
       setSupplier(item?.supplier ?? '')
-      setPurchaseTotal('')
-      setPurchaseQty('')
+      // Restore calculator values if previously saved
+      setPurchaseTotal(item?.purchase_price ? String(item.purchase_price) : '')
+      setPurchaseQty(item?.purchase_qty ? String(item.purchase_qty) : '')
       setError(null)
     }
   }, [open, item])
@@ -79,6 +80,8 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
         unit_price:      parseFloat(unitPrice) || 0,
         order_quantity:  parseFloat(orderQuantity) || 0,
         supplier:        supplier.trim() || null,
+        purchase_price:  parseFloat(purchaseTotal) || 0,
+        purchase_qty:    parseFloat(purchaseQty) || 0,
       }
       const url    = item ? `/api/stock-items/${item.id}` : '/api/stock-items'
       const method = item ? 'PATCH' : 'POST'
