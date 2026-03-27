@@ -58,12 +58,10 @@ Priority order: `vip` → `fidele` → `a_risque` → `perdu` → `nouveau`.
 
 | Column | Type | Notes |
 |---|---|---|
-| `google_review_url` | text nullable | e.g. `https://g.page/r/PLACE_ID/review` |
-| `brevo_api_key` | text nullable | Stored encrypted; used for Brevo API calls |
-| `brevo_sender_name` | text nullable | SMS sender name (11 chars max) |
-| `brevo_sender_phone` | text nullable | WhatsApp sender number |
-
-> **Security note:** `brevo_api_key` is readable only by the establishment's own profiles via RLS. Never exposed to clients.
+| `google_review_url` | text nullable | e.g. `https://g.page/r/PLACE_ID/review` · Set by admin |
+| `brevo_sender_name` | text nullable | SMS sender name (11 chars max) · Set by admin |
+| `sms_credits` | int default 0 | SMS credit balance purchased from Alloflow |
+| `sms_used_total` | int default 0 | Lifetime SMS sent counter (for billing audit) |
 
 ---
 
@@ -114,14 +112,38 @@ group by c.establishment_id;
 
 ## 4. Communications Infrastructure — Brevo
 
-### 4.1 Integration approach
+### 4.1 Business model — Communications as a Service
 
-- **Per-establishment Brevo account** — each establishment provides their own Brevo API key, stored in `establishments.brevo_api_key`. Alloflow does not operate a shared Brevo account.
+Alloflow operates **one centralized Brevo account**. Establishments do not have their own Brevo account and do not provide an API key.
+
+**Reseller model:**
+- Alloflow buys SMS at Brevo's volume rate (~€0.073/SMS France)
+- Alloflow sells SMS credits to establishments at **€0.10/SMS** (or bundle pricing)
+- Margin: ~**€0.027 per SMS** — scales with total volume across all establishments
+- Credits are topped up by Alloflow (manually or via Stripe in a future billing sprint)
+
+**Benefits:** Alloflow controls quality, deliverability, and sender reputation. Simpler for establishments (no Brevo account needed). Revenue stream that grows with platform usage.
+
+### 4.2 Integration approach
+
+- **Single Alloflow Brevo account** — API key stored in server environment variables (`BREVO_API_KEY`), never in the database
 - **Brevo SDK** (`@getbrevo/brevo`) on the server side only
-- **Channels:** SMS · Email · WhatsApp Business (same API, different endpoints)
-- **Contact sync:** When a customer opts in, they are created/updated in Brevo with their establishment's list
+- **Channels in v2:** SMS only to start · WhatsApp + Email in a future sprint (WhatsApp requires Meta business verification)
+- **Per-establishment sender name:** `establishments.brevo_sender_name` (e.g. "MonCafe") — admins set this themselves
 
-### 4.2 Server-side send route
+### 4.3 Credit system
+
+Before any send, the server checks `establishments.sms_credits > 0`. If insufficient:
+- Send is blocked
+- Admin sees a banner: "Crédits SMS épuisés — contactez Alloflow pour recharger"
+
+On successful send:
+```sql
+update establishments set sms_credits = sms_credits - 1, sms_used_total = sms_used_total + 1
+where id = $establishment_id;
+```
+
+### 4.4 Server-side send route
 
 ```
 POST /api/communications/send
@@ -133,7 +155,7 @@ Body: { customerId, channel, message, templateVars? }
 - Calls Brevo API
 - Logs send in `campaign_sends`
 
-### 4.3 Brevo Webhook (delivery tracking)
+### 4.5 Brevo Webhook (delivery tracking)
 
 ```
 POST /api/webhooks/brevo
@@ -296,10 +318,13 @@ A dedicated CRM configuration section is added to the existing settings page (Sp
 
 | Setting | Field | Notes |
 |---|---|---|
-| Clé API Brevo | `brevo_api_key` | Masked after save · "Tester la connexion" button |
-| Nom expéditeur SMS | `brevo_sender_name` | Max 11 chars alphanumeric |
-| Numéro WhatsApp | `brevo_sender_phone` | E.164 format |
+| Nom expéditeur SMS | `brevo_sender_name` | Max 11 chars alphanumeric · Shown as sender on customer's phone |
 | Lien avis Google | `google_review_url` | Paste from Google Business dashboard |
+
+> **Not configurable by admins:** The Brevo API key is managed centrally by Alloflow (environment variable). Establishments purchase SMS credits from Alloflow — their remaining balance is displayed read-only in this tab.
+
+**Credit balance display (read-only):**
+> "📱 Crédits SMS restants : **247 SMS** · [Contacter Alloflow pour recharger]"
 
 ### 9.2 First-time setup flow
 
