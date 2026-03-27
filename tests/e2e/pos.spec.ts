@@ -4,6 +4,7 @@ import { createProduct, deleteProduct, createCashSession, closeCashSession } fro
 test.describe('POS', () => {
   let productId!: string
   let productPrice!: number
+  let productTva!: number
   let sessionId!: string
 
   test.beforeEach(async ({ request }) => {
@@ -17,6 +18,7 @@ test.describe('POS', () => {
     })
     productId = product.id
     productPrice = product.price
+    productTva = product.tva_rate
   })
 
   test.afterEach(async ({ request }) => {
@@ -41,9 +43,10 @@ test.describe('POS', () => {
     // Click the product to add it to the cart
     await page.getByText('Test POS E2E').click()
 
-    // The ticket panel shows total TTC — price is stored as TTC (4.09)
-    // Displayed as "4,09 €" (French locale, comma decimal separator)
-    await expect(page.getByText('4,09 €')).toBeVisible({ timeout: 5_000 })
+    // The ticket panel shows total TTC — price is stored as HT, TTC = HT × (1 + tva/100)
+    // e.g. 4.09 × 1.10 = 4.499 → toFixed(2) = "4.50" → "4,50 €"
+    const expectedTtc = (productPrice * (1 + productTva / 100)).toFixed(2).replace('.', ',')
+    await expect(page.getByText('Total TTC').locator('..').getByText(`${expectedTtc} €`)).toBeVisible({ timeout: 5_000 })
   })
 
   test('ouverture modal paiement', async ({ page }) => {
@@ -55,11 +58,11 @@ test.describe('POS', () => {
 
     // Handle loyalty step: when a product is in the cart, loyaltyDone starts as false.
     // The panel shows "Passer sans fidélité" button to skip the loyalty flow.
-    // If the button is present, click it to set loyaltyDone = true and reveal pos-pay-btn.
-    const skipLoyaltyBtn = page.getByText('Passer sans fidélité')
-    const skipLoyaltyVisible = await skipLoyaltyBtn.isVisible().catch(() => false)
-    if (skipLoyaltyVisible) {
-      await skipLoyaltyBtn.click()
+    // Wait for either the skip button or the pay button to appear (avoids race condition).
+    const skipBtn = page.getByText('Passer sans fidélité')
+    await skipBtn.or(page.locator('[data-testid="pos-pay-btn"]')).first().waitFor({ timeout: 10_000 })
+    if (await skipBtn.isVisible()) {
+      await skipBtn.click()
     }
 
     // Now pos-pay-btn should be visible
@@ -69,7 +72,8 @@ test.describe('POS', () => {
     // Payment modal should appear
     await expect(page.locator('[data-testid="payment-modal"]')).toBeVisible({ timeout: 5_000 })
 
-    // Amount 4.09 TTC is displayed with comma decimal separator in the modal
-    await expect(page.locator('[data-testid="payment-modal"]').getByText('4,09')).toBeVisible()
+    // Amount displayed in modal is TTC: HT × (1 + tva/100), formatted with comma separator
+    const expectedTtc = (productPrice * (1 + productTva / 100)).toFixed(2).replace('.', ',')
+    await expect(page.locator('[data-testid="payment-modal"]').getByText(expectedTtc)).toBeVisible()
   })
 })
