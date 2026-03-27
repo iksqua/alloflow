@@ -116,10 +116,10 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
               </div>
               <div>
                 <div className="text-sm font-bold text-[var(--green)]">
-                  +{Math.floor(order.total_ttc)} pts crédités !
+                  +{Math.round(order.total_ttc)} pts crédités !
                 </div>
                 <div className="text-xs text-[var(--text4)]">
-                  {linkedCustomer.first_name} · {linkedCustomer.points + Math.floor(order.total_ttc)} pts au total
+                  {linkedCustomer.first_name} · {linkedCustomer.points + Math.round(order.total_ttc)} pts au total
                 </div>
               </div>
             </div>

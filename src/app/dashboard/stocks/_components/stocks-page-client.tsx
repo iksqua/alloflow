@@ -100,7 +100,22 @@ export function StocksPageClient({ initialItems, initialOrders }: Props) {
           ))}
         </div>
 
-        {tab === 'inventory' && (
+        {tab === 'inventory' && items.length === 0 && (
+          <div className="text-center py-20 text-[var(--text4)]">
+            <div className="text-5xl mb-4">📦</div>
+            <div className="text-base font-semibold text-[var(--text2)] mb-1">Aucun article en stock</div>
+            <div className="text-sm mb-5">Commencez par ajouter vos premiers ingrédients ou matières premières.</div>
+            <button
+              onClick={() => { setEditingItem(null); setShowItemForm(true) }}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+              style={{ background: 'var(--blue)' }}
+            >
+              + Ajouter un article
+            </button>
+          </div>
+        )}
+
+        {tab === 'inventory' && items.length > 0 && (
           <StockItemsTable
             items={items}
             onEdit={item => { setEditingItem(item); setShowItemForm(true) }}

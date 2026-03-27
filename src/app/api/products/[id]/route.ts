@@ -12,6 +12,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) {
+    return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 403 })
+  }
+
   const { id } = await params
   const body = await req.json()
   const result = updateProductSchema.safeParse(body)
@@ -24,11 +34,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .from('products')
     .update(result.data)
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .select('*, category:categories(id, name, color_hex, icon)')
     .single()
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'Produit non trouvé ou accès refusé' }, { status: 404 })
   }
 
   return NextResponse.json(data)
@@ -42,12 +57,23 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) {
+    return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 403 })
+  }
+
   const { id } = await params
 
   const { error } = await supabase
     .from('products')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

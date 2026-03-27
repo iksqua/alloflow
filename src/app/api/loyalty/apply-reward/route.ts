@@ -14,6 +14,14 @@ export async function POST(req: NextRequest) {
 
   const { order_id, reward_id, customer_id } = result.data
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   // Fetch reward
   const { data: reward, error: rErr } = await supabase
     .from('loyalty_rewards')
@@ -25,10 +33,13 @@ export async function POST(req: NextRequest) {
   // Fetch order total
   const { data: order, error: oErr } = await supabase
     .from('orders')
-    .select('total_ttc')
+    .select('total_ttc, establishment_id')
     .eq('id', order_id)
     .single()
   if (oErr || !order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
+  if (order.establishment_id !== profile.establishment_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const discountAmount = reward.discount_type === 'percent'
     ? Math.round(order.total_ttc * (reward.discount_value / 100) * 100) / 100

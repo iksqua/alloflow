@@ -13,6 +13,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { id } = await params
   const body = await req.json()
   const parsed = discountSchema.safeParse(body)
@@ -20,11 +28,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status')
+    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status, establishment_id')
     .eq('id', id)
     .single()
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  if (order.establishment_id !== profile.establishment_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 400 })
 
   const { type, value } = parsed.data

@@ -7,7 +7,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { id } = await params
+
+  const { data: category } = await supabase
+    .from('categories')
+    .select('establishment_id')
+    .eq('id', id)
+    .single()
+
+  if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+  if (category.establishment_id !== profile.establishment_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const body = await req.json()
   const parsed = updateCategorySchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
@@ -28,7 +48,26 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { id } = await params
+
+  const { data: category } = await supabase
+    .from('categories')
+    .select('establishment_id')
+    .eq('id', id)
+    .single()
+
+  if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+  if (category.establishment_id !== profile.establishment_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { count } = await supabase
     .from('products')

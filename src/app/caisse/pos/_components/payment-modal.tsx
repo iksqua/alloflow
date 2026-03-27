@@ -95,7 +95,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         }),
       })
       if (!orderRes.ok) throw new Error('Order creation failed')
-      const { order } = await orderRes.json()
+      const orderData = await orderRes.json()
+      const order = orderData.order
 
       if (ticket.discount) {
         await fetch(`/api/orders/${order.id}/discounts`, {
@@ -109,9 +110,20 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       if (mode === 'card') {
         payBody = { method: 'card', amount: total }
       } else if (mode === 'cash') {
-        payBody = { method: 'cash', amount: total, cash_given: parseFloat(cashGiven.replace(',', '.')) }
+        const cashGivenAmount = parseFloat(cashGiven.replace(',', '.')) || 0
+        if (!cashGivenAmount || isNaN(cashGivenAmount)) {
+          toast.error('Montant invalide')
+          setIsPaying(false)
+          return
+        }
+        payBody = { method: 'cash', amount: total, cash_given: cashGivenAmount }
       } else {
-        const cardAmount = parseFloat(splitCard.replace(',', '.'))
+        const cardAmount = parseFloat(splitCard.replace(',', '.')) || 0
+        if (!cardAmount || isNaN(cardAmount)) {
+          toast.error('Montant invalide')
+          setIsPaying(false)
+          return
+        }
         const cashAmount = total - cardAmount
         payBody = {
           method: 'split',
@@ -129,7 +141,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         body: JSON.stringify(payBody),
       })
       if (!payRes.ok) throw new Error('Payment failed')
-      onSuccess({ ...order, total_ttc: total })
+      onSuccess({ ...order, total_ttc: total, items: order.items ?? [] })
     } catch {
       toast.error('Erreur lors du paiement')
       setTpeStep('idle')

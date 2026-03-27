@@ -58,7 +58,7 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--border)]">
-                {['Article', 'Catégorie', 'Stock', 'Seuil', 'Niveau', 'Fournisseur', 'Statut', ''].map(h => (
+                {['Article', 'Catégorie', 'Stock', 'Seuil', 'Niveau', 'Prix unitaire', 'Fournisseur', 'Statut', ''].map(h => (
                   <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -83,6 +83,9 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
+                    </td>
+                    <td className="px-4 py-2.5 text-[var(--text2)] tabular-nums">
+                      {item.unit_price.toFixed(2)} €<span className="text-xs text-[var(--text4)]">/{item.unit}</span>
                     </td>
                     <td className="px-4 py-2.5 text-[var(--text3)]">{item.supplier ?? '—'}</td>
                     <td className="px-4 py-2.5">

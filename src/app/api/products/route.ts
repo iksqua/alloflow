@@ -13,9 +13,18 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status')
   const tvaRate = searchParams.get('tva_rate')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   let query = supabase
     .from('products')
     .select('*, category:categories(id, name, color_hex, icon)')
+    .eq('establishment_id', profile.establishment_id)
     .is('deleted_at', null)
     .order('sort_order')
     .order('name')
