@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useOnlineStatus } from '@/lib/hooks/use-online-status'
 import { CategoriesPanel } from './categories-panel'
 import { ProductsPanel } from './products-panel'
 import { TicketPanel } from './ticket-panel'
@@ -38,6 +39,9 @@ export function PosShell({
   const [ticket, setTicket] = useState<LocalTicket>(EMPTY_TICKET)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null)
+
+  const isOnline = useOnlineStatus()
+  const isOffline = !isOnline
 
   // Modals
   const [showPayment, setShowPayment] = useState(false)
@@ -90,6 +94,15 @@ export function PosShell({
 
   return (
     <div className="flex-1 flex overflow-hidden">
+      {isOffline && (
+        <div
+          className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 py-1.5 text-xs font-bold"
+          style={{ background: '#f59e0b', color: '#0f172a' }}
+        >
+          <span>⚡</span>
+          <span>MODE HORS LIGNE — Seuls les paiements en espèces sont disponibles</span>
+        </div>
+      )}
       {/* Barre de navigation caisse */}
       <div
         className="flex items-center justify-between px-4 h-12 flex-shrink-0 border-b border-[var(--border)]"
@@ -163,12 +176,13 @@ export function PosShell({
           ticket={ticket}
           session={session}
           cashierId={cashierId}
+          isOffline={isOffline}
           onClose={() => setShowPayment(false)}
           onSuccess={(order) => {
             setCompletedOrder(order)
             setShowPayment(false)
             setShowReceipt(true)
-            clearTicket()
+            setTicket(EMPTY_TICKET)
           }}
         />
       )}
