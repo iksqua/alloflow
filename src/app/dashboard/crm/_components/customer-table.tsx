@@ -14,6 +14,9 @@ const TIER_LABELS: Record<string, string> = {
   standard: 'Standard',
 }
 
+// TODO: fetch from loyalty_config when available; using default gold threshold for now
+const GOLD_THRESHOLD_PTS = 2000
+
 const TIER_COLORS: Record<string, { bg: string; text: string }> = {
   gold: { bg: 'rgba(251,191,36,0.15)', text: '#fbbf24' },
   silver: { bg: 'rgba(148,163,184,0.15)', text: '#94a3b8' },
@@ -39,8 +42,8 @@ function TierBadge({ tier }: { tier: 'standard' | 'silver' | 'gold' }) {
 }
 
 function PointsCell({ points }: { points: number }) {
-  // Gold threshold = 2000 pts = 100%
-  const pct = Math.min(100, Math.round((points / 2000) * 100))
+  // Gold threshold = GOLD_THRESHOLD_PTS = 100%
+  const pct = Math.min(100, Math.round((points / GOLD_THRESHOLD_PTS) * 100))
   return (
     <div className="flex flex-col gap-1 min-w-[80px]">
       <span className="text-sm text-[var(--text1)]">{points.toLocaleString('fr-FR')} pts</span>
