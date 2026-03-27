@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Dashboard Produits</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-raised: #263348;
+    --border: #334155;
+    --border-active: #475569;
+    --text-primary: #f8fafc;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-disabled: #475569;
+    --blue: #1d4ed8;
+    --blue-hover: #1e40af;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --sidebar-w: 220px;
+  }
+
+  body { background: var(--bg); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+
+  /* ── TABS NAV ── */
+  .tabs-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: #0a0f1e; border-bottom: 1px solid #1e293b;
+    display: flex; gap: 2px; padding: 8px 12px;
+  }
+  .tab-btn {
+    padding: 5px 14px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 500; background: transparent; color: var(--text-muted);
+    transition: all .15s;
+  }
+  .tab-btn.active { background: var(--blue); color: #fff; }
+  .tab-btn:hover:not(.active) { background: var(--surface); color: var(--text-primary); }
+
+  .screen { display: none; padding-top: 44px; }
+  .screen.active { display: flex; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w); min-height: calc(100vh - 44px);
+    background: #111827; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 44px;
+  }
+  .sidebar-logo {
+    padding: 20px 16px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px; background: var(--blue); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; color: white;
+  }
+  .logo-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .logo-sub { font-size: 10px; color: var(--text-muted); }
+
+  .nav-section { padding: 8px 8px 4px; }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--text-disabled); text-transform: uppercase; letter-spacing: .06em; padding: 0 8px; margin-bottom: 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px;
+    color: var(--text-muted); font-size: 13px; cursor: pointer; margin-bottom: 1px;
+    transition: all .1s;
+  }
+  .nav-item:hover { background: var(--surface); color: var(--text-secondary); }
+  .nav-item.active { background: var(--blue); color: white; }
+  .nav-item .nav-icon { width: 16px; text-align: center; font-size: 14px; }
+  .nav-item .nav-badge {
+    margin-left: auto; background: var(--red); color: white;
+    border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+  }
+
+  .sidebar-footer {
+    margin-top: auto; border-top: 1px solid var(--border); padding: 12px;
+  }
+  .user-info {
+    display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; cursor: pointer;
+  }
+  .user-info:hover { background: var(--surface); }
+  .user-avatar {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--blue);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+  .user-name { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .user-role { font-size: 10px; color: var(--text-muted); }
+
+  /* ── MAIN AREA ── */
+  .main { flex: 1; overflow: auto; }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    padding: 24px 24px 16px; display: flex; align-items: flex-start; justify-content: space-between;
+  }
+  .page-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+  .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── BUTTONS ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: var(--blue-hover); }
+  .btn-secondary { background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--surface-raised); }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface); color: var(--text-secondary); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    padding: 0 24px 12px; display: flex; gap: 8px; align-items: center;
+  }
+  .search-input {
+    flex: 1; max-width: 320px; display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px 12px; color: var(--text-muted); font-size: 13px;
+  }
+  .search-input input {
+    background: none; border: none; outline: none; color: var(--text-secondary);
+    font-size: 13px; width: 100%;
+  }
+  .search-input input::placeholder { color: var(--text-muted); }
+
+  .filter-select {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px 10px; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .filter-select .label { color: var(--text-muted); font-size: 11px; }
+
+  .segment {
+    display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    overflow: hidden;
+  }
+  .seg-btn {
+    padding: 7px 12px; font-size: 12px; font-weight: 500; cursor: pointer; border: none;
+    background: transparent; color: var(--text-muted); transition: all .1s;
+  }
+  .seg-btn.active { background: var(--surface-raised); color: var(--text-primary); }
+  .seg-btn:hover:not(.active) { color: var(--text-secondary); }
+
+  .toolbar-sep { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    margin: 0 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden;
+  }
+  .table { width: 100%; border-collapse: collapse; }
+  .table thead tr { background: var(--bg); border-bottom: 1px solid var(--border); }
+  .table th {
+    padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--text-disabled); text-transform: uppercase; letter-spacing: .06em;
+    user-select: none;
+  }
+  .table th.right { text-align: right; }
+  .table th.center { text-align: center; }
+  .table th.sortable { cursor: pointer; }
+  .table th.sortable:hover { color: var(--text-muted); }
+
+  .table tbody tr {
+    border-bottom: 1px solid rgba(51,65,85,.5); cursor: default;
+    transition: background .1s;
+  }
+  .table tbody tr:last-child { border-bottom: none; }
+  .table tbody tr:hover { background: var(--surface-raised); }
+  .table tbody tr:hover .row-actions { opacity: 1; }
+  .table tbody tr.inactive { opacity: 0.6; }
+
+  .table td { padding: 0 12px; height: 40px; vertical-align: middle; }
+  .table td.right { text-align: right; }
+  .table td.center { text-align: center; }
+
+  /* ── TABLE CELLS ── */
+  .product-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .product-ref { font-size: 11px; color: var(--text-muted); font-family: 'SF Mono', monospace; }
+
+  .cat-badge {
+    display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px;
+    font-size: 12px; font-weight: 500;
+  }
+  .cat-plat { background: #172554; color: #93c5fd; }
+  .cat-entree { background: #14532d; color: #86efac; }
+  .cat-boisson { background: #1e1b4b; color: #a5b4fc; }
+  .cat-dessert { background: #4a1d96; color: #d8b4fe; }
+  .cat-extra { background: #292524; color: #d6d3d1; }
+
+  .price-ttc { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .price-ht { font-size: 11px; color: var(--text-muted); }
+
+  .tva-badge {
+    display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px;
+    font-size: 11px; font-weight: 700; background: rgba(245,158,11,.15); color: var(--amber);
+    font-family: 'SF Mono', monospace;
+  }
+  .tva-20 { background: rgba(251,146,60,.15); color: #fb923c; }
+
+  /* ── TOGGLE ── */
+  .toggle-wrap { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toggle {
+    width: 36px; height: 20px; border-radius: 10px; background: var(--border-active); position: relative;
+    transition: background .15s; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--green); }
+  .toggle::after {
+    content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    background: white; top: 3px; left: 3px; transition: transform .15s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+  .toggle-label { font-size: 12px; font-weight: 500; }
+  .toggle-label.on { color: var(--green); }
+  .toggle-label.off { color: var(--text-muted); }
+
+  /* ── ROW ACTIONS ── */
+  .row-actions { opacity: 0; display: flex; align-items: center; justify-content: center; gap: 2px; transition: opacity .1s; }
+  .row-actions.always { opacity: 1; }
+  .action-btn {
+    width: 28px; height: 28px; border-radius: 5px; border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+    font-size: 14px; transition: all .1s;
+  }
+  .action-btn:hover { background: var(--bg); color: var(--text-primary); }
+  .action-btn.danger:hover { background: rgba(239,68,68,.15); color: var(--red); }
+
+  /* ── TABLE FOOTER ── */
+  .table-footer {
+    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+    color: var(--text-muted); font-size: 13px;
+  }
+  .pagination { display: flex; gap: 4px; align-items: center; }
+  .page-btn {
+    width: 30px; height: 30px; border-radius: 5px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-muted); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .page-btn.active { background: var(--blue); border-color: var(--blue); color: white; }
+  .page-btn:hover:not(.active) { background: var(--surface-raised); color: var(--text-secondary); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex; gap: 16px; padding: 0 24px 16px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .stat-value { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+  .stat-label { font-size: 11px; color: var(--text-muted); }
+  .stat-delta { font-size: 11px; color: var(--green); }
+
+  /* ── OVERLAY & DIALOG ── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dialog {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    width: 480px; max-height: 80vh; overflow: auto; box-shadow: 0 25px 50px rgba(0,0,0,.5);
+  }
+  .dialog-header {
+    padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .dialog-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .dialog-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .dialog-close {
+    width: 28px; height: 28px; border-radius: 5px; border: none; background: transparent;
+    color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .dialog-close:hover { background: var(--surface-raised); color: var(--text-primary); }
+  .dialog-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+  .dialog-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ── FORM ── */
+  .form-section { display: flex; flex-direction: column; gap: 12px; }
+  .form-section-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-disabled); padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+  .form-input {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; color: var(--text-primary); font-size: 13px; outline: none;
+    transition: border-color .1s;
+  }
+  .form-input:focus { border-color: var(--blue); }
+  .form-input.full { width: 100%; }
+  .form-select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; color: var(--text-primary); font-size: 13px; outline: none; cursor: pointer;
+  }
+  .form-hint { font-size: 11px; color: var(--text-muted); }
+  .form-error { font-size: 11px; color: var(--red); }
+
+  /* TVA computed display */
+  .price-computed {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    background: rgba(29,78,216,.1); border: 1px solid rgba(29,78,216,.3); border-radius: 6px;
+    font-size: 13px;
+  }
+  .price-computed .label { color: var(--text-muted); font-size: 12px; }
+  .price-computed .value { font-weight: 700; color: var(--text-primary); }
+  .price-computed .tva { margin-left: auto; }
+
+  /* ── TOGGLE ROW IN FORM ── */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  }
+  .toggle-row .label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .toggle-row .sublabel { font-size: 11px; color: var(--text-muted); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 64px 32px; text-align: center; gap: 16px;
+  }
+  .empty-icon { font-size: 48px; opacity: .4; }
+  .empty-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
+  .empty-text { font-size: 13px; color: var(--text-muted); max-width: 320px; line-height: 1.5; }
+  .empty-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+  /* ── SKELETON ── */
+  @keyframes shimmer { 0% { opacity: .4; } 50% { opacity: .7; } 100% { opacity: .4; } }
+  .skeleton {
+    background: var(--surface-raised); border-radius: 4px; animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* ── CATEGORIES MODAL ── */
+  .cat-list { display: flex; flex-direction: column; gap: 4px; }
+  .cat-row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  }
+  .cat-drag { color: var(--text-disabled); cursor: grab; font-size: 16px; }
+  .cat-color { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+  .cat-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .cat-count { font-size: 12px; color: var(--text-muted); }
+  .cat-actions { display: flex; gap: 4px; }
+
+  /* ── BULK BAR ── */
+  .bulk-bar {
+    position: sticky; bottom: 0; margin: 8px 24px 0;
+    background: var(--blue); border-radius: 8px; padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .bulk-count { font-size: 13px; font-weight: 600; color: white; white-space: nowrap; }
+  .bulk-sep { width: 1px; height: 20px; background: rgba(255,255,255,.2); }
+  .bulk-action {
+    padding: 5px 12px; border-radius: 5px; border: 1px solid rgba(255,255,255,.2);
+    background: transparent; color: white; font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: background .1s;
+  }
+  .bulk-action:hover { background: rgba(255,255,255,.1); }
+  .bulk-action.danger { border-color: rgba(239,68,68,.5); color: #fca5a5; }
+
+  /* ── DELETE CONFIRM ── */
+  .dialog.danger-dialog { border-color: rgba(239,68,68,.3); }
+  .danger-header { background: rgba(69,10,10,.6); }
+  .danger-icon { font-size: 24px; }
+  .danger-title { color: #fca5a5; }
+
+  /* ── TOAST ── */
+  .toast-wrap { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
+  .toast {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); min-width: 260px;
+  }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error { border-left: 3px solid var(--red); }
+  .toast-icon { font-size: 16px; }
+  .toast-text { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── SEARCH HIGHLIGHT ── */
+  mark { background: rgba(245,158,11,.25); color: var(--amber); border-radius: 2px; padding: 0 1px; }
+
+  /* ── DROPDOWN ── */
+  .dropdown-menu {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 4px; min-width: 180px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .dropdown-item {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 5px;
+    font-size: 13px; color: var(--text-secondary); cursor: pointer;
+  }
+  .dropdown-item:hover { background: var(--surface-raised); }
+  .dropdown-item.danger { color: var(--red); }
+  .dropdown-item.danger:hover { background: rgba(239,68,68,.1); }
+  .dropdown-sep { height: 1px; background: var(--border); margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── TABS NAVIGATION ── -->
+<div class="tabs-nav">
+  <button class="tab-btn active" onclick="showScreen('screen-main')">1 · Vue principale</button>
+  <button class="tab-btn" onclick="showScreen('screen-form-add')">2 · Ajout produit</button>
+  <button class="tab-btn" onclick="showScreen('screen-form-edit')">3 · Édition produit</button>
+  <button class="tab-btn" onclick="showScreen('screen-empty')">4 · État vide</button>
+  <button class="tab-btn" onclick="showScreen('screen-skeleton')">5 · Chargement</button>
+  <button class="tab-btn" onclick="showScreen('screen-categories')">6 · Catégories</button>
+  <button class="tab-btn" onclick="showScreen('screen-delete')">7 · Supprimer</button>
+  <button class="tab-btn" onclick="showScreen('screen-bulk')">8 · Sélection masse</button>
+  <button class="tab-btn" onclick="showScreen('screen-dropdown')">9 · Actions row</button>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 1 — VUE PRINCIPALE                     -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-main" class="screen active">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">A</div>
+      <div><div class="logo-name">Alloflow</div><div class="logo-sub">L'Entrecôte Dorée</div></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>Dashboard</div>
+      <div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>Commandes<span class="nav-badge">3</span></div>
+      <div class="nav-item"><span class="nav-icon">📈</span>Analytics</div>
+      <div class="nav-item"><span class="nav-icon">📦</span>Stocks</div>
+      <div class="nav-item"><span class="nav-icon">👥</span>CRM</div>
+    </div>
+    <div class="nav-section" style="margin-top:auto">
+      <div class="nav-item"><span class="nav-icon">⚙️</span>Paramètres</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">MA</div>
+        <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Produits</div>
+        <div class="page-subtitle">84 produits · 76 actifs · 8 inactifs · 6 catégories</div>
+      </div>
+      <button class="btn btn-primary">+ Nouveau produit</button>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-value">84</div>
+        <div class="stat-label">Produits au catalogue</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--green)">76</div>
+        <div class="stat-label">Actifs ce soir</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--text-muted)">8</div>
+        <div class="stat-label">Inactifs / suspendus</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">14,80€</div>
+        <div class="stat-label">Prix TTC moyen</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-input">
+        <span style="color:var(--text-muted)">🔍</span>
+        <input type="text" placeholder="Nom, référence…" />
+      </div>
+      <div class="filter-select"><span class="label">Catégorie</span> Tous ▾</div>
+      <div class="segment">
+        <button class="seg-btn active">Tous</button>
+        <button class="seg-btn">Actifs</button>
+        <button class="seg-btn">Inactifs</button>
+      </div>
+      <div class="filter-select"><span class="label">TVA</span> Tous ▾</div>
+      <div class="toolbar-sep"></div>
+      <button class="btn btn-ghost btn-sm">🏷️ Catégories</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:40px"><input type="checkbox" style="accent-color:var(--blue)"></th>
+            <th class="sortable">Nom ↕</th>
+            <th style="width:130px">Catégorie</th>
+            <th class="right" style="width:90px">Prix TTC ↕</th>
+            <th class="center" style="width:70px">TVA</th>
+            <th class="center" style="width:90px">Statut</th>
+            <th class="center" style="width:50px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Entrecôte 300g</div><div class="product-ref">PRD-001</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">26,40€</div><div class="price-ht" style="text-align:right">24,00€ HT</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Burger Maison</div><div class="product-ref">PRD-002</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">16,50€</div><div class="price-ht" style="text-align:right">15,00€ HT</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Salade César</div><div class="product-ref">PRD-005</div></td>
+            <td><span class="cat-badge cat-entree">🥗 Entrée</span></td>
+            <td class="right"><div class="price-ttc">9,90€</div><div class="price-ht" style="text-align:right">9,00€ HT</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Côtes du Rhône 75cl</div><div class="product-ref">PRD-031</div></td>
+            <td><span class="cat-badge cat-boisson">🍹 Boisson</span></td>
+            <td class="right"><div class="price-ttc">24,00€</div><div class="price-ht" style="text-align:right">20,00€ HT</div></td>
+            <td class="center"><span class="tva-badge tva-20">20%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Coca-Cola 33cl</div><div class="product-ref">PRD-032</div></td>
+            <td><span class="cat-badge cat-boisson">🍹 Boisson</span></td>
+            <td class="right"><div class="price-ttc">3,50€</div><div class="price-ht" style="text-align:right">2,92€ HT</div></td>
+            <td class="center"><span class="tva-badge">20%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Tiramisu maison</div><div class="product-ref">PRD-050</div></td>
+            <td><span class="cat-badge cat-dessert">🍮 Dessert</span></td>
+            <td class="right"><div class="price-ttc">7,70€</div><div class="price-ht" style="text-align:right">7,00€ HT</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr class="inactive">
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Plat du jour – Saumon</div><div class="product-ref">PRD-012</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">19,80€</div><div class="price-ht" style="text-align:right">18,00€ HT</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle"></div><span class="toggle-label off">Inactif</span></div></td>
+            <td class="center"><div class="row-actions always"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr class="inactive">
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Soupe à l'oignon</div><div class="product-ref">PRD-008</div></td>
+            <td><span class="cat-badge cat-entree">🥗 Entrée</span></td>
+            <td class="right"><div class="price-ttc">7,15€</div><div class="price-ht" style="text-align:right">6,50€ HT</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle"></div><span class="toggle-label off">Inactif</span></div></td>
+            <td class="center"><div class="row-actions always"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <span>1–25 sur 84 produits</span>
+      <div class="pagination">
+        <button class="page-btn">←</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <span style="color:var(--text-muted);padding:0 4px">…</span>
+        <button class="page-btn">4</button>
+        <button class="page-btn">→</button>
+      </div>
+      <div class="filter-select btn-sm"><span class="label">Afficher</span> 25 par page ▾</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 2 — AJOUT PRODUIT                      -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-form-add" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">A</div>
+      <div><div class="logo-name">Alloflow</div><div class="logo-sub">L'Entrecôte Dorée</div></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>Dashboard</div>
+      <div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>Commandes</div>
+      <div class="nav-item"><span class="nav-icon">📈</span>Analytics</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">MA</div>
+        <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main" style="position:relative">
+    <div class="page-header">
+      <div><div class="page-title">Produits</div><div class="page-subtitle">84 produits · 76 actifs</div></div>
+      <button class="btn btn-primary">+ Nouveau produit</button>
+    </div>
+    <div class="table-wrap" style="opacity:.35;pointer-events:none">
+      <table class="table"><thead><tr><th style="width:40px"></th><th>Nom</th><th>Catégorie</th><th class="right">Prix TTC</th><th class="center">TVA</th><th class="center">Statut</th><th class="center"></th></tr></thead>
+      <tbody>
+        <tr><td></td><td><div class="product-name">Entrecôte 300g</div></td><td><span class="cat-badge cat-plat">🍽️ Plat</span></td><td class="right"><div class="price-ttc">26,40€</div></td><td class="center"><span class="tva-badge">10%</span></td><td class="center"><div class="toggle-wrap"><div class="toggle on"></div></div></td><td></td></tr>
+        <tr><td></td><td><div class="product-name">Burger Maison</div></td><td><span class="cat-badge cat-plat">🍽️ Plat</span></td><td class="right"><div class="price-ttc">16,50€</div></td><td class="center"><span class="tva-badge">10%</span></td><td class="center"><div class="toggle-wrap"><div class="toggle on"></div></div></td><td></td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="overlay" style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:0">
+      <div class="dialog">
+        <div class="dialog-header">
+          <div><div class="dialog-title">Nouveau produit</div><div class="dialog-subtitle">Remplissez les informations du nouveau produit</div></div>
+          <button class="dialog-close">×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-section">
+            <div class="form-section-title">Informations générales</div>
+            <div class="form-field">
+              <label class="form-label">Nom du produit *</label>
+              <input class="form-input full" type="text" placeholder="Ex: Entrecôte grillée 300g" autofocus />
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label class="form-label">Référence interne</label>
+                <input class="form-input full" type="text" placeholder="PRD-085 (auto)" />
+                <span class="form-hint">Générée automatiquement si vide</span>
+              </div>
+              <div class="form-field">
+                <label class="form-label">Catégorie *</label>
+                <select class="form-select full">
+                  <option>Sélectionner…</option>
+                  <option>🍽️ Plats</option>
+                  <option>🥗 Entrées</option>
+                  <option>🍹 Boissons</option>
+                  <option>🍮 Desserts</option>
+                  <option>─────────────</option>
+                  <option>+ Créer une catégorie</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Description</label>
+              <textarea class="form-input full" rows="2" placeholder="Description courte (optionnel)" style="resize:vertical"></textarea>
+              <span class="form-hint">0 / 200 caractères</span>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Prix et fiscalité</div>
+            <div class="form-row">
+              <div class="form-field">
+                <label class="form-label">Prix HT *</label>
+                <input class="form-input full" type="number" placeholder="0,00" step="0.01" />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Taux TVA *</label>
+                <select class="form-select full">
+                  <option>5,5% — Produits essentiels</option>
+                  <option selected>10% — Restauration (défaut)</option>
+                  <option>20% — Alcool / standard</option>
+                </select>
+              </div>
+            </div>
+            <div class="price-computed">
+              <span class="label">Prix TTC calculé :</span>
+              <span class="value">— €</span>
+              <span class="tva"><span class="tva-badge">10%</span></span>
+            </div>
+            <span class="form-hint">Vous pouvez aussi saisir le TTC directement — le HT sera recalculé automatiquement.</span>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Disponibilité</div>
+            <div class="toggle-row">
+              <div>
+                <div class="label">Produit actif</div>
+                <div class="sublabel">Visible sur la caisse et les commandes</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-ghost">Annuler</button>
+          <button class="btn btn-primary">Enregistrer le produit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 3 — ÉDITION PRODUIT                    -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-form-edit" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">A</div>
+      <div><div class="logo-name">Alloflow</div><div class="logo-sub">L'Entrecôte Dorée</div></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div>
+    </div>
+    <div class="sidebar-footer"><div class="user-info"><div class="user-avatar">MA</div><div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div></div></div>
+  </div>
+
+  <div class="main" style="position:relative">
+    <div class="page-header"><div><div class="page-title">Produits</div></div></div>
+    <div class="table-wrap" style="opacity:.35;pointer-events:none">
+      <table class="table"><thead><tr><th></th><th>Nom</th><th>Catégorie</th><th>Prix TTC</th><th>TVA</th><th>Statut</th><th></th></tr></thead>
+      <tbody><tr style="background:rgba(29,78,216,.1);border-left:2px solid var(--blue)"><td></td><td><div class="product-name">Entrecôte 300g</div></td><td><span class="cat-badge cat-plat">🍽️ Plat</span></td><td><div class="price-ttc">26,40€</div></td><td><span class="tva-badge">10%</span></td><td><div class="toggle-wrap"><div class="toggle on"></div></div></td><td></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="overlay" style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:0">
+      <div class="dialog">
+        <div class="dialog-header">
+          <div><div class="dialog-title">Modifier — Entrecôte 300g</div><div class="dialog-subtitle">PRD-001 · Modifié il y a 3 jours</div></div>
+          <button class="dialog-close">×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-section">
+            <div class="form-section-title">Informations générales</div>
+            <div class="form-field">
+              <label class="form-label">Nom du produit *</label>
+              <input class="form-input full" type="text" value="Entrecôte 300g" />
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label class="form-label">Référence interne</label>
+                <input class="form-input full" type="text" value="PRD-001" />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Catégorie *</label>
+                <select class="form-select full"><option selected>🍽️ Plats</option><option>🥗 Entrées</option><option>🍹 Boissons</option><option>🍮 Desserts</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Prix et fiscalité</div>
+            <div class="form-row">
+              <div class="form-field">
+                <label class="form-label">Prix HT *</label>
+                <input class="form-input full" type="number" value="24.00" step="0.01" />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Taux TVA *</label>
+                <select class="form-select full"><option>5,5%</option><option selected>10%</option><option>20%</option></select>
+              </div>
+            </div>
+            <div class="price-computed">
+              <span class="label">Prix TTC :</span>
+              <span class="value">26,40€</span>
+              <span class="tva"><span class="tva-badge">10%</span></span>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Disponibilité</div>
+            <div class="toggle-row">
+              <div><div class="label">Produit actif</div><div class="sublabel">Visible sur la caisse</div></div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="toggle-row">
+              <div><div class="label">Service du soir uniquement</div><div class="sublabel">Ne s'affiche que pour les services soir</div></div>
+              <div class="toggle"></div>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-ghost">Annuler</button>
+          <button class="btn btn-primary">💾 Enregistrer les modifications</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 4 — ÉTAT VIDE                          -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-empty" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">A</div><div><div class="logo-name">Alloflow</div><div class="logo-sub">L'Entrecôte Dorée</div></div></div>
+    <div class="nav-section"><div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div></div>
+    <div class="sidebar-footer"><div class="user-info"><div class="user-avatar">MA</div><div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div></div></div>
+  </div>
+  <div class="main">
+    <div class="page-header">
+      <div><div class="page-title">Produits</div><div class="page-subtitle">0 produits · 0 catégories</div></div>
+      <button class="btn btn-primary">+ Nouveau produit</button>
+    </div>
+    <div class="table-wrap">
+      <div class="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <div class="empty-title">Votre catalogue est vide</div>
+        <div class="empty-text">Commencez par créer vos catégories (Plats, Entrées, Boissons…), puis ajoutez vos produits avec leurs prix et TVA.</div>
+        <div class="empty-actions">
+          <button class="btn btn-ghost">🏷️ Créer des catégories</button>
+          <button class="btn btn-primary">+ Ajouter un premier produit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 5 — CHARGEMENT SKELETON               -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-skeleton" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">A</div><div><div class="logo-name">Alloflow</div></div></div>
+    <div class="nav-section"><div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div></div>
+  </div>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Produits</div>
+        <div><div class="skeleton" style="width:180px;height:14px;margin-top:6px"></div></div>
+      </div>
+      <div class="skeleton" style="width:140px;height:34px;border-radius:6px"></div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-card"><div class="skeleton" style="width:40px;height:24px"></div><div class="skeleton" style="width:120px;height:12px;margin-top:6px"></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:40px;height:24px"></div><div class="skeleton" style="width:100px;height:12px;margin-top:6px"></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:40px;height:24px"></div><div class="skeleton" style="width:80px;height:12px;margin-top:6px"></div></div>
+    </div>
+    <div class="toolbar">
+      <div class="skeleton" style="width:280px;height:34px;border-radius:6px"></div>
+      <div class="skeleton" style="width:130px;height:34px;border-radius:6px"></div>
+      <div class="skeleton" style="width:160px;height:34px;border-radius:6px"></div>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th></th><th>Nom</th><th>Catégorie</th><th>Prix TTC</th><th>TVA</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><div class="skeleton" style="width:16px;height:16px;border-radius:3px"></div></td><td><div class="skeleton" style="width:160px;height:14px"></div><div class="skeleton" style="width:60px;height:10px;margin-top:4px"></div></td><td><div class="skeleton" style="width:80px;height:22px;border-radius:12px"></div></td><td class="right"><div class="skeleton" style="width:60px;height:14px;margin-left:auto"></div></td><td class="center"><div class="skeleton" style="width:36px;height:20px;border-radius:4px;margin:auto"></div></td><td class="center"><div class="skeleton" style="width:50px;height:20px;border-radius:10px;margin:auto"></div></td><td></td></tr>
+          <tr><td><div class="skeleton" style="width:16px;height:16px;border-radius:3px"></div></td><td><div class="skeleton" style="width:130px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:22px;border-radius:12px"></div></td><td class="right"><div class="skeleton" style="width:50px;height:14px;margin-left:auto"></div></td><td class="center"><div class="skeleton" style="width:36px;height:20px;border-radius:4px;margin:auto"></div></td><td class="center"><div class="skeleton" style="width:50px;height:20px;border-radius:10px;margin:auto"></div></td><td></td></tr>
+          <tr><td><div class="skeleton" style="width:16px;height:16px;border-radius:3px"></div></td><td><div class="skeleton" style="width:180px;height:14px"></div></td><td><div class="skeleton" style="width:70px;height:22px;border-radius:12px"></div></td><td class="right"><div class="skeleton" style="width:55px;height:14px;margin-left:auto"></div></td><td class="center"><div class="skeleton" style="width:36px;height:20px;border-radius:4px;margin:auto"></div></td><td class="center"><div class="skeleton" style="width:50px;height:20px;border-radius:10px;margin:auto"></div></td><td></td></tr>
+          <tr><td><div class="skeleton" style="width:16px;height:16px;border-radius:3px"></div></td><td><div class="skeleton" style="width:110px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:22px;border-radius:12px"></div></td><td class="right"><div class="skeleton" style="width:60px;height:14px;margin-left:auto"></div></td><td class="center"><div class="skeleton" style="width:36px;height:20px;border-radius:4px;margin:auto"></div></td><td class="center"><div class="skeleton" style="width:50px;height:20px;border-radius:10px;margin:auto"></div></td><td></td></tr>
+          <tr><td><div class="skeleton" style="width:16px;height:16px;border-radius:3px"></div></td><td><div class="skeleton" style="width:150px;height:14px"></div></td><td><div class="skeleton" style="width:70px;height:22px;border-radius:12px"></div></td><td class="right"><div class="skeleton" style="width:45px;height:14px;margin-left:auto"></div></td><td class="center"><div class="skeleton" style="width:36px;height:20px;border-radius:4px;margin:auto"></div></td><td class="center"><div class="skeleton" style="width:50px;height:20px;border-radius:10px;margin:auto"></div></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 6 — GESTION CATÉGORIES                 -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-categories" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">A</div><div><div class="logo-name">Alloflow</div></div></div>
+    <div class="nav-section"><div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div></div>
+    <div class="sidebar-footer"><div class="user-info"><div class="user-avatar">MA</div><div><div class="user-name">Marc Antoine</div></div></div></div>
+  </div>
+  <div class="main" style="position:relative">
+    <div class="table-wrap" style="margin-top:24px;opacity:.35;pointer-events:none">
+      <table class="table"><thead><tr><th></th><th>Nom</th><th>Catégorie</th><th>Prix TTC</th><th>TVA</th><th>Statut</th><th></th></tr></thead>
+      <tbody><tr><td></td><td><div class="product-name">Entrecôte 300g</div></td><td><span class="cat-badge cat-plat">🍽️ Plat</span></td><td><div class="price-ttc">26,40€</div></td><td><span class="tva-badge">10%</span></td><td></td><td></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="overlay" style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:0">
+      <div class="dialog" style="width:520px">
+        <div class="dialog-header">
+          <div><div class="dialog-title">Gérer les catégories</div><div class="dialog-subtitle">6 catégories · Glissez pour réordonner</div></div>
+          <button class="dialog-close">×</button>
+        </div>
+        <div class="dialog-body" style="padding-bottom:0">
+          <div class="cat-list">
+            <div class="cat-row">
+              <span class="cat-drag">⠿</span>
+              <div class="cat-color" style="background:#3b82f6"></div>
+              <span class="cat-name">Plats</span>
+              <span class="cat-count">32 produits</span>
+              <div class="cat-actions"><button class="action-btn">🎨</button><button class="action-btn danger">🗑️</button></div>
+            </div>
+            <div class="cat-row">
+              <span class="cat-drag">⠿</span>
+              <div class="cat-color" style="background:#22c55e"></div>
+              <span class="cat-name">Entrées</span>
+              <span class="cat-count">14 produits</span>
+              <div class="cat-actions"><button class="action-btn">🎨</button><button class="action-btn danger">🗑️</button></div>
+            </div>
+            <div class="cat-row">
+              <span class="cat-drag">⠿</span>
+              <div class="cat-color" style="background:#8b5cf6"></div>
+              <span class="cat-name">Boissons</span>
+              <span class="cat-count">18 produits</span>
+              <div class="cat-actions"><button class="action-btn">🎨</button><button class="action-btn danger">🗑️</button></div>
+            </div>
+            <div class="cat-row">
+              <span class="cat-drag">⠿</span>
+              <div class="cat-color" style="background:#a855f7"></div>
+              <span class="cat-name">Desserts</span>
+              <span class="cat-count">12 produits</span>
+              <div class="cat-actions"><button class="action-btn">🎨</button><button class="action-btn danger">🗑️</button></div>
+            </div>
+            <div class="cat-row">
+              <span class="cat-drag">⠿</span>
+              <div class="cat-color" style="background:#f59e0b"></div>
+              <span class="cat-name">Menus / Formules</span>
+              <span class="cat-count">5 produits</span>
+              <div class="cat-actions"><button class="action-btn">🎨</button><button class="action-btn danger">🗑️</button></div>
+            </div>
+            <div class="cat-row" style="border-color:var(--blue);background:rgba(29,78,216,.08)">
+              <span class="cat-drag">⠿</span>
+              <div class="cat-color" style="background:#6b7280;border:1px dashed #9ca3af"></div>
+              <input class="form-input" type="text" placeholder="Nom de la catégorie…" style="flex:1;height:28px;padding:4px 8px;font-size:13px" autofocus />
+              <div class="cat-actions"><button class="action-btn">✓</button><button class="action-btn danger">✕</button></div>
+            </div>
+          </div>
+          <div style="padding:12px 0">
+            <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">+ Nouvelle catégorie</button>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-ghost">Annuler</button>
+          <button class="btn btn-primary">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 7 — CONFIRMATION SUPPRESSION           -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-delete" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">A</div><div><div class="logo-name">Alloflow</div></div></div>
+    <div class="nav-section"><div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div></div>
+  </div>
+  <div class="main" style="position:relative">
+    <div class="table-wrap" style="margin-top:24px;opacity:.35;pointer-events:none">
+      <table class="table"><thead><tr><th></th><th>Nom</th><th>Catégorie</th><th>Prix TTC</th><th>TVA</th><th>Statut</th><th></th></tr></thead>
+      <tbody><tr><td></td><td><div class="product-name">Soupe à l'oignon</div></td><td><span class="cat-badge cat-entree">🥗 Entrée</span></td><td><div class="price-ttc">7,15€</div></td><td><span class="tva-badge">10%</span></td><td></td><td></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="overlay" style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:0">
+      <div class="dialog danger-dialog" style="width:420px">
+        <div class="dialog-header danger-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="danger-icon">⚠️</div>
+            <div><div class="dialog-title danger-title">Supprimer définitivement ?</div><div class="dialog-subtitle">Cette action est irréversible</div></div>
+          </div>
+          <button class="dialog-close">×</button>
+        </div>
+        <div class="dialog-body" style="gap:12px">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px">
+            <span style="font-size:24px">🥗</span>
+            <div>
+              <div style="font-weight:600;color:var(--text-primary)">Soupe à l'oignon</div>
+              <div style="font-size:12px;color:var(--text-muted)">PRD-008 · Entrée · 7,15€ TTC</div>
+            </div>
+          </div>
+          <p style="font-size:13px;color:var(--text-muted);line-height:1.5">
+            Le produit sera supprimé de votre catalogue et ne pourra plus être utilisé dans de nouvelles commandes. L'historique des commandes passées sera conservé.
+          </p>
+          <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:#fbbf24">
+            💡 Vous souhaitez juste le retirer temporairement ? <span style="text-decoration:underline;cursor:pointer">Désactivez-le plutôt</span> — vous pourrez le réactiver à tout moment.
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-ghost">Annuler</button>
+          <button class="btn btn-danger">Supprimer définitivement</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 8 — SÉLECTION EN MASSE                 -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-bulk" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">A</div><div><div class="logo-name">Alloflow</div></div></div>
+    <div class="nav-section"><div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div></div>
+  </div>
+  <div class="main">
+    <div class="page-header">
+      <div><div class="page-title">Produits</div><div class="page-subtitle">84 produits · 76 actifs</div></div>
+      <button class="btn btn-primary">+ Nouveau produit</button>
+    </div>
+    <div class="toolbar">
+      <div class="search-input"><span>🔍</span><input type="text" placeholder="Nom, référence…" /></div>
+      <div class="filter-select">Catégorie Tous ▾</div>
+      <div class="segment"><button class="seg-btn active">Tous</button><button class="seg-btn">Actifs</button><button class="seg-btn">Inactifs</button></div>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr>
+          <th style="width:40px"><input type="checkbox" checked style="accent-color:var(--blue)"></th>
+          <th>Nom</th><th>Catégorie</th><th class="right">Prix TTC</th><th class="center">TVA</th><th class="center">Statut</th><th class="center"></th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:rgba(29,78,216,.06);border-left:2px solid var(--blue)">
+            <td><input type="checkbox" checked style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Entrecôte 300g</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">26,40€</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div></div></td>
+            <td></td>
+          </tr>
+          <tr style="background:rgba(29,78,216,.06);border-left:2px solid var(--blue)">
+            <td><input type="checkbox" checked style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Burger Maison</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">16,50€</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div></div></td>
+            <td></td>
+          </tr>
+          <tr style="background:rgba(29,78,216,.06);border-left:2px solid var(--blue)">
+            <td><input type="checkbox" checked style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Côtes du Rhône 75cl</div></td>
+            <td><span class="cat-badge cat-boisson">🍹 Boisson</span></td>
+            <td class="right"><div class="price-ttc">24,00€</div></td>
+            <td class="center"><span class="tva-badge tva-20">20%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div></div></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" style="accent-color:var(--blue)"></td>
+            <td><div class="product-name">Salade César</div></td>
+            <td><span class="cat-badge cat-entree">🥗 Entrée</span></td>
+            <td class="right"><div class="price-ttc">9,90€</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div></div></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bulk-bar">
+      <span class="bulk-count">3 produits sélectionnés</span>
+      <span style="color:rgba(255,255,255,.5);font-size:12px;cursor:pointer">Tout désélectionner</span>
+      <div class="bulk-sep"></div>
+      <button class="bulk-action">✅ Activer</button>
+      <button class="bulk-action">⏸️ Désactiver</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <select style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;border-radius:5px;padding:4px 8px;font-size:12px">
+          <option>Changer catégorie…</option>
+          <option>🍽️ Plats</option><option>🥗 Entrées</option><option>🍹 Boissons</option><option>🍮 Desserts</option>
+        </select>
+        <select style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;border-radius:5px;padding:4px 8px;font-size:12px">
+          <option>Changer TVA…</option><option>5,5%</option><option>10%</option><option>20%</option>
+        </select>
+      </div>
+      <div class="bulk-sep"></div>
+      <button class="bulk-action danger">🗑️ Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 9 — ACTIONS ROW + TOAST                -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="screen-dropdown" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">A</div><div><div class="logo-name">Alloflow</div></div></div>
+    <div class="nav-section"><div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div></div>
+  </div>
+  <div class="main">
+    <div class="page-header"><div><div class="page-title">Produits</div></div></div>
+    <div class="toolbar"><div class="search-input"><span>🔍</span><input type="text" placeholder='<mark>Burg</mark>er…' /></div></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th></th><th>Nom</th><th>Catégorie</th><th class="right">Prix TTC</th><th class="center">TVA</th><th class="center">Statut</th><th class="center"></th></tr></thead>
+        <tbody>
+          <tr>
+            <td></td>
+            <td><div class="product-name">Entrecôte 300g</div><div class="product-ref">PRD-001</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">26,40€</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions always"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr style="background:var(--surface-raised)">
+            <td></td>
+            <td><div class="product-name">Burger Maison</div><div class="product-ref">PRD-002</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">16,50€</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center" style="position:relative">
+              <div class="row-actions always"><button class="action-btn">✏️</button><button class="action-btn" style="background:var(--bg);color:var(--text-primary)">⋯</button></div>
+              <div class="dropdown-menu" style="position:absolute;right:8px;top:36px;z-index:50">
+                <div class="dropdown-item">✏️ Modifier</div>
+                <div class="dropdown-item">📋 Dupliquer</div>
+                <div class="dropdown-sep"></div>
+                <div class="dropdown-item">⏸️ Désactiver temporairement</div>
+                <div class="dropdown-sep"></div>
+                <div class="dropdown-item danger">🗑️ Supprimer définitivement</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><div class="product-name">Salade César</div><div class="product-ref">PRD-005</div></td>
+            <td><span class="cat-badge cat-entree">🥗 Entrée</span></td>
+            <td class="right"><div class="price-ttc">9,90€</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle on"></div><span class="toggle-label on">Actif</span></div></td>
+            <td class="center"><div class="row-actions"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+          <tr class="inactive">
+            <td></td>
+            <td><div class="product-name">Plat du jour – Saumon</div><div class="product-ref">PRD-012</div></td>
+            <td><span class="cat-badge cat-plat">🍽️ Plat</span></td>
+            <td class="right"><div class="price-ttc">19,80€</div></td>
+            <td class="center"><span class="tva-badge">10%</span></td>
+            <td class="center"><div class="toggle-wrap"><div class="toggle"></div><span class="toggle-label off">Inactif</span></div></td>
+            <td class="center"><div class="row-actions always"><button class="action-btn">✏️</button><button class="action-btn">⋯</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div class="toast-wrap">
+    <div class="toast success">
+      <span class="toast-icon">✅</span>
+      <span class="toast-text">Entrecôte 300g — statut mis à jour</span>
+    </div>
+    <div class="toast error">
+      <span class="toast-icon">⚠️</span>
+      <span class="toast-text">Impossible de modifier le statut. Réessayez.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Toggle interactif
+document.querySelectorAll('.toggle-wrap').forEach(wrap => {
+  wrap.addEventListener('click', () => {
+    const t = wrap.querySelector('.toggle');
+    const l = wrap.querySelector('.toggle-label');
+    t.classList.toggle('on');
+    if (l) {
+      l.classList.toggle('on');
+      l.classList.toggle('off');
+      l.textContent = t.classList.contains('on') ? 'Actif' : 'Inactif';
+    }
+  });
+});
+</script>
+</body>
+</html>

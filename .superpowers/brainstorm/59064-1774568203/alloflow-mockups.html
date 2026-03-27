@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Master Mockup Viewer</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-raised: #263348;
+  --border: #334155;
+  --border-active: #475569;
+  --text-primary: #f8fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-disabled: #475569;
+  --blue: #1d4ed8;
+  --blue-hover: #1e40af;
+  --blue-light: #1e3a5f;
+  --blue-glow: rgba(29,78,216,.3);
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --sidebar-w: 220px;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:14px; overflow:hidden; height:100vh; }
+
+/* TAB BAR */
+.tabs { position:fixed; top:0; left:0; right:0; z-index:999; background:#060e1a; border-bottom:1px solid #1e293b; display:flex; gap:2px; padding:6px 10px; overflow-x:auto; scrollbar-width:none; height:38px; align-items:center; }
+.tabs::-webkit-scrollbar { display:none; }
+.tab { padding:4px 12px; border-radius:5px; border:none; cursor:pointer; font-size:11px; font-weight:500; background:transparent; color:var(--text-disabled); white-space:nowrap; transition:all .15s; }
+.tab.active { background:var(--blue); color:#fff; }
+.tab:hover:not(.active) { background:var(--surface); color:var(--text-secondary); }
+.tab-sep { width:1px; height:16px; background:#1e293b; margin:0 4px; flex-shrink:0; }
+.tab-sprint { font-size:10px; color:#334155; padding:0 6px; text-transform:uppercase; letter-spacing:.06em; white-space:nowrap; }
+
+/* SCREENS */
+.screen { display:none; height:calc(100vh - 38px); margin-top:38px; }
+.screen.active { display:flex; }
+.screen iframe { width:100%; height:100%; border:none; display:block; }
+
+/* BACK-OFFICE LAYOUT */
+.bo-layout { display:flex; height:100%; width:100%; background:var(--bg); color:var(--text-primary); overflow:hidden; }
+.sidebar { width:var(--sidebar-w); background:#111827; border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto; }
+.sidebar-logo { padding:20px 16px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.logo-icon { width:32px; height:32px; background:var(--blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:white; flex-shrink:0; }
+.logo-name { font-size:15px; font-weight:700; color:var(--text-primary); }
+.logo-sub { font-size:10px; color:var(--text-muted); }
+.nav-section { padding:8px 8px 4px; }
+.nav-label { font-size:10px; font-weight:600; color:var(--text-disabled); text-transform:uppercase; letter-spacing:.06em; padding:0 8px; margin-bottom:4px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; color:var(--text-muted); font-size:13px; cursor:pointer; margin-bottom:1px; }
+.nav-item:hover { background:var(--surface); color:var(--text-secondary); }
+.nav-item.active { background:var(--blue); color:white; }
+.nav-icon { width:16px; text-align:center; }
+.sidebar-footer { margin-top:auto; border-top:1px solid var(--border); padding:12px; }
+.user-info { display:flex; align-items:center; gap:8px; padding:8px; border-radius:6px; cursor:pointer; }
+.user-info:hover { background:var(--surface); }
+.user-avatar { width:30px; height:30px; border-radius:50%; background:var(--blue); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:white; flex-shrink:0; }
+.user-name { font-size:12px; font-weight:500; color:var(--text-secondary); }
+.user-role { font-size:10px; color:var(--text-muted); }
+.bo-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.topbar { height:56px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 24px; background:#111827; flex-shrink:0; }
+.topbar-title { font-size:15px; font-weight:600; }
+.topbar-actions { display:flex; align-items:center; gap:8px; }
+.content-area { flex:1; overflow-y:auto; padding:24px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:18px; }
+.card-title { font-size:13px; font-weight:600; margin-bottom:14px; }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:6px; border:none; cursor:pointer; font-size:13px; font-weight:500; transition:all .15s; }
+.btn-primary { background:var(--blue); color:white; }
+.btn-primary:hover { background:var(--blue-hover); }
+.btn-secondary { background:var(--surface); color:var(--text-secondary); border:1px solid var(--border); }
+.btn-ghost { background:transparent; color:var(--text-muted); border:1px solid var(--border); }
+.btn-danger { background:rgba(239,68,68,.15); color:#ef4444; border:1px solid rgba(239,68,68,.25); }
+.btn-amber-s { background:rgba(245,158,11,.15); color:#f59e0b; border:1px solid rgba(245,158,11,.25); }
+.btn-green-s { background:rgba(16,185,129,.15); color:#10b981; border:1px solid rgba(16,185,129,.25); }
+.btn-purple { background:rgba(139,92,246,.2); color:#c4b5fd; border:1px solid rgba(139,92,246,.3); }
+.btn-sm { padding:5px 10px; font-size:12px; }
+.btn-full { width:100%; justify-content:center; }
+.input { background:var(--surface-raised); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); font-size:13px; outline:none; padding:7px 10px; }
+.input:focus { border-color:var(--blue); }
+.select { background:var(--surface-raised); border:1px solid var(--border); border-radius:6px; color:var(--text-secondary); font-size:13px; outline:none; padding:7px 10px; cursor:pointer; }
+.badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge-red { background:rgba(239,68,68,.15); color:#ef4444; border:1px solid rgba(239,68,68,.25); }
+.badge-amber { background:rgba(245,158,11,.15); color:#f59e0b; border:1px solid rgba(245,158,11,.25); }
+.badge-green { background:rgba(16,185,129,.15); color:#10b981; border:1px solid rgba(16,185,129,.25); }
+.badge-blue { background:rgba(29,78,216,.15); color:#93c5fd; border:1px solid rgba(29,78,216,.25); }
+.badge-purple { background:rgba(139,92,246,.15); color:#c4b5fd; border:1px solid rgba(139,92,246,.25); }
+.badge-gray { background:rgba(100,116,139,.15); color:var(--text-muted); border:1px solid rgba(100,116,139,.25); }
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.stat-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+.stat-value { font-size:26px; font-weight:800; margin-bottom:4px; }
+.stat-sub { font-size:11px; color:var(--text-muted); }
+.data-table { width:100%; border-collapse:collapse; }
+.data-table th { text-align:left; font-size:11px; color:var(--text-disabled); text-transform:uppercase; letter-spacing:.06em; padding:10px 14px; border-bottom:1px solid var(--border); }
+.data-table td { padding:12px 14px; border-bottom:1px solid rgba(51,65,85,.4); font-size:13px; vertical-align:middle; }
+.data-table tr:hover td { background:var(--surface-raised); }
+.level-bar-bg { width:100px; height:6px; background:rgba(255,255,255,.06); border-radius:3px; display:inline-block; vertical-align:middle; }
+.level-bar { height:6px; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tabs">
+  <span class="tab-sprint">S2</span>
+  <button class="tab active" onclick="showTab('s2-produits',event)">📦 Produits</button>
+  <div class="tab-sep"></div>
+  <span class="tab-sprint">S3</span>
+  <button class="tab" onclick="showTab('s3-caisse',event)">🧾 Caisse POS</button>
+  <div class="tab-sep"></div>
+  <span class="tab-sprint">S4</span>
+  <button class="tab" onclick="showTab('s4-tpe',event)">💳 TPE Flow</button>
+  <button class="tab" onclick="showTab('s4-stocks',event)">📦 Stocks</button>
+  <button class="tab" onclick="showTab('s4-commande',event)">📥 Bon commande</button>
+  <div class="tab-sep"></div>
+  <span class="tab-sprint">S5</span>
+  <button class="tab" onclick="showTab('s5-recettes',event)">📖 Recettes</button>
+  <button class="tab" onclick="showTab('s5-fiche',event)">🧾 Fiche recette</button>
+  <button class="tab" onclick="showTab('s5-sop',event)">👨‍🍳 SOP Cuisine</button>
+  <div class="tab-sep"></div>
+  <span class="tab-sprint">S6</span>
+  <button class="tab" onclick="showTab('s6-analytics',event)">📊 Analytics</button>
+  <button class="tab" onclick="showTab('s6-crm',event)">👥 CRM</button>
+  <button class="tab" onclick="showTab('s6-fidelite',event)">🎁 Fidélité POS</button>
+</div>
+
+<!-- SPRINT 2 -->
+<div class="screen active" id="s2-produits">
+  <iframe src="/files/s2-products-dashboard.html"></iframe>
+</div>
+
+<!-- SPRINT 3 -->
+<div class="screen" id="s3-caisse">
+  <iframe src="/files/s3-caisse-pos.html"></iframe>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 4 — TPE FLOW -->
+<!-- ============================================================ -->
+<div class="screen" id="s4-tpe">
+  <style>
+    #s4-tpe .pos-shell { display:flex; height:100%; width:100%; background:var(--bg); }
+    #s4-tpe .ticket-panel { width:320px; background:#060e1a; border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+    #s4-tpe .ticket-header { padding:16px; border-bottom:1px solid var(--border); font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
+    #s4-tpe .ticket-items { flex:1; padding:12px; }
+    #s4-tpe .ticket-item { display:flex; justify-content:space-between; align-items:center; padding:10px 8px; border-radius:6px; border-bottom:1px solid rgba(51,65,85,.3); }
+    #s4-tpe .ticket-item:last-child { border-bottom:none; }
+    #s4-tpe .ti-name { font-size:13px; color:var(--text-secondary); }
+    #s4-tpe .ti-qty { font-size:11px; color:var(--text-muted); }
+    #s4-tpe .ti-price { font-size:13px; font-weight:600; color:var(--text-primary); }
+    #s4-tpe .ticket-total { padding:14px 16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    #s4-tpe .tt-label { font-size:12px; color:var(--text-muted); }
+    #s4-tpe .tt-value { font-size:22px; font-weight:800; color:var(--text-primary); }
+    #s4-tpe .pos-center { flex:1; position:relative; background:rgba(0,0,0,.4); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:30px; gap:20px; }
+    #s4-tpe .modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; }
+    #s4-tpe .modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; width:420px; box-shadow:0 25px 60px rgba(0,0,0,.5); }
+    #s4-tpe .modal-title { font-size:16px; font-weight:700; margin-bottom:20px; text-align:center; }
+    #s4-tpe .step-indicator { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:24px; }
+    #s4-tpe .step-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+    #s4-tpe .step-done { background:var(--green); color:white; }
+    #s4-tpe .step-active { background:var(--blue); color:white; box-shadow:0 0 0 3px var(--blue-glow); }
+    #s4-tpe .step-pending { background:var(--surface-raised); color:var(--text-disabled); border:1px solid var(--border); }
+    #s4-tpe .step-line { width:40px; height:2px; background:var(--border); }
+    #s4-tpe .step-line.done { background:var(--green); }
+    #s4-tpe .amount-display { text-align:center; margin-bottom:20px; }
+    #s4-tpe .amount-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
+    #s4-tpe .amount-big { font-size:36px; font-weight:800; color:var(--text-primary); }
+    #s4-tpe .tpe-terminal { background:var(--surface-raised); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; display:flex; align-items:center; gap:14px; }
+    #s4-tpe .terminal-body { width:70px; height:90px; background:#1a2540; border-radius:8px; border:2px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:space-around; padding:8px; flex-shrink:0; }
+    #s4-tpe .terminal-screen { width:100%; height:28px; background:#0a1628; border-radius:4px; border:1px solid var(--border-active); }
+    #s4-tpe .terminal-keys { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; width:100%; }
+    #s4-tpe .t-key { height:6px; background:var(--border-active); border-radius:2px; }
+    #s4-tpe .terminal-info { flex:1; }
+    #s4-tpe .terminal-model { font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px; }
+    #s4-tpe .terminal-sub { font-size:11px; color:var(--text-muted); }
+    #s4-tpe .pulse-row { display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom:20px; }
+    #s4-tpe .pulse-dot { width:10px; height:10px; border-radius:50%; background:var(--blue); box-shadow:0 0 0 4px rgba(29,78,216,.3); animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 4px rgba(29,78,216,.3);} 50%{box-shadow:0 0 0 8px rgba(29,78,216,.1);} }
+    #s4-tpe .pulse-label { font-size:13px; color:var(--text-muted); }
+    #s4-tpe .tpe-states { display:flex; gap:12px; padding:0 24px; width:100%; max-width:800px; }
+    #s4-tpe .state-card { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center; }
+    #s4-tpe .state-num { font-size:10px; color:var(--text-disabled); margin-bottom:6px; }
+    #s4-tpe .state-dot-wrap { display:flex; justify-content:center; margin-bottom:8px; }
+    #s4-tpe .state-dot-blue { width:12px; height:12px; border-radius:50%; background:var(--blue); box-shadow:0 0 0 4px rgba(29,78,216,.2); }
+    #s4-tpe .state-dot-amber { width:12px; height:12px; border-radius:50%; background:var(--amber); box-shadow:0 0 0 4px rgba(245,158,11,.2); }
+    #s4-tpe .state-dot-green { width:12px; height:12px; border-radius:50%; background:var(--green); }
+    #s4-tpe .state-dot-red { width:12px; height:12px; border-radius:50%; background:var(--red); }
+    #s4-tpe .state-label { font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:3px; }
+    #s4-tpe .state-sub { font-size:10px; color:var(--text-muted); }
+  </style>
+  <div class="pos-shell">
+    <div class="ticket-panel">
+      <div class="ticket-header">🧾 Ticket en cours</div>
+      <div class="ticket-items">
+        <div class="ticket-item">
+          <div><div class="ti-name">☕ Latte Vanille</div><div class="ti-qty">×1</div></div>
+          <div class="ti-price">4,50 €</div>
+        </div>
+        <div class="ticket-item">
+          <div><div class="ti-name">🍪 Cookie Choco</div><div class="ti-qty">×2</div></div>
+          <div class="ti-price">5,60 €</div>
+        </div>
+        <div class="ticket-item">
+          <div><div class="ti-name">🥤 Jus Orange</div><div class="ti-qty">×1</div></div>
+          <div class="ti-price">3,20 €</div>
+        </div>
+      </div>
+      <div class="ticket-total">
+        <div>
+          <div class="tt-label">Total TTC</div>
+        </div>
+        <div class="tt-value">13,30 €</div>
+      </div>
+    </div>
+    <div class="pos-center">
+      <div class="modal-overlay">
+        <div style="display:flex;flex-direction:column;gap:16px;align-items:center;width:100%;">
+          <div class="modal">
+            <div class="modal-title">💳 Paiement par carte</div>
+            <div class="step-indicator">
+              <div class="step-dot step-done">✓</div>
+              <div class="step-line done"></div>
+              <div class="step-dot step-active">2</div>
+              <div class="step-line"></div>
+              <div class="step-dot step-pending">3</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);margin-top:-14px;margin-bottom:20px;padding:0 0 0 4px;">
+              <span>Initiation</span>
+              <span style="margin-left:24px;">En attente</span>
+              <span>Confirmation</span>
+            </div>
+            <div class="amount-display">
+              <div class="amount-label">Montant à encaisser</div>
+              <div class="amount-big">13,30 €</div>
+            </div>
+            <div class="tpe-terminal">
+              <div class="terminal-body">
+                <div class="terminal-screen"></div>
+                <div class="terminal-keys">
+                  <div class="t-key"></div><div class="t-key"></div><div class="t-key"></div>
+                  <div class="t-key"></div><div class="t-key"></div><div class="t-key"></div>
+                  <div class="t-key"></div><div class="t-key"></div><div class="t-key"></div>
+                </div>
+              </div>
+              <div class="terminal-info">
+                <div class="terminal-model">Ingenico iCT250</div>
+                <div class="terminal-sub">Connecté via IP · Port 8080</div>
+                <div style="margin-top:8px;"><span class="badge badge-green">● En ligne</span></div>
+              </div>
+            </div>
+            <div class="pulse-row">
+              <div class="pulse-dot"></div>
+              <div class="pulse-label">En attente de la carte…</div>
+            </div>
+            <button class="btn btn-danger btn-full" style="margin-top:4px;">✕ Annuler la transaction</button>
+          </div>
+          <div class="tpe-states">
+            <div class="state-card">
+              <div class="state-num">① ENVOI</div>
+              <div class="state-dot-wrap"><div class="state-dot-blue"></div></div>
+              <div class="state-label">Concert V3</div>
+              <div class="state-sub" style="color:var(--blue);">En cours…</div>
+            </div>
+            <div class="state-card">
+              <div class="state-num">② PIN</div>
+              <div class="state-dot-wrap"><div class="state-dot-amber"></div></div>
+              <div class="state-label">PIN en cours</div>
+              <div class="state-sub" style="color:var(--amber);">Saisie client</div>
+            </div>
+            <div class="state-card" style="border-color:rgba(16,185,129,.3);">
+              <div class="state-num">③ APPROUVÉ</div>
+              <div class="state-dot-wrap"><div class="state-dot-green"></div></div>
+              <div class="state-label" style="color:var(--green);">Approuvé ✓</div>
+              <div class="state-sub" style="color:var(--green);">Paiement OK</div>
+            </div>
+            <div class="state-card" style="border-color:rgba(239,68,68,.3);">
+              <div class="state-num">④ REFUSÉ</div>
+              <div class="state-dot-wrap"><div class="state-dot-red"></div></div>
+              <div class="state-label" style="color:var(--red);">Refusé ✗</div>
+              <div class="state-sub" style="color:var(--red);">Carte déclinée</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 4 — STOCKS DASHBOARD -->
+<!-- ============================================================ -->
+<div class="screen" id="s4-stocks">
+  <div class="bo-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">A</div>
+        <div><div class="logo-name">Alloflow</div><div class="logo-sub">Back-office</div></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Caisse</div>
+        <div class="nav-item"><span class="nav-icon">🧾</span> POS</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Gestion</div>
+        <div class="nav-item"><span class="nav-icon">📦</span> Produits</div>
+        <div class="nav-item active"><span class="nav-icon">🏪</span> Stocks</div>
+        <div class="nav-item"><span class="nav-icon">📖</span> Recettes</div>
+        <div class="nav-item"><span class="nav-icon">📋</span> SOPs</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+        <div class="nav-item"><span class="nav-icon">👥</span> CRM Fidélité</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">MA</div>
+          <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bo-main">
+      <div class="topbar">
+        <div class="topbar-title">Stocks &amp; Approvisionnements</div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm">📥 Réception</button>
+          <button class="btn btn-primary btn-sm">+ Bon de commande</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total articles</div>
+            <div class="stat-value">24</div>
+            <div class="stat-sub">références actives</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Alertes niveau bas</div>
+            <div class="stat-value" style="color:var(--amber);">3</div>
+            <div class="stat-sub">seuil critique approché</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ruptures</div>
+            <div class="stat-value" style="color:var(--red);">1</div>
+            <div class="stat-sub">stock épuisé</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Commandes en cours</div>
+            <div class="stat-value" style="color:#93c5fd;">2</div>
+            <div class="stat-sub">en attente de livraison</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;">
+          <input class="input" style="flex:1;" placeholder="🔍 Rechercher un article…">
+          <select class="select"><option>Tous les statuts</option><option>✓ OK</option><option>⚠ Bas</option><option>⛔ Rupture</option></select>
+          <select class="select"><option>Toutes catégories</option><option>Café</option><option>Laitier</option><option>Sirops</option><option>Pâtisserie</option></select>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Article</th><th>Catégorie</th><th>Stock actuel</th><th>Seuil alerte</th><th>Niveau</th><th>Fournisseur</th><th>Statut</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>☕ Grains de café</td><td><span style="color:var(--text-muted);">Café</span></td>
+                <td><span style="color:var(--red);font-weight:600;">0,8 kg</span></td><td>2 kg</td>
+                <td><div class="level-bar-bg"><div class="level-bar" style="width:15%;background:var(--red);"></div></div></td>
+                <td style="color:var(--text-muted);">Café du Commerce</td>
+                <td><span class="badge badge-red">⛔ Rupture</span></td>
+                <td><button class="btn btn-danger btn-sm">Commander</button></td>
+              </tr>
+              <tr>
+                <td>🥛 Lait entier</td><td><span style="color:var(--text-muted);">Laitier</span></td>
+                <td><span style="color:var(--amber);font-weight:600;">4,2 L</span></td><td>5 L</td>
+                <td><div class="level-bar-bg"><div class="level-bar" style="width:35%;background:var(--amber);"></div></div></td>
+                <td style="color:var(--text-muted);">Metro</td>
+                <td><span class="badge badge-amber">⚠ Bas</span></td>
+                <td><button class="btn btn-amber-s btn-sm">Commander</button></td>
+              </tr>
+              <tr>
+                <td>🍫 Sirop vanille</td><td><span style="color:var(--text-muted);">Sirops</span></td>
+                <td><span style="color:var(--green);font-weight:600;">60 cl</span></td><td>20 cl</td>
+                <td><div class="level-bar-bg"><div class="level-bar" style="width:80%;background:var(--green);"></div></div></td>
+                <td style="color:var(--text-muted);">Brake France</td>
+                <td><span class="badge badge-green">✓ OK</span></td>
+                <td><button class="btn btn-ghost btn-sm">Détails</button></td>
+              </tr>
+              <tr>
+                <td>🌾 Farine T55</td><td><span style="color:var(--text-muted);">Pâtisserie</span></td>
+                <td><span style="color:var(--green);font-weight:600;">3,5 kg</span></td><td>2 kg</td>
+                <td><div class="level-bar-bg"><div class="level-bar" style="width:65%;background:var(--green);"></div></div></td>
+                <td style="color:var(--text-muted);">Metro</td>
+                <td><span class="badge badge-green">✓ OK</span></td>
+                <td><button class="btn btn-ghost btn-sm">Détails</button></td>
+              </tr>
+              <tr>
+                <td>🧈 Beurre doux</td><td><span style="color:var(--text-muted);">Laitier</span></td>
+                <td><span style="color:var(--amber);font-weight:600;">1,1 kg</span></td><td>1,5 kg</td>
+                <td><div class="level-bar-bg"><div class="level-bar" style="width:28%;background:var(--amber);"></div></div></td>
+                <td style="color:var(--text-muted);">Metro</td>
+                <td><span class="badge badge-amber">⚠ Bas</span></td>
+                <td><button class="btn btn-amber-s btn-sm">Commander</button></td>
+              </tr>
+              <tr>
+                <td>🍬 Sucre en poudre</td><td><span style="color:var(--text-muted);">Pâtisserie</span></td>
+                <td><span style="color:var(--green);font-weight:600;">8 kg</span></td><td>2 kg</td>
+                <td><div class="level-bar-bg"><div class="level-bar" style="width:95%;background:var(--green);"></div></div></td>
+                <td style="color:var(--text-muted);">Metro</td>
+                <td><span class="badge badge-green">✓ OK</span></td>
+                <td><button class="btn btn-ghost btn-sm">Détails</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 4 — BON DE COMMANDE -->
+<!-- ============================================================ -->
+<div class="screen" id="s4-commande">
+  <div class="bo-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">A</div>
+        <div><div class="logo-name">Alloflow</div><div class="logo-sub">Back-office</div></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Caisse</div>
+        <div class="nav-item"><span class="nav-icon">🧾</span> POS</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Gestion</div>
+        <div class="nav-item"><span class="nav-icon">📦</span> Produits</div>
+        <div class="nav-item active"><span class="nav-icon">🏪</span> Stocks</div>
+        <div class="nav-item"><span class="nav-icon">📖</span> Recettes</div>
+        <div class="nav-item"><span class="nav-icon">📋</span> SOPs</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+        <div class="nav-item"><span class="nav-icon">👥</span> CRM Fidélité</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">MA</div>
+          <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bo-main">
+      <div class="topbar">
+        <div class="topbar-title">
+          <span style="color:var(--text-muted);cursor:pointer;">← Stocks</span>
+          <span style="color:var(--border);margin:0 8px;">/</span>
+          Nouveau bon de commande
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm">Annuler</button>
+          <button class="btn btn-primary btn-sm">📤 Envoyer la commande</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
+          <div>
+            <div class="card">
+              <div class="card-title">Informations commande</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+                <div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Fournisseur</div>
+                  <select class="select" style="width:100%;"><option>Metro</option><option>Café du Commerce</option><option>Brake France</option></select>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Date livraison souhaitée</div>
+                  <input class="input" style="width:100%;" type="date" value="2026-03-31">
+                </div>
+                <div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Référence interne</div>
+                  <input class="input" style="width:100%;color:var(--text-muted);" value="BC-2026-047" readonly>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Notes fournisseur</div>
+                <textarea class="input" style="width:100%;height:60px;resize:none;" placeholder="Instructions de livraison, remarques…"></textarea>
+              </div>
+            </div>
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div class="card-title" style="margin-bottom:0;">Articles commandés</div>
+                <button class="btn btn-ghost btn-sm">+ Ajouter un article</button>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Article</th><th>Stock actuel</th><th>Qté commandée</th><th>Unité</th><th>Prix unit. HT</th><th>Total HT</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="font-weight:500;">☕ Grains de café</div>
+                      <div style="font-size:11px;color:var(--red);">⛔ Rupture — urgent</div>
+                    </td>
+                    <td><span style="color:var(--red);font-size:12px;">0,8 kg</span></td>
+                    <td><input class="input" style="width:70px;text-align:center;" value="5"></td>
+                    <td style="color:var(--text-muted);">kg</td>
+                    <td>18,50 €</td>
+                    <td style="font-weight:600;">92,50 €</td>
+                    <td><button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3);">✕</button></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="font-weight:500;">🥛 Lait entier</div>
+                      <div style="font-size:11px;color:var(--amber);">⚠ Niveau bas</div>
+                    </td>
+                    <td><span style="color:var(--amber);font-size:12px;">4,2 L</span></td>
+                    <td><input class="input" style="width:70px;text-align:center;" value="20"></td>
+                    <td style="color:var(--text-muted);">L</td>
+                    <td>0,95 €</td>
+                    <td style="font-weight:600;">19,00 €</td>
+                    <td><button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3);">✕</button></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="font-weight:500;">🧈 Beurre doux</div>
+                      <div style="font-size:11px;color:var(--amber);">⚠ Niveau bas</div>
+                    </td>
+                    <td><span style="color:var(--amber);font-size:12px;">1,1 kg</span></td>
+                    <td><input class="input" style="width:70px;text-align:center;" value="3"></td>
+                    <td style="color:var(--text-muted);">kg</td>
+                    <td>5,80 €</td>
+                    <td style="font-weight:600;">17,40 €</td>
+                    <td><button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3);">✕</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- RIGHT COLUMN -->
+          <div style="position:sticky;top:0;">
+            <div class="card">
+              <div class="card-title">Récapitulatif</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Fournisseur</span><span>Metro</span></div>
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Lignes</span><span>3 articles</span></div>
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Livraison</span><span>31 mars 2026</span></div>
+                <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total HT</span><span>128,90 €</span></div>
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">TVA 5,5%</span><span>7,09 €</span></div>
+                <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+                <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;"><span>Total TTC</span><span style="color:#93c5fd;">135,99 €</span></div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-full" style="margin-bottom:8px;">📤 Envoyer au fournisseur</button>
+            <button class="btn btn-ghost btn-full">💾 Enregistrer brouillon</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 5 — LISTE DES RECETTES -->
+<!-- ============================================================ -->
+<div class="screen" id="s5-recettes">
+  <style>
+    #s5-recettes .recipe-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    #s5-recettes .recipe-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:border-color .15s; }
+    #s5-recettes .recipe-card:hover { border-color:var(--border-active); }
+    #s5-recettes .recipe-card.alert-red { border-color:rgba(239,68,68,.4); }
+    #s5-recettes .recipe-icon { font-size:32px; margin-bottom:10px; }
+    #s5-recettes .recipe-name { font-size:14px; font-weight:700; margin-bottom:2px; }
+    #s5-recettes .recipe-cat { font-size:11px; color:var(--text-muted); margin-bottom:12px; }
+    #s5-recettes .fc-label { font-size:10px; color:var(--text-disabled); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; display:flex; justify-content:space-between; }
+    #s5-recettes .fc-bar-bg { width:100%; height:6px; background:rgba(255,255,255,.06); border-radius:3px; margin-bottom:4px; position:relative; }
+    #s5-recettes .fc-bar { height:6px; border-radius:3px; }
+    #s5-recettes .fc-threshold { position:absolute; top:-2px; height:10px; width:2px; background:var(--text-disabled); border-radius:1px; }
+    #s5-recettes .recipe-meta { display:flex; justify-content:space-between; font-size:12px; margin-top:10px; }
+    #s5-recettes .recipe-new { border:2px dashed var(--border); background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; color:var(--text-disabled); gap:8px; cursor:pointer; }
+    #s5-recettes .recipe-new:hover { border-color:var(--border-active); color:var(--text-muted); }
+  </style>
+  <div class="bo-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">A</div>
+        <div><div class="logo-name">Alloflow</div><div class="logo-sub">Back-office</div></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Caisse</div>
+        <div class="nav-item"><span class="nav-icon">🧾</span> POS</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Gestion</div>
+        <div class="nav-item"><span class="nav-icon">📦</span> Produits</div>
+        <div class="nav-item"><span class="nav-icon">🏪</span> Stocks</div>
+        <div class="nav-item active"><span class="nav-icon">📖</span> Recettes</div>
+        <div class="nav-item"><span class="nav-icon">📋</span> SOPs</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+        <div class="nav-item"><span class="nav-icon">👥</span> CRM Fidélité</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">MA</div>
+          <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bo-main">
+      <div class="topbar">
+        <div class="topbar-title">Recettes &amp; Food Cost</div>
+        <div class="topbar-actions">
+          <select class="select"><option>Toutes catégories</option><option>Boissons chaudes</option><option>Pâtisseries</option></select>
+          <select class="select"><option>Trier par : Food cost ↑</option><option>Trier par : Nom A→Z</option><option>Trier par : Marge ↓</option></select>
+          <button class="btn btn-primary btn-sm">+ Nouvelle recette</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Food cost moyen</div>
+            <div class="stat-value" style="color:var(--amber);">31,4%</div>
+            <div class="stat-sub">seuil cible : 35%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Marge brute moy.</div>
+            <div class="stat-value" style="color:var(--green);">68,6%</div>
+            <div class="stat-sub">sur toutes recettes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Recettes fiches</div>
+            <div class="stat-value">14</div>
+            <div class="stat-sub">dont 12 liées au POS</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Alertes food cost</div>
+            <div class="stat-value" style="color:var(--red);">2</div>
+            <div class="stat-sub">dépassement seuil 35%</div>
+          </div>
+        </div>
+        <div class="recipe-grid">
+          <!-- Latte Vanille -->
+          <div class="recipe-card">
+            <div class="recipe-icon">☕</div>
+            <div class="recipe-name">Latte Vanille</div>
+            <div class="recipe-cat">Boissons chaudes</div>
+            <div class="fc-label"><span>Food Cost</span><span style="color:var(--green);font-weight:700;">28%</span></div>
+            <div class="fc-bar-bg"><div class="fc-bar" style="width:28%;background:var(--green);"></div><div class="fc-threshold" style="left:35%;"></div></div>
+            <div class="recipe-meta">
+              <span style="color:var(--text-muted);">4,50 €</span>
+              <span style="color:var(--green);">3,24 € (72%)</span>
+            </div>
+          </div>
+          <!-- Cappuccino -->
+          <div class="recipe-card">
+            <div class="recipe-icon">☕</div>
+            <div class="recipe-name">Cappuccino</div>
+            <div class="recipe-cat">Boissons chaudes</div>
+            <div class="fc-label"><span>Food Cost</span><span style="color:var(--green);font-weight:700;">24%</span></div>
+            <div class="fc-bar-bg"><div class="fc-bar" style="width:24%;background:var(--green);"></div><div class="fc-threshold" style="left:35%;"></div></div>
+            <div class="recipe-meta">
+              <span style="color:var(--text-muted);">4,00 €</span>
+              <span style="color:var(--green);">3,04 € (76%)</span>
+            </div>
+          </div>
+          <!-- Cookie -->
+          <div class="recipe-card">
+            <div class="recipe-icon">🍪</div>
+            <div class="recipe-name">Cookie Chocolat</div>
+            <div class="recipe-cat">Pâtisseries</div>
+            <div class="fc-label"><span>Food Cost</span><span style="color:var(--amber);font-weight:700;">32%</span></div>
+            <div class="fc-bar-bg"><div class="fc-bar" style="width:32%;background:var(--amber);"></div><div class="fc-threshold" style="left:35%;"></div></div>
+            <div class="recipe-meta">
+              <span style="color:var(--text-muted);">2,80 €</span>
+              <span style="color:var(--amber);">1,90 € (68%)</span>
+            </div>
+          </div>
+          <!-- Croissant -->
+          <div class="recipe-card alert-red">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div class="recipe-icon">🥐</div>
+              <span class="badge badge-red" style="font-size:10px;">⚠ Seuil dépassé</span>
+            </div>
+            <div class="recipe-name">Croissant Beurre</div>
+            <div class="recipe-cat">Pâtisseries</div>
+            <div class="fc-label"><span>Food Cost</span><span style="color:var(--red);font-weight:700;">41%</span></div>
+            <div class="fc-bar-bg"><div class="fc-bar" style="width:41%;background:var(--red);"></div><div class="fc-threshold" style="left:35%;"></div></div>
+            <div class="recipe-meta">
+              <span style="color:var(--text-muted);">2,20 €</span>
+              <span style="color:var(--red);">1,30 € (59%)</span>
+            </div>
+          </div>
+          <!-- Matcha -->
+          <div class="recipe-card">
+            <div class="recipe-icon">🍵</div>
+            <div class="recipe-name">Matcha Latte</div>
+            <div class="recipe-cat">Boissons chaudes</div>
+            <div class="fc-label"><span>Food Cost</span><span style="color:var(--amber);font-weight:700;">34%</span></div>
+            <div class="fc-bar-bg"><div class="fc-bar" style="width:34%;background:var(--amber);"></div><div class="fc-threshold" style="left:35%;"></div></div>
+            <div class="recipe-meta">
+              <span style="color:var(--text-muted);">5,00 €</span>
+              <span style="color:var(--amber);">3,30 € (66%)</span>
+            </div>
+          </div>
+          <!-- New -->
+          <div class="recipe-card recipe-new">
+            <div style="font-size:28px;">+</div>
+            <div style="font-size:13px;font-weight:500;">Nouvelle recette</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 5 — FICHE RECETTE -->
+<!-- ============================================================ -->
+<div class="screen" id="s5-fiche">
+  <div class="bo-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">A</div>
+        <div><div class="logo-name">Alloflow</div><div class="logo-sub">Back-office</div></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Caisse</div>
+        <div class="nav-item"><span class="nav-icon">🧾</span> POS</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Gestion</div>
+        <div class="nav-item"><span class="nav-icon">📦</span> Produits</div>
+        <div class="nav-item"><span class="nav-icon">🏪</span> Stocks</div>
+        <div class="nav-item active"><span class="nav-icon">📖</span> Recettes</div>
+        <div class="nav-item"><span class="nav-icon">📋</span> SOPs</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+        <div class="nav-item"><span class="nav-icon">👥</span> CRM Fidélité</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">MA</div>
+          <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bo-main">
+      <div class="topbar">
+        <div class="topbar-title">
+          <span style="color:var(--text-muted);cursor:pointer;">← Recettes</span>
+          <span style="color:var(--border);margin:0 8px;">/</span>
+          Latte Vanille
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm">👨‍🍳 Mode cuisine</button>
+          <button class="btn btn-primary btn-sm">✏️ Modifier</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
+          <div>
+            <!-- Header card -->
+            <div class="card" style="display:flex;align-items:flex-start;gap:16px;justify-content:space-between;">
+              <div style="display:flex;gap:16px;align-items:flex-start;">
+                <div style="width:72px;height:72px;background:var(--surface-raised);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;">☕</div>
+                <div>
+                  <h2 style="font-size:20px;font-weight:800;margin-bottom:8px;">Latte Vanille</h2>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <span class="badge badge-blue">Boissons chaudes</span>
+                    <span class="badge badge-gray">⏱ 3 min</span>
+                    <span class="badge badge-gray">1 portion</span>
+                    <span class="badge badge-green">✓ Lié au POS</span>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Prix de vente</div>
+                <div style="font-size:24px;font-weight:800;color:#93c5fd;">4,50 €</div>
+              </div>
+            </div>
+            <!-- Ingrédients -->
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div class="card-title" style="margin-bottom:0;">Ingrédients</div>
+                <div style="font-size:12px;color:var(--text-muted);">Coût total matières : <span style="color:var(--amber);font-weight:700;">0,35 €</span></div>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr><th>Ingrédient</th><th>Quantité</th><th>Coût unit.</th><th>Coût ligne</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>☕ Shot espresso ×2</td><td>16 g</td><td>0,75 €/100g</td><td style="font-weight:600;">0,12 €</td></tr>
+                  <tr><td>🥛 Lait entier</td><td>200 ml</td><td>0,40 €/L</td><td style="font-weight:600;">0,08 €</td></tr>
+                  <tr><td>🍮 Sirop vanille</td><td>2 cl</td><td>3,00 €/L</td><td style="font-weight:600;">0,06 €</td></tr>
+                  <tr><td>🍬 Sucre</td><td>5 g</td><td>1,00 €/kg</td><td style="font-weight:600;">0,01 €</td></tr>
+                  <tr><td>☕ Cup papier</td><td>1 u.</td><td>0,08 €/u.</td><td style="font-weight:600;">0,08 €</td></tr>
+                </tbody>
+                <tfoot>
+                  <tr style="border-top:2px solid var(--border);">
+                    <td colspan="3" style="font-weight:600;color:var(--text-muted);">Total coût matières</td>
+                    <td style="color:var(--amber);font-weight:700;">0,35 €</td>
+                  </tr>
+                  <tr>
+                    <td colspan="3" style="color:var(--text-muted);font-size:12px;">+ Main d'œuvre estimée</td>
+                    <td style="color:var(--text-muted);font-size:12px;">0,21 €</td>
+                  </tr>
+                  <tr>
+                    <td colspan="3" style="color:var(--text-muted);font-size:12px;">+ Charges</td>
+                    <td style="color:var(--text-muted);font-size:12px;">0,08 €</td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--border);">
+                    <td colspan="3" style="font-weight:700;color:var(--text-primary);">Coût de revient total</td>
+                    <td style="font-weight:800;color:var(--red);font-size:15px;">1,26 €</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          <!-- RIGHT COLUMN -->
+          <div>
+            <div class="card">
+              <div style="text-align:center;margin-bottom:16px;">
+                <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">FOOD COST</div>
+                <div style="font-size:48px;font-weight:900;color:var(--green);">28%</div>
+                <div style="font-size:12px;color:var(--green);">✓ En dessous du seuil (35%)</div>
+              </div>
+              <div style="background:var(--surface-raised);border-radius:8px;padding:12px;margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+                  <span style="color:var(--text-muted);">Prix de vente</span><span style="font-weight:600;">4,50 €</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+                  <span style="color:var(--text-muted);">Coût de revient</span><span style="color:var(--red);">−1,26 €</span>
+                </div>
+                <div style="height:1px;background:var(--border);margin-bottom:8px;"></div>
+                <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;">
+                  <span>Marge brute</span><span style="color:var(--green);">3,24 € (72%)</span>
+                </div>
+              </div>
+              <!-- Cost breakdown bar -->
+              <div style="margin-bottom:10px;">
+                <div style="font-size:11px;color:var(--text-disabled);margin-bottom:6px;">Décomposition du coût</div>
+                <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;">
+                  <div style="width:28%;background:var(--red);border-radius:4px 0 0 4px;"></div>
+                  <div style="width:16%;background:var(--amber);"></div>
+                  <div style="width:6%;background:#a855f7;"></div>
+                  <div style="flex:1;background:var(--green);border-radius:0 4px 4px 0;"></div>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;">
+                  <span style="font-size:10px;color:var(--red);">■ Matières 28%</span>
+                  <span style="font-size:10px;color:var(--amber);">■ MO 16%</span>
+                  <span style="font-size:10px;color:#a855f7;">■ Charges 6%</span>
+                  <span style="font-size:10px;color:var(--green);">■ Marge 72%</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Procédure SOP</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:22px;height:22px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;">1</div>
+                  <span style="font-size:12px;color:var(--text-secondary);">Préchauffer la tasse</span>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:22px;height:22px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;">2</div>
+                  <span style="font-size:12px;color:var(--text-secondary);">Extraire l'espresso double</span>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:22px;height:22px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;">3</div>
+                  <span style="font-size:12px;color:var(--text-secondary);">Faire mousser le lait</span>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;opacity:0.5;">
+                  <div style="width:22px;height:22px;border-radius:50%;background:var(--surface-raised);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted);flex-shrink:0;">4</div>
+                  <span style="font-size:12px;color:var(--text-muted);">Ajouter le sirop vanille…</span>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="margin-top:12px;color:#93c5fd;border-color:rgba(29,78,216,.3);">Voir tout →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 5 — SOP MODE CUISINE -->
+<!-- ============================================================ -->
+<div class="screen" id="s5-sop">
+  <style>
+    #s5-sop .sop-wrap { width:100%; height:100%; background:var(--bg); display:flex; flex-direction:column; overflow:hidden; }
+    #s5-sop .sop-header { background:#111827; border-bottom:1px solid var(--border); padding:16px 40px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    #s5-sop .sop-progress { height:3px; background:var(--surface); flex-shrink:0; }
+    #s5-sop .sop-progress-fill { height:3px; width:37%; background:linear-gradient(90deg,var(--green),var(--blue)); }
+    #s5-sop .sop-body { flex:1; overflow-y:auto; display:flex; justify-content:center; padding:40px 80px; }
+    #s5-sop .sop-steps { width:100%; max-width:900px; display:flex; flex-direction:column; gap:16px; }
+    #s5-sop .sop-step { display:flex; gap:18px; align-items:flex-start; }
+    #s5-sop .step-circle { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; margin-top:2px; }
+    #s5-sop .step-circle.done { background:var(--green); color:white; }
+    #s5-sop .step-circle.curr { background:var(--blue); color:white; box-shadow:0 0 0 4px var(--blue-glow); }
+    #s5-sop .step-circle.pend { background:var(--surface-raised); border:1px solid var(--border); color:var(--text-disabled); }
+    #s5-sop .step-content { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+    #s5-sop .step-content.curr { border-color:var(--blue); background:var(--blue-light); }
+    #s5-sop .step-content.pend { opacity:0.6; }
+    #s5-sop .step-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+    #s5-sop .step-desc { font-size:12px; color:var(--text-muted); line-height:1.6; }
+    #s5-sop .step-time { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:10px; margin-top:8px; }
+    #s5-sop .step-time.active { background:rgba(29,78,216,.15); color:#93c5fd; border:1px solid rgba(29,78,216,.25); }
+    #s5-sop .step-time.done { background:rgba(16,185,129,.15); color:var(--green); border:1px solid rgba(16,185,129,.25); opacity:0.7; }
+    #s5-sop .step-time.pending { background:rgba(255,255,255,.04); color:var(--text-disabled); border:1px solid var(--border); opacity:0.5; }
+    #s5-sop .step-note { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); border-radius:6px; padding:8px 10px; font-size:11px; color:var(--amber); margin-top:8px; }
+  </style>
+  <div class="sop-wrap">
+    <div class="sop-header">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <button class="btn btn-ghost btn-sm">← Recettes</button>
+        <div>
+          <div style="font-size:15px;font-weight:700;">☕ Latte Vanille — Procédure SOP</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">8 étapes · 3 min 30 sec</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.06em;">Étape en cours</div>
+          <div style="font-size:16px;font-weight:800;color:#93c5fd;">3 / 8</div>
+        </div>
+        <button class="btn btn-primary">⏭ Suivante</button>
+      </div>
+    </div>
+    <div class="sop-progress"><div class="sop-progress-fill"></div></div>
+    <div class="sop-body">
+      <div class="sop-steps">
+        <!-- Step 1 done -->
+        <div class="sop-step">
+          <div class="step-circle done">✓</div>
+          <div class="step-content">
+            <div class="step-title" style="color:var(--green);">Préchauffer la tasse</div>
+            <div class="step-desc">Remplir la tasse d'eau chaude à 80°C et laisser reposer 30 secondes pour stabiliser la température.</div>
+            <span class="step-time done">⏱ 30 sec</span>
+          </div>
+        </div>
+        <!-- Step 2 done -->
+        <div class="sop-step">
+          <div class="step-circle done">✓</div>
+          <div class="step-content">
+            <div class="step-title" style="color:var(--green);">Doser et moudre le café</div>
+            <div class="step-desc">Peser 16g de café en grains. Régler la mouture sur 3 (fin espresso). Moudre directement dans le porte-filtre.</div>
+            <span class="step-time done">⏱ 30 sec</span>
+          </div>
+        </div>
+        <!-- Step 3 active -->
+        <div class="sop-step">
+          <div class="step-circle curr">3</div>
+          <div class="step-content curr">
+            <div class="step-title">Extraire l'espresso</div>
+            <div class="step-desc">Tasser uniformément à 20 kg de pression. Lancer l'extraction — viser 25 à 30 secondes pour un double espresso de 40 ml.</div>
+            <span class="step-time active">⏱ 30 sec</span>
+            <div class="step-note">⚠ Si l'extraction dure &lt; 25 sec → café trop grossier, resserrer la mouture. Si &gt; 35 sec → café trop fin, élargir.</div>
+          </div>
+        </div>
+        <!-- Steps 4–8 pending -->
+        <div class="sop-step">
+          <div class="step-circle pend">4</div>
+          <div class="step-content pend">
+            <div class="step-title">Faire mousser le lait</div>
+            <div class="step-desc">Verser 200 ml de lait entier froid dans le pichet. Positionner la vapeur à 1 cm du fond. Monter à 65°C max.</div>
+            <span class="step-time pending">⏱ 40 sec</span>
+          </div>
+        </div>
+        <div class="sop-step">
+          <div class="step-circle pend">5</div>
+          <div class="step-content pend">
+            <div class="step-title">Ajouter le sirop</div>
+            <div class="step-desc">Verser 2 cl de sirop vanille dans la tasse préchauffée (vidée).</div>
+            <span class="step-time pending">⏱ 10 sec</span>
+          </div>
+        </div>
+        <div class="sop-step">
+          <div class="step-circle pend">6</div>
+          <div class="step-content pend">
+            <div class="step-title">Assembler le latte</div>
+            <div class="step-desc">Verser l'espresso sur le sirop, puis le lait moussé en inclinant la tasse. Réaliser le latte art si souhaité.</div>
+            <span class="step-time pending">⏱ 30 sec</span>
+          </div>
+        </div>
+        <div class="sop-step">
+          <div class="step-circle pend">7</div>
+          <div class="step-content pend">
+            <div class="step-title">Vérification qualité</div>
+            <div class="step-desc">Température entre 62–68°C. Mousse lisse et brillante. Ratio lait/espresso visuel correct.</div>
+            <span class="step-time pending">⏱ 10 sec</span>
+          </div>
+        </div>
+        <div class="sop-step">
+          <div class="step-circle pend">8</div>
+          <div class="step-content pend">
+            <div class="step-title">Service</div>
+            <div class="step-desc">Poser sur soucoupe avec la cuillère. Annoncer la boisson. Scanner la commande POS comme préparée.</div>
+            <span class="step-time pending">⏱ 10 sec</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 6 — ANALYTICS -->
+<!-- ============================================================ -->
+<div class="screen" id="s6-analytics">
+  <style>
+    #s6-analytics .charts-row { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:18px; }
+    #s6-analytics .bottom-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    #s6-analytics .bar-chart { display:flex; align-items:flex-end; gap:2px; height:100px; padding-top:8px; }
+    #s6-analytics .bc-bar { flex:1; border-radius:2px 2px 0 0; background:var(--surface-raised); min-width:4px; transition:height .3s; }
+    #s6-analytics .bc-bar.highlight { background:var(--blue); }
+    #s6-analytics .bc-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--text-disabled); margin-top:4px; }
+    #s6-analytics .hbar-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    #s6-analytics .hbar-label { font-size:11px; color:var(--text-muted); width:60px; flex-shrink:0; text-align:right; }
+    #s6-analytics .hbar-bg { flex:1; height:8px; background:rgba(255,255,255,.04); border-radius:4px; position:relative; }
+    #s6-analytics .hbar-fill { height:8px; border-radius:4px; }
+    #s6-analytics .hbar-val { font-size:10px; color:var(--text-disabled); width:30px; flex-shrink:0; }
+    #s6-analytics .top-product { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(51,65,85,.4); }
+    #s6-analytics .top-product:last-child { border-bottom:none; }
+    #s6-analytics .tp-rank { width:20px; font-size:12px; font-weight:700; color:var(--text-muted); flex-shrink:0; }
+    #s6-analytics .tp-name { flex:1; font-size:13px; }
+    #s6-analytics .tp-ventes { font-size:11px; color:var(--text-muted); }
+    #s6-analytics .tp-ca { font-size:13px; font-weight:600; }
+    #s6-analytics .tp-pct { font-size:11px; color:var(--text-muted); width:36px; text-align:right; }
+    #s6-analytics .site-card { background:var(--surface-raised); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+    #s6-analytics .site-card.highlight { border-color:rgba(29,78,216,.5); background:var(--blue-light); }
+  </style>
+  <div class="bo-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">A</div>
+        <div><div class="logo-name">Alloflow</div><div class="logo-sub">Back-office</div></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Caisse</div>
+        <div class="nav-item"><span class="nav-icon">🧾</span> POS</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Gestion</div>
+        <div class="nav-item"><span class="nav-icon">📦</span> Produits</div>
+        <div class="nav-item"><span class="nav-icon">🏪</span> Stocks</div>
+        <div class="nav-item"><span class="nav-icon">📖</span> Recettes</div>
+        <div class="nav-item"><span class="nav-icon">📋</span> SOPs</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item active"><span class="nav-icon">📊</span> Analytics</div>
+        <div class="nav-item"><span class="nav-icon">👥</span> CRM Fidélité</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">MA</div>
+          <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bo-main">
+      <div class="topbar">
+        <div class="topbar-title">Analytics</div>
+        <div class="topbar-actions">
+          <div style="display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;">
+            <button class="btn btn-primary btn-sm" style="border-radius:6px;">Aujourd'hui</button>
+            <button class="btn btn-ghost btn-sm" style="border:none;color:var(--text-muted);">7 jours</button>
+            <button class="btn btn-ghost btn-sm" style="border:none;color:var(--text-muted);">30 jours</button>
+            <button class="btn btn-ghost btn-sm" style="border:none;color:var(--text-muted);">Mois</button>
+          </div>
+          <select class="select"><option>Allocookie Paris 1er</option><option>Allocookie Paris 11e</option><option>Allocookie Lyon</option></select>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">CA du jour</div>
+            <div class="stat-value" style="color:#93c5fd;">482 €</div>
+            <div class="stat-sub" style="color:var(--green);">↑ +12% vs hier</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Transactions</div>
+            <div class="stat-value">87</div>
+            <div class="stat-sub" style="color:var(--green);">↑ +8 vs hier</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ticket moyen</div>
+            <div class="stat-value">5,54 €</div>
+            <div class="stat-sub" style="color:var(--green);">↑ +0,30 €</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Taux espèces</div>
+            <div class="stat-value">34%</div>
+            <div class="stat-sub">66% carte bancaire</div>
+          </div>
+        </div>
+        <div class="charts-row">
+          <div class="card">
+            <div class="card-title">CA — 30 derniers jours</div>
+            <div class="bar-chart" id="barChart"></div>
+            <div class="bc-labels"><span>1 mar</span><span>15 mar</span><span>Auj.</span></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Heures de pointe</div>
+            <div class="hbar-row"><div class="hbar-label">8h–9h</div><div class="hbar-bg"><div class="hbar-fill" style="width:65%;background:var(--blue);"></div></div><div class="hbar-val" style="color:var(--text-muted);">18 tx</div></div>
+            <div class="hbar-row"><div class="hbar-label">9h–10h</div><div class="hbar-bg"><div class="hbar-fill" style="width:87%;background:var(--blue);"></div></div><div class="hbar-val" style="color:var(--text-muted);">24 tx</div></div>
+            <div class="hbar-row"><div class="hbar-label">10h–11h</div><div class="hbar-bg"><div class="hbar-fill" style="width:44%;background:var(--blue);"></div></div><div class="hbar-val" style="color:var(--text-muted);">12 tx</div></div>
+            <div class="hbar-row"><div class="hbar-label">12h–13h</div><div class="hbar-bg"><div class="hbar-fill" style="width:100%;background:#a855f7;"></div></div><div class="hbar-val" style="color:#c4b5fd;font-weight:700;">28 tx</div></div>
+            <div class="hbar-row"><div class="hbar-label">13h–14h</div><div class="hbar-bg"><div class="hbar-fill" style="width:72%;background:#a855f7;"></div></div><div class="hbar-val" style="color:var(--text-muted);">20 tx</div></div>
+            <div class="hbar-row"><div class="hbar-label">14h–17h</div><div class="hbar-bg"><div class="hbar-fill" style="width:29%;background:var(--surface-raised);"></div></div><div class="hbar-val" style="color:var(--text-muted);">8 tx</div></div>
+          </div>
+        </div>
+        <div class="bottom-row">
+          <div class="card">
+            <div class="card-title">Top produits — aujourd'hui</div>
+            <div class="top-product">
+              <div class="tp-rank">1</div>
+              <div class="tp-name">☕ Latte Vanille</div>
+              <div class="tp-ventes">34 ventes</div>
+              <div class="tp-ca">153 €</div>
+              <div class="tp-pct">23%</div>
+            </div>
+            <div class="top-product">
+              <div class="tp-rank">2</div>
+              <div class="tp-name">🍪 Cookie Choco</div>
+              <div class="tp-ventes">28 ventes</div>
+              <div class="tp-ca">78 €</div>
+              <div class="tp-pct">16%</div>
+            </div>
+            <div class="top-product">
+              <div class="tp-rank">3</div>
+              <div class="tp-name">☕ Cappuccino</div>
+              <div class="tp-ventes">22 ventes</div>
+              <div class="tp-ca">88 €</div>
+              <div class="tp-pct">13%</div>
+            </div>
+            <div class="top-product">
+              <div class="tp-rank">4</div>
+              <div class="tp-name">🍵 Matcha Latte</div>
+              <div class="tp-ventes">18 ventes</div>
+              <div class="tp-ca">90 €</div>
+              <div class="tp-pct">11%</div>
+            </div>
+            <div class="top-product">
+              <div class="tp-rank">5</div>
+              <div class="tp-name">🧋 Bubble Tea</div>
+              <div class="tp-ventes">14 ventes</div>
+              <div class="tp-ca">63 €</div>
+              <div class="tp-pct">8%</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Réseau — CA du jour</div>
+            <div class="site-card highlight">
+              <div>
+                <div style="font-size:13px;font-weight:600;">📍 Paris 1er</div>
+                <div style="font-size:11px;color:var(--text-muted);">Vue actuelle</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:18px;font-weight:800;color:#93c5fd;">482 €</div>
+                <div style="font-size:11px;color:var(--green);">↑ +12%</div>
+              </div>
+            </div>
+            <div class="site-card">
+              <div>
+                <div style="font-size:13px;font-weight:600;">📍 Paris 11e</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:18px;font-weight:700;">398 €</div>
+                <div style="font-size:11px;color:var(--green);">↑ +4%</div>
+              </div>
+            </div>
+            <div class="site-card">
+              <div>
+                <div style="font-size:13px;font-weight:600;">📍 Lyon</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:18px;font-weight:700;">302 €</div>
+                <div style="font-size:11px;color:var(--red);">↓ −3%</div>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:12px;color:var(--text-muted);">Total réseau</span>
+              <span style="font-size:18px;font-weight:800;">1 182 €</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 6 — CRM FIDÉLITÉ -->
+<!-- ============================================================ -->
+<div class="screen" id="s6-crm">
+  <div class="bo-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">A</div>
+        <div><div class="logo-name">Alloflow</div><div class="logo-sub">Back-office</div></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Caisse</div>
+        <div class="nav-item"><span class="nav-icon">🧾</span> POS</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Gestion</div>
+        <div class="nav-item"><span class="nav-icon">📦</span> Produits</div>
+        <div class="nav-item"><span class="nav-icon">🏪</span> Stocks</div>
+        <div class="nav-item"><span class="nav-icon">📖</span> Recettes</div>
+        <div class="nav-item"><span class="nav-icon">📋</span> SOPs</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analytics</div>
+        <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+        <div class="nav-item active"><span class="nav-icon">👥</span> CRM Fidélité</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span> Paramètres</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">MA</div>
+          <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bo-main">
+      <div class="topbar">
+        <div class="topbar-title">CRM Fidélité</div>
+        <div class="topbar-actions">
+          <input class="input" placeholder="🔍 Rechercher un client…" style="width:220px;">
+          <select class="select"><option>Tous les statuts</option><option>⭐ Gold</option><option>🥈 Silver</option><option>Standard</option></select>
+          <button class="btn btn-purple btn-sm">⚙ Programme</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Clients inscrits</div>
+            <div class="stat-value">342</div>
+            <div class="stat-sub" style="color:var(--green);">+12 ce mois</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Membres Gold</div>
+            <div class="stat-value" style="color:var(--amber);">28</div>
+            <div class="stat-sub">≥ 200 pts</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Points distribués</div>
+            <div class="stat-value" style="color:#c4b5fd;">18 420</div>
+            <div class="stat-sub">total cumulé</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Récompenses utilisées</div>
+            <div class="stat-value">64</div>
+            <div class="stat-sub">ce mois-ci</div>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Client</th><th>Statut</th><th>Points</th><th>CA total</th><th>Dernière visite</th><th>Boisson favorite</th><th>Établissement</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:30px;height:30px;border-radius:50%;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--amber);">ML</div>
+                    <span style="font-weight:500;">Marie L.</span>
+                  </div>
+                </td>
+                <td><span class="badge badge-amber">⭐ Gold</span></td>
+                <td><span style="font-weight:700;color:var(--amber);">342 pts</span></td>
+                <td>487 €</td>
+                <td style="color:var(--green);font-size:12px;">Aujourd'hui 09:14</td>
+                <td>☕ Latte Vanille</td>
+                <td style="color:var(--text-muted);font-size:12px;">Paris 1er</td>
+                <td><button class="btn btn-ghost btn-sm">Voir</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:30px;height:30px;border-radius:50%;background:rgba(100,116,139,.2);border:1px solid rgba(100,116,139,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-muted);">TB</div>
+                    <span style="font-weight:500;">Thomas B.</span>
+                  </div>
+                </td>
+                <td><span class="badge badge-gray">🥈 Silver</span></td>
+                <td style="color:var(--text-muted);">127 pts</td>
+                <td>203 €</td>
+                <td style="font-size:12px;color:var(--text-muted);">Hier 13:42</td>
+                <td>🍪 Cookie</td>
+                <td style="color:var(--text-muted);font-size:12px;">Paris 1er</td>
+                <td><button class="btn btn-ghost btn-sm">Voir</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:30px;height:30px;border-radius:50%;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--amber);">SC</div>
+                    <span style="font-weight:500;">Sophie C.</span>
+                  </div>
+                </td>
+                <td><span class="badge badge-amber">⭐ Gold</span></td>
+                <td><span style="font-weight:700;color:var(--amber);">284 pts</span></td>
+                <td>412 €</td>
+                <td style="font-size:12px;color:var(--text-muted);">27 mars 08:55</td>
+                <td>🍵 Matcha</td>
+                <td style="color:var(--text-muted);font-size:12px;">Lyon</td>
+                <td><button class="btn btn-ghost btn-sm">Voir</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:30px;height:30px;border-radius:50%;background:rgba(29,78,216,.2);border:1px solid rgba(29,78,216,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#93c5fd;">AK</div>
+                    <span style="font-weight:500;">Alex K.</span>
+                  </div>
+                </td>
+                <td><span class="badge badge-gray">Standard</span></td>
+                <td style="color:var(--text-muted);">42 pts</td>
+                <td>68 €</td>
+                <td style="font-size:12px;color:var(--text-muted);">24 mars</td>
+                <td>☕ Espresso</td>
+                <td style="color:var(--text-muted);font-size:12px;">Paris 11e</td>
+                <td><button class="btn btn-ghost btn-sm">Voir</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Programme fidélité -->
+        <div class="card" style="border-color:rgba(139,92,246,.3);margin-top:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div>
+              <div class="card-title" style="margin-bottom:2px;">Programme fidélité</div>
+              <div style="font-size:12px;color:var(--text-muted);">Règles actives</div>
+            </div>
+            <button class="btn btn-purple btn-sm">Modifier les règles</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div style="background:var(--surface-raised);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:20px;margin-bottom:4px;">💰</div>
+              <div style="font-size:13px;font-weight:700;">1 pt / 1 €</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">dépensé en caisse</div>
+            </div>
+            <div style="background:var(--surface-raised);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:20px;margin-bottom:4px;">🥈</div>
+              <div style="font-size:13px;font-weight:700;">Silver ≥ 100 pts</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">accès prioritaire events</div>
+            </div>
+            <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:20px;margin-bottom:4px;">⭐</div>
+              <div style="font-size:13px;font-weight:700;color:var(--amber);">Gold ≥ 200 pts</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">café offert à chaque visite</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SPRINT 6 — WIDGET FIDÉLITÉ POS -->
+<!-- ============================================================ -->
+<div class="screen" id="s6-fidelite">
+  <style>
+    #s6-fidelite .pos-shell { display:flex; height:100%; width:100%; }
+    #s6-fidelite .ticket-panel { width:300px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+    #s6-fidelite .ticket-header { padding:16px; border-bottom:1px solid var(--border); font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; }
+    #s6-fidelite .ticket-items { flex:1; padding:12px; }
+    #s6-fidelite .ticket-item { display:flex; justify-content:space-between; padding:10px 8px; border-bottom:1px solid rgba(51,65,85,.3); }
+    #s6-fidelite .ticket-item:last-child { border-bottom:none; }
+    #s6-fidelite .ticket-total { padding:14px; border-top:2px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    #s6-fidelite .pos-center { flex:1; background:rgba(0,0,0,.4); position:relative; display:flex; align-items:center; justify-content:center; }
+    #s6-fidelite .fid-modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; width:440px; box-shadow:0 25px 60px rgba(0,0,0,.6); }
+    #s6-fidelite .modal-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+    #s6-fidelite .client-card { background:rgba(245,158,11,.06); border:1px solid rgba(245,158,11,.25); border-radius:10px; padding:12px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    #s6-fidelite .cl-avatar { width:38px; height:38px; border-radius:50%; background:rgba(245,158,11,.3); border:2px solid rgba(245,158,11,.5); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--amber); flex-shrink:0; }
+    #s6-fidelite .pts-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    #s6-fidelite .pts-box { background:var(--surface-raised); border-radius:8px; padding:10px; text-align:center; }
+    #s6-fidelite .reward-item { display:flex; justify-content:space-between; align-items:center; padding:10px; border-radius:8px; margin-bottom:8px; }
+    #s6-fidelite .reward-active { background:rgba(16,185,129,.06); border:1px solid rgba(16,185,129,.25); }
+    #s6-fidelite .reward-dim { background:var(--surface-raised); border:1px solid var(--border); opacity:0.6; }
+  </style>
+  <div class="pos-shell">
+    <div class="ticket-panel">
+      <div class="ticket-header">🧾 Ticket en cours</div>
+      <div class="ticket-items">
+        <div class="ticket-item">
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);">☕ Latte Vanille</div>
+            <div style="font-size:11px;color:var(--text-muted);">×1</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;">4,50 €</div>
+        </div>
+        <div class="ticket-item">
+          <div>
+            <div style="font-size:13px;color:var(--text-secondary);">🍪 Cookie Choco</div>
+            <div style="font-size:11px;color:var(--text-muted);">×1</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;">2,80 €</div>
+        </div>
+      </div>
+      <div class="ticket-total">
+        <span style="font-size:12px;color:var(--text-muted);">Total</span>
+        <span style="font-size:22px;font-weight:800;color:#93c5fd;">7,30 €</span>
+      </div>
+    </div>
+    <div class="pos-center">
+      <div class="fid-modal">
+        <div class="modal-head">
+          <div>
+            <div style="font-size:16px;font-weight:700;">🎁 Fidélité client</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Identifier le client pour cumuler des points</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="padding:4px 8px;">✕</button>
+        </div>
+        <!-- Search — état : client sélectionné -->
+        <div style="margin:14px 0 12px;">
+          <div style="display:flex;align-items:center;gap:8px;background:var(--blue-light);border:1px solid rgba(29,78,216,.4);border-radius:8px;padding:8px 12px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--amber);flex-shrink:0;">ML</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);">Marie L.</div>
+              <div style="font-size:11px;color:var(--text-muted);">marie.l@email.com</div>
+            </div>
+            <span style="font-size:11px;color:#93c5fd;cursor:pointer;">Changer</span>
+          </div>
+        </div>
+        <!-- Client card -->
+        <div class="client-card">
+          <div class="cl-avatar">ML</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;">Marie L.</div>
+            <div style="font-size:12px;color:var(--amber);">342 pts · ⭐ Gold · Membre depuis janv. 2026</div>
+          </div>
+        </div>
+        <!-- Points grid -->
+        <div class="pts-grid">
+          <div class="pts-box">
+            <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Points actuels</div>
+            <div style="font-size:22px;font-weight:800;color:var(--amber);">342</div>
+          </div>
+          <div class="pts-box" style="background:var(--blue-light);border:1px solid rgba(29,78,216,.3);">
+            <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">À gagner aujourd'hui</div>
+            <div style="font-size:22px;font-weight:800;color:#93c5fd;">+7 pts</div>
+            <div style="font-size:10px;color:var(--text-muted);">7,30 € → 7 pts</div>
+          </div>
+        </div>
+        <!-- Récompenses -->
+        <div style="font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Récompenses disponibles</div>
+        <div class="reward-item reward-active">
+          <div>
+            <div style="font-size:13px;font-weight:600;">☕ Café offert</div>
+            <div style="font-size:11px;color:var(--green);">Statut Gold · 0 pts requis</div>
+          </div>
+          <button class="btn btn-green-s btn-sm">Appliquer</button>
+        </div>
+        <div class="reward-item reward-dim">
+          <div>
+            <div style="font-size:13px;font-weight:600;">🎁 Réduction 5 €</div>
+            <div style="font-size:11px;color:var(--text-muted);">50 pts requis</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="color:#93c5fd;border-color:rgba(29,78,216,.3);">Utiliser</button>
+        </div>
+        <!-- Bottom actions -->
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;">Passer sans fidélité</button>
+          <button class="btn btn-primary" style="flex:2;justify-content:center;">Confirmer (+7 pts) →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id, event) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+}
+
+// Generate bar chart for analytics
+(function() {
+  const heights = [38,45,52,41,63,58,72,49,55,68,47,60,75,82,56,44,70,63,58,77,84,61,49,72,68,79,85,73,90,100];
+  const chart = document.getElementById('barChart');
+  if (!chart) return;
+  heights.forEach((h, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'bc-bar' + (i === heights.length - 1 ? ' highlight' : '');
+    bar.style.height = h + '%';
+    chart.appendChild(bar);
+  });
+})();
+</script>
+</body>
+</html>

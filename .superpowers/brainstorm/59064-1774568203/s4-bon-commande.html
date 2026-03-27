@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Bon de commande</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+.layout { display: flex; min-height: 100vh; background: #0a1628; color: #f1f5f9; }
+.sidebar { width: 220px; background: #0f2744; border-right: 1px solid rgba(255,255,255,0.06); padding: 20px 12px; flex-shrink: 0; }
+.logo { font-size: 15px; font-weight: 800; margin-bottom: 28px; padding: 0 8px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #94a3b8; margin-bottom: 2px; cursor:pointer; }
+.nav-item.active { background: rgba(59,130,246,0.12); color: #60a5fa; }
+.nav-section { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing:.1em; padding: 0 8px; margin: 16px 0 6px; }
+.main { flex: 1; display: flex; flex-direction: column; }
+.topbar { height: 56px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #0f2744; }
+.content { padding: 24px; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+.card { background: #0f2744; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px; }
+.input { width: 100%; height: 38px; padding: 0 12px; background: #1e3a5f; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #f1f5f9; font-size: 13px; outline: none; }
+.label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing:.06em; margin-bottom: 6px; display: block; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar">
+    <div class="logo">🍪 Allocookie</div>
+    <div class="nav-section">Back-office</div>
+    <div class="nav-item">📦 Produits</div>
+    <div class="nav-item active">🏪 Stocks</div>
+    <div class="nav-item">📖 Recettes</div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="color:#64748b;font-size:13px;cursor:pointer;">← Stocks</span>
+        <span style="color:#334155;">/</span>
+        <span style="font-size:14px;font-weight:600;">Nouveau bon de commande</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button style="padding:7px 14px;border-radius:8px;background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);font-size:12px;cursor:pointer;">Annuler</button>
+        <button style="padding:7px 16px;border-radius:8px;background:#3b82f6;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;">📤 Envoyer la commande</button>
+      </div>
+    </div>
+    <div class="content">
+      <!-- Colonne principale -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- Infos commande -->
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:14px;">Informations commande</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+            <div>
+              <label class="label">Fournisseur</label>
+              <select class="input" style="cursor:pointer;">
+                <option>Metro</option>
+                <option>Café du Commerce</option>
+                <option>Brake France</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Date livraison souhaitée</label>
+              <input type="date" class="input" value="2026-03-31">
+            </div>
+            <div>
+              <label class="label">Référence interne</label>
+              <input class="input" value="BC-2026-047" readonly style="color:#64748b;">
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <label class="label">Notes fournisseur</label>
+            <textarea class="input" style="height:60px;padding:8px 12px;resize:none;">Livraison avant 9h impérativement. Accès par la cour arrière.</textarea>
+          </div>
+        </div>
+
+        <!-- Lignes commande -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="font-size:13px;font-weight:700;">Articles commandés</div>
+            <button style="padding:5px 12px;border-radius:7px;background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.2);font-size:12px;cursor:pointer;">+ Ajouter un article</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,0.06);">Article</th>
+                <th style="text-align:center;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,0.06);">Stock actuel</th>
+                <th style="text-align:center;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,0.06);">Qté commandée</th>
+                <th style="text-align:center;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,0.06);">Unité</th>
+                <th style="text-align:right;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,0.06);">Prix unit. HT</th>
+                <th style="text-align:right;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,0.06);">Total HT</th>
+                <th style="border-bottom:1px solid rgba(255,255,255,0.06);"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                  <div style="font-size:13px;font-weight:600;color:#f1f5f9;">☕ Grains de café</div>
+                  <div style="font-size:11px;color:#ef4444;">⛔ Rupture — urgent</div>
+                </td>
+                <td style="text-align:center;color:#ef4444;font-weight:600;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">0,8 kg</td>
+                <td style="text-align:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                  <input type="number" value="5" style="width:60px;height:32px;text-align:center;background:#1e3a5f;border:1px solid rgba(59,130,246,0.4);border-radius:6px;color:#f1f5f9;font-size:13px;font-weight:700;outline:none;">
+                </td>
+                <td style="text-align:center;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">kg</td>
+                <td style="text-align:right;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">18,50 €</td>
+                <td style="text-align:right;font-weight:700;color:#f1f5f9;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">92,50 €</td>
+                <td style="border-bottom:1px solid rgba(255,255,255,0.04);padding-left:10px;"><button style="background:none;border:none;color:#475569;cursor:pointer;font-size:14px;">✕</button></td>
+              </tr>
+              <tr>
+                <td style="padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                  <div style="font-size:13px;font-weight:600;color:#f1f5f9;">🥛 Lait entier</div>
+                  <div style="font-size:11px;color:#f59e0b;">⚠ Niveau bas</div>
+                </td>
+                <td style="text-align:center;color:#f59e0b;font-weight:600;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">4,2 L</td>
+                <td style="text-align:center;border-bottom:1px solid rgba(255,255,255,0.04);">
+                  <input type="number" value="20" style="width:60px;height:32px;text-align:center;background:#1e3a5f;border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#f1f5f9;font-size:13px;outline:none;">
+                </td>
+                <td style="text-align:center;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">L</td>
+                <td style="text-align:right;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">0,95 €</td>
+                <td style="text-align:right;font-weight:700;color:#f1f5f9;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);">19,00 €</td>
+                <td style="border-bottom:1px solid rgba(255,255,255,0.04);padding-left:10px;"><button style="background:none;border:none;color:#475569;cursor:pointer;font-size:14px;">✕</button></td>
+              </tr>
+              <tr>
+                <td style="padding:11px 0;">
+                  <div style="font-size:13px;font-weight:600;color:#f1f5f9;">🧈 Beurre doux</div>
+                  <div style="font-size:11px;color:#f59e0b;">⚠ Niveau bas</div>
+                </td>
+                <td style="text-align:center;color:#f59e0b;font-weight:600;font-size:13px;">1,1 kg</td>
+                <td style="text-align:center;">
+                  <input type="number" value="3" style="width:60px;height:32px;text-align:center;background:#1e3a5f;border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#f1f5f9;font-size:13px;outline:none;">
+                </td>
+                <td style="text-align:center;color:#64748b;font-size:13px;">kg</td>
+                <td style="text-align:right;color:#64748b;font-size:13px;">5,80 €</td>
+                <td style="text-align:right;font-weight:700;color:#f1f5f9;font-size:13px;">17,40 €</td>
+                <td style="padding-left:10px;"><button style="background:none;border:none;color:#475569;cursor:pointer;font-size:14px;">✕</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Récapitulatif -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card" style="position:sticky;top:24px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:16px;">Récapitulatif</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">Fournisseur</span>
+              <span style="font-weight:600;">Metro</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">Articles</span>
+              <span>3 lignes</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">Livraison souhaitée</span>
+              <span>31 mars 2026</span>
+            </div>
+            <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">Total HT</span>
+              <span style="font-weight:600;">128,90 €</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:#64748b;">TVA (5,5%)</span>
+              <span>7,09 €</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;margin-top:4px;">
+              <span>Total TTC</span>
+              <span style="color:#3b82f6;">135,99 €</span>
+            </div>
+          </div>
+          <button style="width:100%;padding:12px;border-radius:10px;background:#3b82f6;color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">📤 Envoyer au fournisseur</button>
+          <button style="width:100%;padding:10px;border-radius:10px;background:rgba(255,255,255,0.04);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);font-size:13px;cursor:pointer;">💾 Enregistrer brouillon</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

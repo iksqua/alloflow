@@ -1,0 +1,84 @@
+<h2>Prochains Sprints — Quel module on attaque ?</h2>
+<p class="subtitle">Sprints 1–3 terminés ✅ — Choisis le focus de la prochaine session de mockups</p>
+
+<div class="cards" style="margin-top: 24px;">
+
+  <div class="card" data-choice="stocks" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%); padding: 20px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span style="font-size:28px;">📦</span>
+        <span style="color:#60a5fa; font-weight:700; font-size:16px;">Sprint 4 — Stocks</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">📋 Inventaire temps réel</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">⚠️ Alertes seuil bas</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">📥 Bons de commande</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">🔗 Décrément auto ventes</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Stocks & Approvisionnements</h3>
+      <p>Gestion des niveaux de stock, alertes, bons de commande fournisseurs. Décrémente automatiquement à chaque vente POS.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="sop" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%); padding: 20px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span style="font-size:28px;">📖</span>
+        <span style="color:#60a5fa; font-weight:700; font-size:16px;">Sprint 5 — SOP / Recettes</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">🧾 Fiches recettes</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">💰 Food cost calculé</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">📏 Unités & portions</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">🔗 Lié aux produits POS</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>SOP / Recettes & Food Cost</h3>
+      <p>Fiches recettes standardisées, calcul du coût de revient, marges par produit. Connecté aux stocks et au catalogue POS.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="caisse-avancee" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%); padding: 20px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span style="font-size:28px;">💳</span>
+        <span style="color:#60a5fa; font-weight:700; font-size:16px;">Sprint 4 — Caisse avancée</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">🖨 TPE Concert V3</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">📜 Conformité NF525</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">📡 PWA Mode offline</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">🧾 Journal fiscal</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Caisse avancée — TPE & NF525</h3>
+      <p>Intégration terminal de paiement Ingenico (protocole Concert V3), conformité fiscale NF525, mode offline PWA pour les coupures réseau.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="crm-analytics" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%); padding: 20px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span style="font-size:28px;">📊</span>
+        <span style="color:#60a5fa; font-weight:700; font-size:16px;">Sprint 6 — Analytics & CRM</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">📈 Dashboard analytics</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">🎁 Programme fidélité</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">👥 Profils clients</div>
+        <div style="background:#0f2744; border:1px solid #1e3a5f; border-radius:8px; padding:8px; font-size:11px; color:#94a3b8;">🏪 Multi-établissements</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Analytics & CRM Fidélité</h3>
+      <p>Dashboard de performance, programme de fidélité clients, gestion multi-sites. Vision globale pour le franchiseur.</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center; color:#64748b; font-size:13px; margin-top:20px;">Tu peux sélectionner plusieurs modules si tu veux les couvrir dans cette session</p>

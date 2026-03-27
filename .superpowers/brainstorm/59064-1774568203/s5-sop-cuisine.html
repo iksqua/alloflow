@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — SOP Mode Cuisine</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+body { background: #050d1a; color: #f1f5f9; min-height: 100vh; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-bottom: 1px solid rgba(255,255,255,0.06); background: #0a1628; }
+.content { padding: 40px 80px; max-width: 900px; margin: 0 auto; }
+.step { display: flex; gap: 24px; margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.step:last-child { border: none; }
+.step-num { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; flex-shrink: 0; }
+.step-num.done { background: #10b981; color: white; }
+.step-num.active { background: #3b82f6; color: white; box-shadow: 0 0 0 6px rgba(59,130,246,0.2); }
+.step-num.pending { background: rgba(255,255,255,0.06); color: #475569; }
+.step-body { flex: 1; }
+.step-title { font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+.step-desc { font-size: 15px; color: #94a3b8; line-height: 1.6; }
+.step-time { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.06); color: #64748b; margin-top: 10px; }
+.step-note { margin-top: 10px; padding: 10px 14px; background: rgba(245,158,11,0.08); border-left: 3px solid #f59e0b; border-radius: 0 8px 8px 0; font-size: 13px; color: #fbbf24; }
+.progress-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin: 0 32px; }
+.progress-fill { height: 4px; background: linear-gradient(90deg,#10b981,#3b82f6); border-radius: 2px; width: 37%; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <button style="padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.06);color:#94a3b8;border:none;font-size:13px;cursor:pointer;">← Recettes</button>
+    <div>
+      <div style="font-size:18px;font-weight:800;">☕ Latte Vanille — Procédure SOP</div>
+      <div style="font-size:12px;color:#64748b;margin-top:2px;">8 étapes · Temps estimé : 3 min 30 sec</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="text-align:right;">
+      <div style="font-size:11px;color:#64748b;">ÉTAPE EN COURS</div>
+      <div style="font-size:15px;font-weight:700;color:#3b82f6;">3 / 8</div>
+    </div>
+    <button style="padding:10px 20px;border-radius:10px;background:#3b82f6;color:white;border:none;font-size:14px;font-weight:700;cursor:pointer;">⏭ Suivante</button>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-fill"></div>
+</div>
+
+<div class="content">
+
+  <div class="step">
+    <div class="step-num done">✓</div>
+    <div class="step-body">
+      <div class="step-title" style="color:#10b981;">Préchauffer la tasse</div>
+      <div class="step-desc">Remplir la tasse d'eau chaude et laisser reposer 30 secondes. Vider avant de continuer. La tasse doit être chaude au toucher.</div>
+      <span class="step-time">⏱ 30 sec</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num done">✓</div>
+    <div class="step-body">
+      <div class="step-title" style="color:#10b981;">Doser et moudre le café</div>
+      <div class="step-desc">Peser 16 g de grains. Moudre finement (réglage 3 sur le broyeur). Tasser uniformément à 15–20 kg de pression.</div>
+      <span class="step-time">⏱ 30 sec</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num active">3</div>
+    <div class="step-body">
+      <div class="step-title">Extraire l'espresso</div>
+      <div class="step-desc">Démarrer l'extraction. Temps cible : 25–28 secondes pour 30 ml par shot. La couleur doit être brun caramel avec une crema dorée.</div>
+      <span class="step-time">⏱ 30 sec</span>
+      <div class="step-note">⚠ Si extraction &lt; 25 sec → café trop grossier. Si &gt; 30 sec → café trop fin. Ajuster le broyeur.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num pending">4</div>
+    <div class="step-body">
+      <div class="step-title" style="color:#475569;">Texturer le lait</div>
+      <div class="step-desc" style="color:#475569;">Verser 200 ml de lait entier froid dans le pichet. Positionner la buse vapeur juste sous la surface. Chauffer à 65°C max — texturé, soyeux, sans grosses bulles.</div>
+      <span class="step-time" style="opacity:0.4;">⏱ 45 sec</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num pending">5</div>
+    <div class="step-body">
+      <div class="step-title" style="color:#475569;">Ajouter le sirop vanille</div>
+      <div class="step-desc" style="color:#475569;">Verser 2 cl (2 pompes) de sirop vanille directement dans la tasse avec l'espresso. Mélanger légèrement.</div>
+      <span class="step-time" style="opacity:0.4;">⏱ 10 sec</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num pending">6</div>
+    <div class="step-body">
+      <div class="step-title" style="color:#475569;">Assembler le latte</div>
+      <div class="step-desc" style="color:#475569;">Verser le lait texturé en mouvement circulaire sur l'espresso. Laisser 1 cm de mousse en surface.</div>
+      <span class="step-time" style="opacity:0.4;">⏱ 15 sec</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num pending">7</div>
+    <div class="step-body">
+      <div class="step-title" style="color:#475569;">Latte art (optionnel)</div>
+      <div class="step-desc" style="color:#475569;">Réaliser un motif cœur ou feuille si le temps le permet. Non obligatoire aux heures de pointe.</div>
+      <span class="step-time" style="opacity:0.4;">⏱ 15 sec</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num pending">8</div>
+    <div class="step-body">
+      <div class="step-title" style="color:#475569;">Service</div>
+      <div class="step-desc" style="color:#475569;">Poser sur une soucoupe propre. Servir immédiatement. Annoncer le nom du client. Température de service : 65–70°C.</div>
+      <span class="step-time" style="opacity:0.4;">⏱ 10 sec</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<h2>Fidélité POS — À quel moment identifier le client ?</h2>
+<p class="subtitle">Le flow de caisse a 4 étapes clés. Où insérer la fidélité ?</p>
+
+<style>
+.flow-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin: 28px 0;
+  position: relative;
+}
+.flow-step {
+  flex: 1;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 16px 14px;
+  text-align: center;
+  position: relative;
+}
+.flow-step .step-num {
+  font-size: 10px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 6px;
+}
+.flow-step .step-icon { font-size: 24px; margin-bottom: 6px; }
+.flow-step .step-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+}
+.flow-step .step-desc { font-size: 11px; color: #64748b; }
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  font-size: 18px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+.insert-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1d4ed8;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.highlight-blue { border-color: rgba(29,78,216,.6); background: rgba(29,78,216,.08); }
+.separator { height: 1px; background: #1e293b; margin: 24px 0; }
+</style>
+
+<div class="section">
+  <div class="label">Flow actuel (sans fidélité)</div>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="step-num">Étape 1</div>
+      <div class="step-icon">🧾</div>
+      <div class="step-name">Composition ticket</div>
+      <div class="step-desc">Caissier ajoute les articles</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-num">Étape 2</div>
+      <div class="step-icon">💳</div>
+      <div class="step-name">Choix paiement</div>
+      <div class="step-desc">CB / Espèces / TPE</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-num">Étape 3</div>
+      <div class="step-icon">✅</div>
+      <div class="step-name">Confirmation</div>
+      <div class="step-desc">Paiement validé</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="step-num">Étape 4</div>
+      <div class="step-icon">🖨️</div>
+      <div class="step-name">Ticket / Reçu</div>
+      <div class="step-desc">Impression ou email</div>
+    </div>
+  </div>
+</div>
+
+<div class="separator"></div>
+
+<div class="label">3 options d'insertion — Clique sur celle qui te paraît la meilleure</div>
+
+<div class="options">
+
+  <div class="option" data-choice="avant" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Avant le paiement — bouton "Fidélité" sur le ticket</h3>
+      <div class="flow-row" style="margin:12px 0 8px;">
+        <div class="flow-step" style="font-size:11px;padding:8px;">🧾 Ticket</div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step highlight-blue" style="font-size:11px;padding:8px;position:relative;">
+          <div class="insert-badge">🎁 Fidélité</div>
+          🎁 Identifier client
+        </div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step" style="font-size:11px;padding:8px;">💳 Paiement</div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step" style="font-size:11px;padding:8px;">✅ Confirm.</div>
+      </div>
+      <p>Le client est identifié <strong>avant</strong> de payer. On peut appliquer une récompense (réduction) qui modifie le total. Flow actif — le caissier doit cliquer.</p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><h4>Pour</h4><ul><li>Réductions applicables avant paiement</li><li>Points visibles sur le reçu</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Ajoute une étape obligatoire au flow</li><li>Risque de ralentir la caisse</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="apres" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Après confirmation — pop-up automatique</h3>
+      <div class="flow-row" style="margin:12px 0 8px;">
+        <div class="flow-step" style="font-size:11px;padding:8px;">🧾 Ticket</div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step" style="font-size:11px;padding:8px;">💳 Paiement</div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step" style="font-size:11px;padding:8px;">✅ Confirm.</div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step highlight-blue" style="font-size:11px;padding:8px;position:relative;">
+          <div class="insert-badge">🎁 Fidélité</div>
+          🎁 Créditer pts
+        </div>
+      </div>
+      <p>Paiement d'abord, identification ensuite. Pop-up rapide : "Client fidélité ?" — téléphone ou email. Points crédités automatiquement. Pas de réduction possible (trop tard).</p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><h4>Pour</h4><ul><li>Ne ralentit pas le paiement</li><li>Flow principal intact</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Impossible d'appliquer des réductions</li><li>Client doit attendre après paiement</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="dual" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Double point d'entrée — flexible</h3>
+      <div class="flow-row" style="margin:12px 0 8px;">
+        <div class="flow-step" style="font-size:11px;padding:8px;position:relative;">
+          <div class="insert-badge" style="background:#475569;">🎁 Optionnel</div>
+          🧾 Ticket
+        </div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step" style="font-size:11px;padding:8px;">💳 Paiement</div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step highlight-blue" style="font-size:11px;padding:8px;position:relative;">
+          <div class="insert-badge">🎁 Auto</div>
+          ✅ Confirm.
+        </div>
+        <div class="flow-arrow" style="font-size:13px;">→</div>
+        <div class="flow-step" style="font-size:11px;padding:8px;">🖨️ Reçu</div>
+      </div>
+      <p><strong>Avant :</strong> bouton discret "🎁 Fidélité" sur le ticket — si le client veut une réduction. <strong>Après :</strong> pop-up automatique post-paiement pour créditer les points si pas encore fait.</p>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><h4>Pour</h4><ul><li>Réductions ET crédits points possibles</li><li>Flow principal non bloqué</li><li>Flexible selon le client</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Plus complexe à implémenter</li><li>2 moments différents → confusion possible</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>

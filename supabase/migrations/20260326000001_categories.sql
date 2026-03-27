@@ -13,9 +13,17 @@ CREATE TABLE categories (
 CREATE INDEX idx_categories_establishment ON categories(establishment_id);
 CREATE INDEX idx_categories_sort ON categories(establishment_id, sort_order);
 
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER set_categories_updated_at
   BEFORE UPDATE ON categories
-  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime();
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 

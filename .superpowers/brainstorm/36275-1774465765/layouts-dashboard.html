@@ -1,0 +1,185 @@
+<h2>Dashboard Produits — Quel layout te parle le plus ?</h2>
+<p class="subtitle">Chaque option a une ambiance différente. Choisis ce qui correspond à ta vision d'Alloflow.</p>
+
+<div class="cards">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:16px;font-family:system-ui">
+      <!-- Stats bar -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#0f172a">24</div>
+          <div style="font-size:10px;color:#64748b">Produits actifs</div>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#0f172a">5</div>
+          <div style="font-size:10px;color:#64748b">Catégories</div>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#0f172a">12,50€</div>
+          <div style="font-size:10px;color:#64748b">Prix moyen</div>
+        </div>
+      </div>
+      <!-- Search + filter bar -->
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <div style="flex:1;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11px;color:#94a3b8">🔍 Rechercher un produit...</div>
+        <div style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11px;color:#64748b">Tous ▾</div>
+        <div style="background:#0f172a;border-radius:6px;padding:6px 10px;font-size:11px;color:#fff">+ Nouveau</div>
+      </div>
+      <!-- Category tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">
+        <div style="background:#0f172a;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px">Tous (24)</div>
+        <div style="background:#f1f5f9;color:#64748b;border-radius:20px;padding:3px 10px;font-size:10px">Plats (8)</div>
+        <div style="background:#f1f5f9;color:#64748b;border-radius:20px;padding:3px 10px;font-size:10px">Entrées (5)</div>
+        <div style="background:#f1f5f9;color:#64748b;border-radius:20px;padding:3px 10px;font-size:10px">Boissons (6)</div>
+        <div style="background:#f1f5f9;color:#64748b;border-radius:20px;padding:3px 10px;font-size:10px">Desserts (5)</div>
+      </div>
+      <!-- Table rows -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;padding:6px 10px;font-size:9px;color:#94a3b8;border-bottom:1px solid #f1f5f9;background:#f8fafc">
+          <span>Produit</span><span>Catégorie</span><span>Prix</span><span>TVA</span><span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;padding:7px 10px;font-size:10px;align-items:center;border-bottom:1px solid #f8fafc">
+          <span style="font-weight:600;color:#0f172a">Entrecôte</span>
+          <span style="color:#64748b">Plat</span>
+          <span style="color:#0f172a">24,00€</span>
+          <span style="color:#64748b">10%</span>
+          <span style="color:#3b82f6;font-size:9px">✏️ 🗑️</span>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;padding:7px 10px;font-size:10px;align-items:center;border-bottom:1px solid #f8fafc;background:#f8fafc">
+          <span style="font-weight:600;color:#0f172a">Coca Cola</span>
+          <span style="color:#64748b">Boisson</span>
+          <span style="color:#0f172a">3,50€</span>
+          <span style="color:#64748b">20%</span>
+          <span style="color:#3b82f6;font-size:9px">✏️ 🗑️</span>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;padding:7px 10px;font-size:10px;align-items:center">
+          <span style="font-weight:600;color:#0f172a">Tiramisu</span>
+          <span style="color:#64748b">Dessert</span>
+          <span style="color:#0f172a">7,00€</span>
+          <span style="color:#64748b">10%</span>
+          <span style="color:#3b82f6;font-size:9px">✏️ 🗑️</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Table enrichie</h3>
+      <p>Stats en haut, recherche, filtres par catégorie, table dense. Efficace pour gérer beaucoup de produits rapidement.</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:16px;font-family:system-ui">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#0f172a">Catalogue produits</div>
+          <div style="font-size:10px;color:#94a3b8">24 produits • 5 catégories</div>
+        </div>
+        <div style="background:#0f172a;border-radius:6px;padding:6px 10px;font-size:10px;color:#fff">+ Nouveau produit</div>
+      </div>
+      <!-- Category columns -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px">
+          <div style="font-size:10px;font-weight:600;color:#0f172a;margin-bottom:6px">🍽️ Plats <span style="color:#94a3b8">(8)</span></div>
+          <div style="background:#f8fafc;border-radius:5px;padding:5px 7px;margin-bottom:4px;font-size:9px">
+            <div style="font-weight:600">Entrecôte</div><div style="color:#94a3b8">24,00€</div>
+          </div>
+          <div style="background:#f8fafc;border-radius:5px;padding:5px 7px;margin-bottom:4px;font-size:9px">
+            <div style="font-weight:600">Burger maison</div><div style="color:#94a3b8">15,00€</div>
+          </div>
+          <div style="color:#3b82f6;font-size:9px;text-align:center;margin-top:4px">+ 6 autres</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px">
+          <div style="font-size:10px;font-weight:600;color:#0f172a;margin-bottom:6px">🥗 Entrées <span style="color:#94a3b8">(5)</span></div>
+          <div style="background:#f8fafc;border-radius:5px;padding:5px 7px;margin-bottom:4px;font-size:9px">
+            <div style="font-weight:600">Salade César</div><div style="color:#94a3b8">9,00€</div>
+          </div>
+          <div style="background:#f8fafc;border-radius:5px;padding:5px 7px;margin-bottom:4px;font-size:9px">
+            <div style="font-weight:600">Soupe du jour</div><div style="color:#94a3b8">6,50€</div>
+          </div>
+          <div style="color:#3b82f6;font-size:9px;text-align:center;margin-top:4px">+ 3 autres</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px">
+          <div style="font-size:10px;font-weight:600;color:#0f172a;margin-bottom:6px">🍹 Boissons <span style="color:#94a3b8">(6)</span></div>
+          <div style="background:#f8fafc;border-radius:5px;padding:5px 7px;margin-bottom:4px;font-size:9px">
+            <div style="font-weight:600">Coca Cola</div><div style="color:#94a3b8">3,50€</div>
+          </div>
+          <div style="background:#f8fafc;border-radius:5px;padding:5px 7px;margin-bottom:4px;font-size:9px">
+            <div style="font-weight:600">Eau minérale</div><div style="color:#94a3b8">2,00€</div>
+          </div>
+          <div style="color:#3b82f6;font-size:9px;text-align:center;margin-top:4px">+ 4 autres</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Vue par catégories</h3>
+      <p>Colonnes par catégorie, vue carte. Visuelle et intuitive, idéale pour un catalogue organisé comme une carte de restaurant.</p>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:16px;font-family:system-ui">
+      <!-- Sidebar + main -->
+      <div style="display:flex;gap:10px;height:160px">
+        <!-- Sidebar -->
+        <div style="width:90px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;flex-shrink:0">
+          <div style="font-size:9px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase">Catégories</div>
+          <div style="background:#0f172a;color:#fff;border-radius:5px;padding:4px 7px;font-size:9px;margin-bottom:3px">Tous (24)</div>
+          <div style="color:#64748b;padding:4px 7px;font-size:9px;margin-bottom:2px">🍽️ Plats (8)</div>
+          <div style="color:#64748b;padding:4px 7px;font-size:9px;margin-bottom:2px">🥗 Entrées (5)</div>
+          <div style="color:#64748b;padding:4px 7px;font-size:9px;margin-bottom:2px">🍹 Boissons (6)</div>
+          <div style="color:#64748b;padding:4px 7px;font-size:9px;margin-bottom:2px">🍮 Desserts (5)</div>
+          <div style="border-top:1px solid #f1f5f9;margin:6px 0;padding-top:6px">
+            <div style="color:#3b82f6;padding:4px 7px;font-size:9px">+ Catégorie</div>
+          </div>
+        </div>
+        <!-- Main -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:5px 8px;font-size:10px;color:#94a3b8">🔍 Rechercher...</div>
+            <div style="background:#0f172a;border-radius:6px;padding:5px 10px;font-size:10px;color:#fff">+ Nouveau</div>
+          </div>
+          <!-- Product grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;overflow:hidden">
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px">
+              <div style="font-size:10px;font-weight:600;color:#0f172a">Entrecôte</div>
+              <div style="font-size:9px;color:#94a3b8">Plat • 10%</div>
+              <div style="font-size:12px;font-weight:700;color:#0f172a;margin-top:4px">24,00€</div>
+              <div style="display:flex;gap:3px;margin-top:5px">
+                <div style="flex:1;background:#f1f5f9;border-radius:4px;padding:2px;font-size:8px;text-align:center;color:#64748b">✏️</div>
+                <div style="flex:1;background:#fef2f2;border-radius:4px;padding:2px;font-size:8px;text-align:center;color:#ef4444">🗑️</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px">
+              <div style="font-size:10px;font-weight:600;color:#0f172a">Coca Cola</div>
+              <div style="font-size:9px;color:#94a3b8">Boisson • 20%</div>
+              <div style="font-size:12px;font-weight:700;color:#0f172a;margin-top:4px">3,50€</div>
+              <div style="display:flex;gap:3px;margin-top:5px">
+                <div style="flex:1;background:#f1f5f9;border-radius:4px;padding:2px;font-size:8px;text-align:center;color:#64748b">✏️</div>
+                <div style="flex:1;background:#fef2f2;border-radius:4px;padding:2px;font-size:8px;text-align:center;color:#ef4444">🗑️</div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px">
+              <div style="font-size:10px;font-weight:600;color:#0f172a">Tiramisu</div>
+              <div style="font-size:9px;color:#94a3b8">Dessert • 10%</div>
+              <div style="font-size:12px;font-weight:700;color:#0f172a;margin-top:4px">7,00€</div>
+              <div style="display:flex;gap:3px;margin-top:5px">
+                <div style="flex:1;background:#f1f5f9;border-radius:4px;padding:2px;font-size:8px;text-align:center;color:#64748b">✏️</div>
+                <div style="flex:1;background:#fef2f2;border-radius:4px;padding:2px;font-size:8px;text-align:center;color:#ef4444">🗑️</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Sidebar + grille de cartes</h3>
+      <p>Navigation latérale par catégorie, produits en grille. Ressemble à une interface POS moderne, très tactile.</p>
+    </div>
+  </div>
+
+</div>
