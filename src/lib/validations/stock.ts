@@ -15,7 +15,7 @@ const stockItemFields = z.object({
   is_pos:          z.boolean().default(false),
   pos_price:       z.number().positive().nullable().optional(),
   pos_tva_rate:    z.number().refine(v => [5.5, 10, 20].includes(v)).default(10),
-  pos_category_id: z.preprocess(v => (v == null || v === '' ? null : v), z.union([z.string().uuid(), z.null()]).optional()),
+  pos_category_id: z.string().nullable().optional(),
 })
 
 const posRefine = <T extends { is_pos?: boolean; pos_price?: number | null }>(data: T) =>

@@ -19,24 +19,19 @@ export const sopStepSchema = z.object({
   note_text:        z.string().max(500).nullable().optional(),
 })
 
-const nullableUuid = z.preprocess(
-  v => (v == null || v === '' ? null : v),
-  z.union([z.string().uuid(), z.null()]).optional()
-)
-
 export const createSopSchema = z.object({
   title:       z.string().min(1).max(200),
   content:     z.string().max(2000).nullable().optional(),   // general notes
-  category_id: nullableUuid,
-  recipe_id:   nullableUuid,
+  category_id: z.string().nullable().optional(),
+  recipe_id:   z.string().nullable().optional(),
   steps:       z.array(sopStepSchema).default([]),
 })
 
 export const updateSopSchema = z.object({
   title:       z.string().min(1).max(200).optional(),
   content:     z.string().max(2000).nullable().optional(),
-  category_id: nullableUuid,
-  recipe_id:   nullableUuid,
+  category_id: z.string().nullable().optional(),
+  recipe_id:   z.string().nullable().optional(),
 })
 
 export type SopCategoryInput       = z.infer<typeof sopCategorySchema>
