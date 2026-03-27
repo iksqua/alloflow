@@ -52,6 +52,7 @@ Computed automatically by a Supabase trigger on `orders` (after status = 'paid')
 | `perdu` | `last_order_at` > 60 days ago (or never ordered and created > 60 days ago) |
 
 Priority order: `vip` → `fidele` → `a_risque` → `perdu` → `nouveau`.
+`nouveau` applies only when no higher-priority segment matches — a customer with `order_count = 1` who hasn't ordered in 60+ days is classified as `perdu`, not `nouveau`.
 
 ### 2.3 New Fields on `establishments` table
 
@@ -115,7 +116,7 @@ group by c.establishment_id;
 
 ### 4.1 Integration approach
 
-- **Single Brevo account** managed by Alloflow (API key per establishment stored in `establishments.brevo_api_key`)
+- **Per-establishment Brevo account** — each establishment provides their own Brevo API key, stored in `establishments.brevo_api_key`. Alloflow does not operate a shared Brevo account.
 - **Brevo SDK** (`@getbrevo/brevo`) on the server side only
 - **Channels:** SMS · Email · WhatsApp Business (same API, different endpoints)
 - **Contact sync:** When a customer opts in, they are created/updated in Brevo with their establishment's list
@@ -155,7 +156,7 @@ POST /api/webhooks/brevo
 | `establishment_id` | uuid FK | |
 | `name` | text | e.g. "Promo Vendredi 28 mars" |
 | `type` | text | `'manual'` \| `'automated'` |
-| `trigger` | text nullable | For automated: `'birthday'` \| `'welcome'` \| `'reactivation'` \| `'lost'` \| `'google_review'` \| `'tier_upgrade'` |
+| `trigger` | text nullable | For automated: `'birthday'` \| `'welcome'` \| `'reactivation'` \| `'lost'` \| `'tier_upgrade'` (google_review uses automation_rules only) |
 | `channel` | text | `'sms'` \| `'whatsapp'` \| `'email'` |
 | `template_body` | text | Message with `{{prenom}}`, `{{points}}`, `{{lien_avis}}` variables |
 | `segment_filter` | jsonb | `{"segments": ["a_risque", "perdu"], "tags": ["vip"]}` |
@@ -219,7 +220,7 @@ POST /api/webhooks/brevo
 | `google_review` | After any paid order (with existing customer) | 1 hour |
 | `tier_upgrade` | Customer tier changes (standard→silver→gold) | Immediately |
 
-**Execution:** Supabase `pg_cron` job runs every hour, checks pending automations, calls `/api/automation/process` (internal route protected by secret header).
+**Execution:** Supabase `pg_cron` job runs every hour, calls `/api/automation/process` (internal route protected by a secret header). The processor queries `automation_rules` (active=true), evaluates trigger conditions against customers, checks `campaign_sends` to avoid duplicates (e.g., `google_review` not sent in last 90 days), then calls `/api/communications/send` for each eligible customer.
 
 ### 5.4 Template variables
 
@@ -264,8 +265,7 @@ The Google review URL is configured in `/dashboard/settings?tab=crm` (added to t
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/customers` | PATCH | Update customer (add new fields) |
-| `/api/customers/[id]` | PATCH | Update profile, tags, opt-ins |
+| `/api/customers/[id]` | PATCH | Update profile, tags, opt-ins, new fields |
 | `/api/campaigns` | GET, POST | List + create campaigns |
 | `/api/campaigns/[id]/send` | POST | Trigger send for a manual campaign |
 | `/api/automation-rules` | GET, PUT | List + upsert automation rules |
