@@ -18,7 +18,8 @@ export async function createProduct(request: APIRequestContext, overrides = {}) 
 }
 
 export async function deleteProduct(request: APIRequestContext, id: string) {
-  await request.delete(`${BASE}/api/products/${id}`)
+  const res = await request.delete(`${BASE}/api/products/${id}`)
+  if (!res.ok()) throw new Error(`deleteProduct failed: ${res.status()}`)
 }
 
 export async function createRecipe(request: APIRequestContext, overrides = {}) {
@@ -36,7 +37,8 @@ export async function createRecipe(request: APIRequestContext, overrides = {}) {
 }
 
 export async function deleteRecipe(request: APIRequestContext, id: string) {
-  await request.delete(`${BASE}/api/recipes/${id}`)
+  const res = await request.delete(`${BASE}/api/recipes/${id}`)
+  if (!res.ok()) throw new Error(`deleteRecipe failed: ${res.status()}`)
 }
 
 export async function createCashSession(request: APIRequestContext) {
@@ -51,13 +53,15 @@ export async function createCashSession(request: APIRequestContext) {
 
 export async function closeCashSession(request: APIRequestContext, id: string) {
   // PATCH only accepts closing_float; status is always set to 'closed' server-side
-  await request.patch(`${BASE}/api/cash-sessions/${id}`, {
+  const res = await request.patch(`${BASE}/api/cash-sessions/${id}`, {
     data: { closing_float: 100 },
   })
+  if (!res.ok()) throw new Error(`closeCashSession failed: ${res.status()}`)
 }
 
 export async function getRecipes(request: APIRequestContext) {
   const res  = await request.get(`${BASE}/api/recipes`)
+  if (!res.ok()) throw new Error(`getRecipes failed: ${res.status()}`)
   const json = await res.json()
   return json.recipes as Array<{
     id: string
