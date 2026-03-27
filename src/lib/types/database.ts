@@ -177,11 +177,19 @@ export interface Database {
         ]
       }
       loyalty_rewards: {
-        Row: { id: string; establishment_id: string; name: string; points_required: number; discount_type: 'percent' | 'fixed' | 'product'; discount_value: number }
-        Insert: { id?: string; establishment_id: string; name: string; points_required: number; discount_type: 'percent' | 'fixed' | 'product'; discount_value?: number }
-        Update: { id?: string; establishment_id?: string; name?: string; points_required?: number; discount_type?: 'percent' | 'fixed' | 'product'; discount_value?: number }
+        Row: { id: string; establishment_id: string; name: string; points_required: number; type: string; value: number; active: boolean }
+        Insert: { id?: string; establishment_id: string; name: string; points_required: number; type: string; value?: number; active?: boolean }
+        Update: { id?: string; establishment_id?: string; name?: string; points_required?: number; type?: string; value?: number; active?: boolean }
         Relationships: [
           { foreignKeyName: "loyalty_rewards_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: false; referencedRelation: "establishments"; referencedColumns: ["id"] }
+        ]
+      }
+      loyalty_config: {
+        Row: { id: string; establishment_id: string; active: boolean; pts_per_euro: number; signup_bonus: number; pts_validity_days: number; min_redemption_pts: number; levels: Json; created_at: string; updated_at: string }
+        Insert: { id?: string; establishment_id: string; active?: boolean; pts_per_euro?: number; signup_bonus?: number; pts_validity_days?: number; min_redemption_pts?: number; levels?: Json; created_at?: string; updated_at?: string }
+        Update: { id?: string; establishment_id?: string; active?: boolean; pts_per_euro?: number; signup_bonus?: number; pts_validity_days?: number; min_redemption_pts?: number; levels?: Json; created_at?: string; updated_at?: string }
+        Relationships: [
+          { foreignKeyName: "loyalty_config_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: true; referencedRelation: "establishments"; referencedColumns: ["id"] }
         ]
       }
       loyalty_transactions: {

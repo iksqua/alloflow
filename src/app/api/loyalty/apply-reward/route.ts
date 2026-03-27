@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   // Fetch reward
   const { data: reward, error: rErr } = await supabase
     .from('loyalty_rewards')
-    .select('discount_type, discount_value')
+    .select('type, value')
     .eq('id', reward_id)
     .single()
   if (rErr || !reward) return NextResponse.json({ error: 'Récompense non trouvée' }, { status: 404 })
@@ -41,9 +41,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const discountAmount = reward.discount_type === 'percent'
-    ? Math.round(order.total_ttc * (reward.discount_value / 100) * 100) / 100
-    : reward.discount_value
+  const discountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
+    ? Math.round(order.total_ttc * (reward.value / 100) * 100) / 100
+    : reward.value
 
   const newTotal = Math.max(0, order.total_ttc - discountAmount)
 
