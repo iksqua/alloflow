@@ -72,7 +72,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         tva_rate:         pos.tva_rate,
         category_id:      pos.category_id ?? null,
         recipe_id:        id,
-        category:         'autre',
         is_active:        true,
       })
     }

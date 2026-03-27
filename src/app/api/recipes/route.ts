@@ -105,7 +105,6 @@ export async function POST(req: NextRequest) {
         tva_rate:         pos.tva_rate,
         category_id:      pos.category_id ?? null,
         recipe_id:        recipe.id,
-        category:         'autre',  // legacy enum required — always 'autre' for recipe products
         is_active:        true,
       })
 

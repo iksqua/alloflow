@@ -4,7 +4,7 @@ import { z } from 'zod'
 export const ingredientSchema = z.object({
   id:         z.string().uuid().optional(),   // optional — omit for new ingredients
   name:       z.string().min(1).max(100),
-  quantity:   z.number().positive(),
+  quantity:   z.number().min(0.001, 'La quantité doit être supérieure à 0'),
   unit:       z.string().min(1).max(20),
   unit_cost:  z.number().min(0).default(0),
   sort_order: z.number().int().default(0),
@@ -40,7 +40,7 @@ export const updateRecipeSchema = z.object({
 
 export const createIngredientSchema = z.object({
   name:       z.string().min(1).max(100),
-  quantity:   z.number().positive(),
+  quantity:   z.number().min(0.001, 'La quantité doit être supérieure à 0'),
   unit:       z.string().min(1).max(20),
   unit_cost:  z.number().min(0).default(0),
   sort_order: z.number().int().default(0),

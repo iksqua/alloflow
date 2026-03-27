@@ -217,7 +217,10 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) {
         const j = await res.json()
-        throw new Error(j.error ?? 'Erreur serveur')
+        const msg = typeof j.error === 'string'
+          ? j.error
+          : j.error?.formErrors?.[0] ?? JSON.stringify(j.error) ?? 'Erreur serveur'
+        throw new Error(msg)
       }
       await onSave()
     } catch (err) {
