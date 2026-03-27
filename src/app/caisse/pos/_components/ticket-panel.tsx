@@ -1,5 +1,6 @@
 'use client'
-import type { LocalTicket } from '../types'
+import type { LocalTicket, LoyaltyCustomer, LoyaltyReward } from '../types'
+import { LoyaltyBadge } from './loyalty-badge'
 
 interface TicketPanelProps {
   ticket: LocalTicket
@@ -9,6 +10,11 @@ interface TicketPanelProps {
   onDiscount: () => void
   onPay: () => void
   sessionOpen: boolean
+  linkedCustomer:   LoyaltyCustomer | null
+  linkedReward:     LoyaltyReward | null
+  loyaltyDone:      boolean
+  onLoyaltyTrigger: () => void
+  onLoyaltySkip:    () => void
 }
 
 function computeTicketTotals(ticket: LocalTicket) {
@@ -37,6 +43,13 @@ function computeTicketTotals(ticket: LocalTicket) {
   return { subtotalHt, discountAmount, total }
 }
 
+function computeLoyaltyDiscount(reward: LoyaltyReward | null, total: number): number {
+  if (!reward) return 0
+  return reward.discount_type === 'percent'
+    ? Math.round(total * (reward.discount_value / 100) * 100) / 100
+    : reward.discount_value
+}
+
 export function TicketPanel({
   ticket,
   onUpdateQuantity,
@@ -45,9 +58,16 @@ export function TicketPanel({
   onDiscount,
   onPay,
   sessionOpen,
+  linkedCustomer,
+  linkedReward,
+  loyaltyDone,
+  onLoyaltyTrigger,
+  onLoyaltySkip,
 }: TicketPanelProps) {
   const { subtotalHt, discountAmount, total } = computeTicketTotals(ticket)
   const isEmpty = ticket.items.length === 0
+  const loyaltyDiscountAmount = loyaltyDone ? computeLoyaltyDiscount(linkedReward, total) : 0
+  const finalTotal = Math.max(0, total - loyaltyDiscountAmount)
 
   return (
     <div
@@ -139,9 +159,15 @@ export function TicketPanel({
                   <span className="tabular-nums">−{discountAmount.toFixed(2).replace('.', ',')} €</span>
                 </div>
               )}
+              {loyaltyDone && loyaltyDiscountAmount > 0 && linkedReward && (
+                <div className="flex justify-between text-[var(--green)]">
+                  <span>🎁 {linkedReward.name}</span>
+                  <span className="tabular-nums">−{loyaltyDiscountAmount.toFixed(2).replace('.', ',')} €</span>
+                </div>
+              )}
               <div className="flex justify-between text-[var(--text1)] font-bold text-base pt-1 border-t border-[var(--border)]">
                 <span>Total TTC</span>
-                <span className="tabular-nums">{total.toFixed(2).replace('.', ',')} €</span>
+                <span className="tabular-nums">{finalTotal.toFixed(2).replace('.', ',')} €</span>
               </div>
             </div>
 
@@ -151,17 +177,53 @@ export function TicketPanel({
             >
               Appliquer une remise
             </button>
+
+            {/* Loyalty Badge — shown after identification */}
+            {loyaltyDone && linkedCustomer && (
+              <LoyaltyBadge
+                customer={linkedCustomer}
+                reward={linkedReward}
+                orderTotal={total}
+              />
+            )}
           </>
         )}
 
-        <button
-          onClick={onPay}
-          disabled={isEmpty}
-          className="w-full h-12 rounded-xl text-base font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
-          style={{ background: isEmpty ? 'var(--border)' : 'var(--green)' }}
-        >
-          {!sessionOpen ? 'Ouvrir la session' : isEmpty ? 'Ticket vide' : `Encaisser ${total.toFixed(2).replace('.', ',')} €`}
-        </button>
+        {/* Loyalty Trigger OR Encaisser */}
+        {!isEmpty && !loyaltyDone ? (
+          <div className="space-y-2">
+            <button
+              onClick={onLoyaltyTrigger}
+              disabled={!sessionOpen}
+              className="w-full h-12 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
+              style={{ background: '#d97706' }}
+            >
+              🎁 Identifier le client →
+            </button>
+            <div className="text-center">
+              <button
+                onClick={onLoyaltySkip}
+                disabled={!sessionOpen}
+                className="text-xs text-[var(--text4)] hover:text-[var(--text2)] disabled:opacity-30"
+              >
+                Passer sans fidélité
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={onPay}
+            disabled={isEmpty || !sessionOpen}
+            className="w-full h-12 rounded-xl text-base font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
+            style={{ background: isEmpty ? 'var(--border)' : 'var(--green)' }}
+          >
+            {!sessionOpen
+              ? 'Ouvrir la session'
+              : isEmpty
+                ? 'Ticket vide'
+                : `Encaisser ${finalTotal.toFixed(2).replace('.', ',')} €`}
+          </button>
+        )}
       </div>
     </div>
   )
