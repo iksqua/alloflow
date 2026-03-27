@@ -55,10 +55,16 @@ export function ReceiveDeliveryModal({ open, order, onClose, onSave }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--border)] p-6" style={{ background: 'var(--surface)' }}>
-        <h2 className="text-base font-bold text-[var(--text1)] mb-1">Réception livraison</h2>
-        <p className="text-xs text-[var(--text4)] mb-5">{order.order_ref} · {order.supplier}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style={{ background: 'var(--overlay-bg)' }}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-[var(--border)] p-6" style={{ background: 'var(--surface)' }}>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h2 className="text-base font-bold text-[var(--text1)]">Réception livraison</h2>
+            <p className="text-xs text-[var(--text3)] mt-0.5">{order.order_ref} · {order.supplier}</p>
+          </div>
+          <button onClick={onClose} className="text-lg text-[var(--text3)] hover:text-[var(--text1)] transition-colors cursor-pointer">✕</button>
+        </div>
         <form onSubmit={handleSubmit}>
           <div className="rounded-lg border border-[var(--border)] overflow-hidden mb-4">
             <table className="w-full text-sm">
@@ -88,7 +94,8 @@ export function ReceiveDeliveryModal({ open, order, onClose, onSave }: Props) {
                           min="0"
                           value={quantities[item.id] ?? ''}
                           onChange={e => setQuantities(prev => ({ ...prev, [item.id]: e.target.value }))}
-                          className="w-20 px-2 py-1 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-xs text-right"
+                          className="w-20 px-2 py-1 rounded border border-[var(--border)] text-[var(--text2)] text-xs text-right focus:outline-none focus:border-[var(--blue)] transition-colors"
+                          style={{ background: 'var(--surface2)' }}
                         />
                       </td>
                       <td className={`px-3 py-2 text-right text-xs font-semibold ${
@@ -104,11 +111,11 @@ export function ReceiveDeliveryModal({ open, order, onClose, onSave }: Props) {
           </div>
 
           {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
-          <div className="flex gap-2">
+          <div className="flex gap-3 mt-6 pt-5 border-t border-[var(--border)]">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-[var(--border)] text-sm text-[var(--text3)]">Annuler</button>
+              className="flex-1 px-4 py-2 rounded-lg border border-[var(--border)] text-sm font-medium text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors">Annuler</button>
             <button type="submit" disabled={loading}
-              className="flex-2 px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+              className="flex-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
               style={{ background: 'var(--blue)' }}>
               {loading ? 'Enregistrement...' : '✓ Confirmer réception'}
             </button>

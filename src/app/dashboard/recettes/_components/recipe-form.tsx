@@ -134,43 +134,54 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--border)] p-6" style={{ background: 'var(--surface)' }}>
-        <h2 className="text-base font-bold text-[var(--text1)] mb-5">
-          {recipe ? 'Modifier la recette' : 'Nouvelle recette'}
-        </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style={{ background: 'var(--overlay-bg)' }}>
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-[var(--border)] p-6" style={{ background: 'var(--surface)' }}>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h2 className="text-base font-bold text-[var(--text1)]">
+              {recipe ? 'Modifier la recette' : 'Nouvelle recette'}
+            </h2>
+            <p className="text-xs text-[var(--text3)] mt-0.5">Saisissez les informations de la recette</p>
+          </div>
+          <button onClick={onClose} className="text-lg text-[var(--text3)] hover:text-[var(--text1)] transition-colors cursor-pointer">✕</button>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Informations générales */}
           <div>
-            <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Nom de la recette *</label>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Nom de la recette *</label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Cookie chocolat"
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm" />
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text1)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+              style={{ background: 'var(--surface2)' }} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Catégorie recette</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Catégorie recette</label>
               <input value={category} onChange={e => setCategory(e.target.value)} placeholder="Pâtisserie, Boisson..."
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm" />
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text1)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                style={{ background: 'var(--surface2)' }} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Portion</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Portion</label>
               <input value={portion} onChange={e => setPortion(e.target.value)} placeholder="8 portions"
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm" />
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text1)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                style={{ background: 'var(--surface2)' }} />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Description</label>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2}
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm resize-none" />
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text1)] text-sm resize-none focus:outline-none focus:border-[var(--blue)] transition-colors"
+              style={{ background: 'var(--surface2)' }} />
           </div>
 
           {/* Ingrédients */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Ingrédients</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Ingrédients</label>
               <button type="button" onClick={addIngredient}
                 className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
                 + Ajouter
@@ -186,17 +197,21 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
                 <div key={idx} className="grid grid-cols-[1fr_80px_80px_80px_28px] gap-1.5 items-center">
                   <input value={ing.name} onChange={e => updateIngredient(idx, 'name', e.target.value)}
                     placeholder="Farine T55"
-                    className="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-xs" />
+                    className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }} />
                   <input type="number" step="0.001" value={ing.quantity} onChange={e => updateIngredient(idx, 'quantity', e.target.value)}
                     placeholder="Qté"
-                    className="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-xs text-right" />
+                    className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs text-right focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }} />
                   <select value={ing.unit} onChange={e => updateIngredient(idx, 'unit', e.target.value)}
-                    className="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-xs">
+                    className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }}>
                     {UNITS.map(u => <option key={u}>{u}</option>)}
                   </select>
                   <input type="number" step="0.001" value={ing.unit_cost} onChange={e => updateIngredient(idx, 'unit_cost', e.target.value)}
                     placeholder="0,00 €"
-                    className="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-xs text-right" />
+                    className="px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text1)] text-xs text-right focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }} />
                   <button type="button" onClick={() => removeIngredient(idx)}
                     className="text-red-500/60 hover:text-red-400 text-sm font-bold text-center">×</button>
                 </div>
@@ -230,26 +245,29 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
               <div className="mt-4 space-y-3 border-t border-[var(--border)] pt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Prix de vente TTC *</label>
-                    <div className="relative mt-1">
+                    <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Prix de vente TTC *</label>
+                    <div className="relative">
                       <input type="number" step="0.01" value={posPrice} onChange={e => setPosPrice(e.target.value)}
                         placeholder="4,50"
-                        className="w-full px-3 py-2 pr-7 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-sm" />
+                        className="w-full px-3 py-2 pr-7 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                        style={{ background: 'var(--surface2)' }} />
                       <span className="absolute right-3 top-2.5 text-xs text-[var(--text4)]">€</span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">TVA</label>
+                    <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">TVA</label>
                     <select value={posTva} onChange={e => setPosTva(parseFloat(e.target.value))}
-                      className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-sm">
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                      style={{ background: 'var(--surface2)' }}>
                       {TVA_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Catégorie caisse</label>
+                  <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Catégorie caisse</label>
                   <select value={posCatId} onChange={e => setPosCatId(e.target.value)}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-sm">
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }}>
                     <option value="">— Aucune catégorie —</option>
                     {categories.map(c => (
                       <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
@@ -267,11 +285,11 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-3 mt-6 pt-5 border-t border-[var(--border)]">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-[var(--border)] text-sm text-[var(--text3)]">Annuler</button>
+              className="flex-1 px-4 py-2 rounded-lg border border-[var(--border)] text-sm font-medium text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors">Annuler</button>
             <button type="submit" disabled={loading}
-              className="flex-2 px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+              className="flex-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
               style={{ background: 'var(--blue)' }}>
               {loading ? 'Enregistrement...' : 'Enregistrer'}
             </button>

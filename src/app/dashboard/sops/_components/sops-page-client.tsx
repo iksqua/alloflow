@@ -66,7 +66,7 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
   }
 
   return (
-    <div style={{ paddingLeft: '220px', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div>
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

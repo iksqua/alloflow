@@ -1,6 +1,6 @@
 export interface RecipeIngredient {
   id: string
-  recipe_id: string
+  recipe_id?: string
   name: string
   quantity: number
   unit: string

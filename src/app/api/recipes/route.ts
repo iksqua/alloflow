@@ -39,7 +39,7 @@ export async function GET(_req: NextRequest) {
       (sum: number, i: { quantity: number; unit_cost: number }) => sum + i.quantity * i.unit_cost,
       0
     )
-    const price = r.product?.price ?? null
+    const price = r.product?.[0]?.price ?? null
     const foodCostPct = price && price > 0
       ? Math.round((foodCostAmount / price) * 1000) / 10  // one decimal
       : null

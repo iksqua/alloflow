@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: payments } = await supabase
     .from('payments')
-    .insert(paymentsToInsert)
+    .insert(paymentsToInsert as { order_id: string; method: 'card' | 'cash' | 'ticket_resto'; amount: number; cash_given: number | null; change_due: number | null }[])
     .select()
 
   // Libérer la table

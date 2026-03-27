@@ -137,23 +137,32 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--border)] p-6" style={{ background: 'var(--surface)' }}>
-        <h2 className="text-base font-bold text-[var(--text1)] mb-5">{sop ? 'Modifier le SOP' : 'Nouveau SOP'}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style={{ background: 'var(--overlay-bg)' }}>
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-[var(--border)] p-6" style={{ background: 'var(--surface)' }}>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h2 className="text-base font-bold text-[var(--text1)]">{sop ? 'Modifier le SOP' : 'Nouveau SOP'}</h2>
+            <p className="text-xs text-[var(--text3)] mt-0.5">Saisissez les informations et les étapes de la procédure</p>
+          </div>
+          <button onClick={onClose} className="text-lg text-[var(--text3)] hover:text-[var(--text1)] transition-colors cursor-pointer">✕</button>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* General info */}
           <div>
-            <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Titre *</label>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Titre *</label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Nettoyage de la salle"
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm" />
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+              style={{ background: 'var(--surface2)' }} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Catégorie</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Catégorie</label>
               <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm">
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                style={{ background: 'var(--surface2)' }}>
                 <option value="">— Aucune —</option>
                 {categories.map(c => (
                   <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
@@ -161,9 +170,10 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Recette liée</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Recette liée</label>
               <select value={recipeId} onChange={e => setRecipeId(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm">
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                style={{ background: 'var(--surface2)' }}>
                 <option value="">— Aucune recette —</option>
                 {recipes.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
               </select>
@@ -171,15 +181,16 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Notes générales</label>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Notes générales</label>
             <textarea value={content} onChange={e => setContent(e.target.value)} rows={2}
-              className="mt-1 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm resize-none" />
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm resize-none focus:outline-none focus:border-[var(--blue)] transition-colors"
+              style={{ background: 'var(--surface2)' }} />
           </div>
 
           {/* Steps */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Étapes</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Étapes</label>
               <button type="button" onClick={addStep}
                 className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>+ Ajouter une étape</button>
             </div>
@@ -197,7 +208,8 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
                     <span className="text-xs font-bold text-[var(--text4)] w-5">{idx + 1}</span>
                     <input value={step.title} onChange={e => updateStep(idx, 'title', e.target.value)}
                       placeholder="Titre de l'étape"
-                      className="flex-1 px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-xs" />
+                      className="flex-1 px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text2)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                      style={{ background: 'var(--surface2)' }} />
                     <div className="flex gap-1">
                       <button type="button" onClick={() => moveStep(idx, -1)} disabled={idx === 0}
                         className="text-xs text-[var(--text4)] disabled:opacity-30 px-1">↑</button>
@@ -210,19 +222,22 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
 
                   <textarea value={step.description} onChange={e => updateStep(idx, 'description', e.target.value)}
                     placeholder="Description détaillée de l'étape" rows={2}
-                    className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-xs resize-none" />
+                    className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text2)] text-xs resize-none focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }} />
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[10px] text-[var(--text4)]">Timer (secondes)</label>
                       <input type="number" value={step.duration_seconds} onChange={e => updateStep(idx, 'duration_seconds', e.target.value)}
                         placeholder="ex: 180 = 3 min"
-                        className="mt-0.5 w-full px-2 py-1 rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-xs" />
+                        className="mt-0.5 w-full px-2 py-1 rounded-md border border-[var(--border)] text-[var(--text2)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                        style={{ background: 'var(--surface2)' }} />
                     </div>
                     <div>
                       <label className="text-[10px] text-[var(--text4)]">Note</label>
                       <select value={step.note_type} onChange={e => updateStep(idx, 'note_type', e.target.value)}
-                        className="mt-0.5 w-full px-2 py-1 rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-xs">
+                        className="mt-0.5 w-full px-2 py-1 rounded-md border border-[var(--border)] text-[var(--text2)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                        style={{ background: 'var(--surface2)' }}>
                         <option value="">— Aucune —</option>
                         <option value="tip">💡 Conseil</option>
                         <option value="warning">⚠️ Attention</option>
@@ -233,12 +248,14 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
                   {step.note_type && (
                     <input value={step.note_text} onChange={e => updateStep(idx, 'note_text', e.target.value)}
                       placeholder="Texte de la note"
-                      className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text1)] text-xs" />
+                      className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text2)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                      style={{ background: 'var(--surface2)' }} />
                   )}
 
                   <input value={step.media_url} onChange={e => updateStep(idx, 'media_url', e.target.value)}
                     placeholder="URL vidéo YouTube/Vimeo (optionnel)"
-                    className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] text-[var(--text2)] text-xs" />
+                    className="w-full px-2 py-1.5 rounded-md border border-[var(--border)] text-[var(--text2)] text-xs focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }} />
                 </div>
               ))}
             </div>
@@ -246,11 +263,11 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-3 mt-6 pt-5 border-t border-[var(--border)]">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-[var(--border)] text-sm text-[var(--text3)]">Annuler</button>
+              className="flex-1 px-4 py-2 rounded-lg border border-[var(--border)] text-sm font-medium text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors">Annuler</button>
             <button type="submit" disabled={loading}
-              className="flex-2 px-6 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+              className="flex-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
               style={{ background: 'var(--blue)' }}>
               {loading ? 'Enregistrement...' : 'Enregistrer'}
             </button>

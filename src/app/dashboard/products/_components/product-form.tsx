@@ -97,7 +97,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Emoji + Nom */}
           <div>
-            <label className="block text-xs font-medium text-[var(--text3)] mb-1.5">Nom du produit *</label>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Nom du produit *</label>
             <div className="flex gap-2">
               <div className="relative">
                 <input
@@ -134,7 +134,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
 
           {/* Catégorie */}
           <div>
-            <label className="block text-xs font-medium text-[var(--text3)] mb-1.5">Catégorie</label>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Catégorie</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
@@ -152,7 +152,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-[var(--text3)] mb-1.5">Description</label>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -166,7 +166,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
           {/* Prix + TVA */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[var(--text3)] mb-1.5">Prix TTC (€) *</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Prix TTC (€) *</label>
               <input
                 type="number"
                 value={price}
@@ -180,7 +180,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--text3)] mb-1.5">Taux TVA *</label>
+              <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Taux TVA *</label>
               <select
                 value={tvaRate}
                 onChange={(e) => setTvaRate(parseFloat(e.target.value) as 5.5 | 10 | 20)}
