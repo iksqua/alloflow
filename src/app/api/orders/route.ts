@@ -4,16 +4,19 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const createOrderSchema = z.object({
-  session_id: z.string().uuid().optional(),
-  table_id: z.string().uuid().optional(),
+  session_id:  z.string().uuid().optional(),
+  table_id:    z.string().uuid().optional(),
+  customer_id: z.string().uuid().optional(),
+  reward_id:   z.string().uuid().optional(),
+  reward_discount_amount: z.number().min(0).optional(),
   items: z.array(z.object({
-    product_id: z.string().uuid(),
+    product_id:   z.string().uuid(),
     product_name: z.string(),
-    emoji: z.string().nullable().optional(),
-    unit_price: z.number().positive(),   // HT
-    tva_rate: z.union([z.literal(5.5), z.literal(10), z.literal(20)]),
-    quantity: z.number().int().positive(),
-    note: z.string().optional(),
+    emoji:        z.string().nullable().optional(),
+    unit_price:   z.number().positive(),   // HT
+    tva_rate:     z.union([z.literal(5.5), z.literal(10), z.literal(20)]),
+    quantity:     z.number().int().positive(),
+    note:         z.string().optional(),
   })).min(1, 'Au moins un article requis'),
 })
 
@@ -61,14 +64,17 @@ export async function POST(req: NextRequest) {
     .from('orders')
     .insert({
       establishment_id: profile.establishment_id,
-      session_id: session_id ?? null,
-      table_id: table_id ?? null,
-      cashier_id: user.id,
-      subtotal_ht: subtotalHt,
-      tax_5_5: tax55,
-      tax_10: tax10,
-      tax_20: tax20,
-      total_ttc: totalTtc,
+      session_id:       session_id ?? null,
+      table_id:         table_id ?? null,
+      cashier_id:       user.id,
+      customer_id:      parsed.data.customer_id ?? null,
+      reward_id:        parsed.data.reward_id ?? null,
+      discount_amount:  parsed.data.reward_discount_amount ?? 0,
+      subtotal_ht:      subtotalHt,
+      tax_5_5:          tax55,
+      tax_10:           tax10,
+      tax_20:           tax20,
+      total_ttc:        Math.max(0, totalTtc - (parsed.data.reward_discount_amount ?? 0)),
     })
     .select()
     .single()

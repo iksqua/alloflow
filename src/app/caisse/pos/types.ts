@@ -82,3 +82,22 @@ export interface LocalItem {
 }
 
 export type PaymentMode = 'card' | 'cash' | 'split'
+
+// Loyalty types (Sprint 6)
+export interface LoyaltyCustomer {
+  id: string
+  first_name: string
+  last_name: string | null
+  phone: string | null
+  email: string | null
+  points: number
+  tier: 'standard' | 'silver' | 'gold'
+}
+
+export interface LoyaltyReward {
+  id: string
+  name: string
+  points_required: number
+  discount_type: 'percent' | 'fixed'
+  discount_value: number
+}
