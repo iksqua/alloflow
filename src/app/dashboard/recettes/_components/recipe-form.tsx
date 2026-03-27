@@ -188,6 +188,8 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
     e.preventDefault()
     if (!title.trim()) { setError('Le nom est requis'); return }
     if (!isInternal && !posPrice) { setError('Le prix de vente est requis'); return }
+    const badQty = ingredients.find(ing => ing.name.trim() && !(parseFloat(ing.quantity) > 0))
+    if (badQty) { setError(`La quantité de "${badQty.name}" doit être supérieure à 0`); return }
 
     setLoading(true); setError(null)
     try {
@@ -202,7 +204,7 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
           .map((ing, idx) => ({
             ...(ing.id ? { id: ing.id } : {}),
             name:       ing.name.trim(),
-            quantity:   parseFloat(ing.quantity) || 0,
+            quantity:   parseFloat(ing.quantity),
             unit:       ing.unit,
             unit_cost:  parseFloat(ing.unit_cost) || 0,
             sort_order: idx,

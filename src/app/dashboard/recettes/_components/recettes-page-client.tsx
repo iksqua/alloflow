@@ -59,9 +59,15 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
   const alertCount  = recipes.filter(r => (r.food_cost_pct ?? 0) > 35).length
 
   async function reload() {
-    const res  = await fetch('/api/recipes')
-    const json = await res.json()
-    setRecipes(json.recipes ?? [])
+    const res   = await fetch('/api/recipes')
+    const json  = await res.json()
+    const fresh: Recipe[] = json.recipes ?? []
+    setRecipes(fresh)
+    // Keep editingRecipe in sync so the form always shows fresh data
+    setEditingRecipe(prev => {
+      if (!prev) return prev
+      return fresh.find(r => r.id === prev.id) ?? prev
+    })
   }
 
   async function handleDelete(id: string) {
