@@ -57,7 +57,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
         name: name.trim(),
         emoji: emoji.trim() || null,
         description: description.trim() || null,
-        price: parseFloat(priceHt as string),
+        price: priceTtc,
         tva_rate: tvaRate,
         category_id: categoryId || null,
         is_active: isActive,
