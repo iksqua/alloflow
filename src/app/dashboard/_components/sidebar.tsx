@@ -3,7 +3,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 
-const NAV_ITEMS = [
+interface NavItem {
+  href: string
+  label: string
+  icon: string
+  disabled?: boolean
+  exact?: boolean
+  subItems?: { href: string; label: string; exact?: boolean }[]
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', exact: true },
   { href: '/dashboard/products', label: 'Produits', icon: '🍽️' },
   { href: '/dashboard/orders', label: 'Commandes', icon: '📋', disabled: true },
@@ -14,9 +23,9 @@ const NAV_ITEMS = [
   {
     href: '/dashboard/analytics',
     label: 'Analytics',
-    icon: '📊',
+    icon: '📈',
     subItems: [
-      { href: '/dashboard/analytics', label: 'Vue d\'ensemble', exact: true },
+      { href: '/dashboard/analytics', label: "Vue d'ensemble", exact: true },
       { href: '/dashboard/analytics/report', label: 'Rapport ventes' },
     ],
   },
@@ -107,7 +116,7 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
               ? pathname === item.href
               : pathname.startsWith(item.href)
 
-            if ((item as { disabled?: boolean }).disabled) {
+            if (item.disabled) {
               return (
                 <div
                   key={item.href}
@@ -123,13 +132,14 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
               )
             }
 
-            if ((item as { subItems?: { href: string; label: string; exact?: boolean }[] }).subItems) {
-              const subItems = (item as { subItems: { href: string; label: string; exact?: boolean }[] }).subItems
+            if (item.subItems) {
+              const subItems = item.subItems
+              const subTitles = subItems.map((s) => s.label).join(', ')
               return (
                 <div key={item.href}>
                   <Link
                     href={item.href}
-                    title={item.label}
+                    title={`${item.label}: ${subTitles}`}
                     onClick={() => setMobileOpen(false)}
                     className={[
                       'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
