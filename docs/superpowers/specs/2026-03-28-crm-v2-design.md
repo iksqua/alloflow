@@ -286,7 +286,38 @@ The Google review URL is configured in `/dashboard/settings?tab=crm` (added to t
 
 ---
 
-## 9. Sidebar Navigation
+## 9. Admin Self-Service Setup (per establishment)
+
+All CRM communication settings are configured **by the establishment admin themselves** from the dashboard — no Alloflow intervention required. This applies to every establishment they manage.
+
+### 9.1 Settings page — CRM tab (`/dashboard/settings?tab=crm`)
+
+A dedicated CRM configuration section is added to the existing settings page (Sprint 9 / Settings sprint). Admins can configure:
+
+| Setting | Field | Notes |
+|---|---|---|
+| Clé API Brevo | `brevo_api_key` | Masked after save · "Tester la connexion" button |
+| Nom expéditeur SMS | `brevo_sender_name` | Max 11 chars alphanumeric |
+| Numéro WhatsApp | `brevo_sender_phone` | E.164 format |
+| Lien avis Google | `google_review_url` | Paste from Google Business dashboard |
+
+### 9.2 First-time setup flow
+
+When an admin accesses `/dashboard/crm/campagnes` or `/dashboard/crm/analytics` for the first time without Brevo configured, a **setup banner** is shown:
+
+> "📡 Configurez votre compte Brevo pour activer les campagnes SMS et WhatsApp → [Paramètres CRM]"
+
+When the `google_review` automation is enabled without a review URL, the automation rule page shows an inline warning:
+
+> "⚠ Ajoutez votre lien Google Business dans les paramètres pour activer cette automation → [Paramètres]"
+
+### 9.3 Multi-establishment support
+
+Each `establishment` row stores its own `brevo_api_key` and `google_review_url` independently. An admin who manages multiple establishments configures each one separately via the establishment switcher (already in sidebar). Settings are always scoped to the current active establishment.
+
+---
+
+## 10. Sidebar Navigation
 
 Add under CRM section:
 - **CRM** (existing) → client list
@@ -296,7 +327,7 @@ Add under CRM section:
 
 ---
 
-## 10. Out of Scope (v2)
+## 12. Out of Scope (v2)
 
 - WhatsApp 2-way inbox (inbound message management) → future sprint
 - Advanced campaign A/B testing
@@ -307,13 +338,14 @@ Add under CRM section:
 
 ---
 
-## 11. Implementation Order (suggested sprint split)
+## 13. Implementation Order (suggested sprint split)
 
 **Sprint 9A — Foundation:**
 - DB migrations (new columns, RFM trigger, pg_cron job)
 - Customer profile enrichment (form updates)
+- Settings page CRM tab (Brevo key + sender name + Google review URL) — self-service per establishment
 - Brevo SDK integration + `/api/communications/send`
-- Automation rules config page
+- Automation rules config page (with setup banners for unconfigured establishments)
 
 **Sprint 9B — Campaigns + Analytics:**
 - Persona analytics dashboard
