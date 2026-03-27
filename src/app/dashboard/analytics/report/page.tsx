@@ -1,0 +1,161 @@
+import { Suspense } from 'react'
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import {
+  getPeriodRange,
+  fetchOrdersForReport,
+  fetchKpiSummary,
+  fetchTvaBreakdown,
+} from '@/lib/analytics/queries'
+import type { Period } from '@/lib/analytics/types'
+import { PeriodPicker } from '../_components/period-picker'
+import { ReportTable } from './_components/report-table'
+import { TvaSummary } from './_components/tva-summary'
+
+export default async function ReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string; site?: string; page?: string }>
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const params = await searchParams
+  const period = (params.period ?? '30d') as Period
+  const siteId = params.site || undefined
+  const page = parseInt(params.page ?? '1', 10)
+  const range = getPeriodRange(period)
+
+  // Fetch establishments for PeriodPicker
+  const { data: establishments } = await supabase
+    .from('establishments')
+    .select('id, name')
+    .order('name')
+
+  const establishmentList = (establishments ?? []) as { id: string; name: string }[]
+
+  // Fetch orders, KPI and TVA breakdown in parallel
+  const [{ rows, total }, kpi, tvaBreakdown] = await Promise.all([
+    fetchOrdersForReport(range, siteId, page, 50),
+    fetchKpiSummary(range, siteId),
+    fetchTvaBreakdown(range, siteId),
+  ])
+
+  const totalHt  = rows.reduce((s, r) => s + r.amountHt, 0)
+  const totalTva = rows.reduce((s, r) => s + r.tvaAmount, 0)
+  const totalTtc = rows.reduce((s, r) => s + r.amountTtc, 0)
+
+  return (
+    <div className="flex flex-col min-h-0 flex-1">
+      {/* Topbar */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold text-[var(--text1)]">Rapport des ventes</h1>
+        <Suspense fallback={<div className="h-7" />}>
+          <PeriodPicker
+            currentPeriod={period}
+            establishments={establishmentList}
+            currentEstablishment={siteId}
+          />
+        </Suspense>
+      </div>
+
+      {/* Main layout */}
+      <div className="flex gap-5 min-h-0 flex-1">
+        {/* Left column */}
+        <div className="flex flex-col flex-1 gap-4 min-w-0">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-slate-500">
+            <Link href="/dashboard/analytics" className="text-blue-400 hover:underline">
+              Analytics
+            </Link>
+            <span>›</span>
+            <span className="text-slate-400">Rapport des ventes</span>
+          </nav>
+
+          {/* Sortable transactions table */}
+          <ReportTable
+            rows={rows}
+            total={total}
+            tvaBreakdown={tvaBreakdown}
+            totalHt={totalHt}
+            totalTva={totalTva}
+            totalTtc={totalTtc}
+          />
+        </div>
+
+        {/* Right column */}
+        <div className="flex flex-col gap-4 w-[240px] shrink-0">
+          {/* TVA Summary */}
+          <TvaSummary data={tvaBreakdown} />
+
+          {/* Payment split card */}
+          <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px]">
+            <h3 className="text-sm font-semibold text-slate-200 mb-4">Répartition paiements</h3>
+
+            <div className="flex flex-col gap-3">
+              {/* Carte */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs text-blue-400 font-semibold">
+                    💳 Carte
+                  </span>
+                  <span className="text-xs text-slate-300 tabular-nums font-semibold">
+                    {kpi.cardAmount.toFixed(2)} €
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-blue-400 transition-all"
+                      style={{ width: `${kpi.cardPct}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-500 w-8 text-right tabular-nums">
+                    {kpi.cardPct} %
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-px bg-white/[0.04]" />
+
+              {/* Espèces */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
+                    💵 Espèces
+                  </span>
+                  <span className="text-xs text-slate-300 tabular-nums font-semibold">
+                    {kpi.cashAmount.toFixed(2)} €
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-amber-400 transition-all"
+                      style={{ width: `${kpi.cashPct}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-500 w-8 text-right tabular-nums">
+                    {kpi.cashPct} %
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-px bg-white/[0.04]" />
+
+              {/* Total TTC */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider">Total TTC</span>
+                <span className="text-sm text-blue-400 font-bold tabular-nums">
+                  {kpi.caTtc.toFixed(2)} €
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
