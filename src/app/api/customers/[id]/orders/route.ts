@@ -45,13 +45,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   // For each order, look up earn transactions
   const orderIds: string[] = (orders ?? []).map((o: { id: string }) => o.id)
 
+  if (orderIds.length === 0) return NextResponse.json({ orders: [] })
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: earnTxs } = await (supabase as any)
     .from('loyalty_transactions')
     .select('order_id, points')
     .eq('customer_id', id)
     .eq('type', 'earn')
-    .in('order_id', orderIds.length > 0 ? orderIds : ['__none__'])
+    .in('order_id', orderIds)
 
   const earnByOrderId: Record<string, number> = {}
   for (const tx of earnTxs ?? []) {

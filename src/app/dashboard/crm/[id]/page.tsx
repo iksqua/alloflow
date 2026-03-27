@@ -5,6 +5,7 @@ import { CustomerProfile } from './_components/customer-profile'
 import { CustomerOrderHistory } from './_components/customer-order-history'
 import { CustomerNotes } from './_components/customer-notes'
 import { CustomerLoyaltyPanel } from './_components/customer-loyalty-panel'
+import { fetchCustomerOrders } from './_lib/fetch-customer-orders'
 
 interface Order {
   id: string
@@ -52,7 +53,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const supabaseAny = supabase as any
   const [
     { data: customer },
-    { data: ordersData },
+    rawOrders,
     { data: transactionsData },
     { data: rewardsData },
   ] = await Promise.all([
@@ -62,16 +63,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       .eq('id', id)
       .eq('establishment_id', establishmentId)
       .single(),
-    supabaseAny
-      .from('orders')
-      .select(`
-        id, created_at, total_ttc, payment_method,
-        order_items ( quantity, products ( name ) )
-      `)
-      .eq('customer_id', id)
-      .eq('status', 'paid')
-      .order('created_at', { ascending: false })
-      .limit(20),
+    fetchCustomerOrders(id),
     supabaseAny
       .from('loyalty_transactions')
       .select('id, type, points, created_at, order_id')
@@ -88,31 +80,13 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   if (!customer) notFound()
 
-  // Fetch earn transactions for orders to compute points_earned
-  const orderIds: string[] = (ordersData ?? []).map((o: { id: string }) => o.id)
-  const { data: earnTxs } = await supabaseAny
-    .from('loyalty_transactions')
-    .select('order_id, points')
-    .eq('customer_id', id)
-    .eq('type', 'earn')
-    .in('order_id', orderIds.length > 0 ? orderIds : ['__none__'])
-
-  const earnByOrderId: Record<string, number> = {}
-  for (const tx of earnTxs ?? []) {
-    if (tx.order_id) earnByOrderId[tx.order_id] = (earnByOrderId[tx.order_id] ?? 0) + tx.points
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orders: Order[] = (ordersData ?? []).map((o: any) => ({
+  const orders: Order[] = rawOrders.map((o) => ({
     id: o.id,
-    created_at: o.created_at,
-    total_ttc: o.total_ttc ?? 0,
-    payment_method: o.payment_method ?? null,
-    items: (o.order_items ?? []).map((item: { quantity: number; products: { name: string } | null }) => ({
-      name: item.products?.name ?? 'Produit inconnu',
-      quantity: item.quantity,
-    })),
-    points_earned: earnByOrderId[o.id] ?? Math.floor(o.total_ttc ?? 0),
+    created_at: o.createdAt,
+    total_ttc: o.totalTtc,
+    payment_method: o.paymentMethod,
+    items: o.items,
+    points_earned: o.pointsEarned,
   }))
 
   const transactions: LoyaltyTransaction[] = (transactionsData ?? []) as LoyaltyTransaction[]

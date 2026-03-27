@@ -1,6 +1,5 @@
 'use client'
 // src/app/dashboard/crm/[id]/_components/customer-loyalty-panel.tsx
-import { useState } from 'react'
 
 interface Customer {
   id: string
@@ -49,18 +48,10 @@ function formatDiscountType(type: string, value: number) {
 }
 
 export function CustomerLoyaltyPanel({ customer, transactions, rewards }: Props) {
-  const [qrToast, setQrToast] = useState(false)
-
   const threshold = TIER_THRESHOLDS[customer.tier]
   const progressPct = customer.tier === 'gold'
     ? 100
     : Math.min(100, Math.round((customer.points / threshold.target) * 100))
-
-  function handleSendQr(channel: 'sms' | 'email') {
-    void channel
-    setQrToast(true)
-    setTimeout(() => setQrToast(false), 3000)
-  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -94,23 +85,20 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards }: Props)
           <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-2">Envoyer le QR code</p>
           <div className="flex gap-2">
             <button
-              onClick={() => handleSendQr('sms')}
-              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-[var(--text2)] hover:bg-white/[0.04] transition-colors"
+              disabled
+              title="Bientôt disponible"
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-[var(--text2)] opacity-50 cursor-not-allowed"
             >
               📱 SMS
             </button>
             <button
-              onClick={() => handleSendQr('email')}
-              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-[var(--text2)] hover:bg-white/[0.04] transition-colors"
+              disabled
+              title="Bientôt disponible"
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-[var(--text2)] opacity-50 cursor-not-allowed"
             >
               ✉ Email
             </button>
           </div>
-          {qrToast && (
-            <p className="mt-2 text-xs text-[var(--text3)] text-center">
-              Fonctionnalité bientôt disponible
-            </p>
-          )}
         </div>
       </div>
 
