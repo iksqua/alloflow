@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Analytics Multi-sites</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+.layout { display: flex; min-height: 100vh; background: #0a1628; color: #f1f5f9; }
+.sidebar { width: 220px; background: #0f2744; border-right: 1px solid rgba(255,255,255,0.06); padding: 20px 12px; flex-shrink: 0; }
+.logo { font-size: 15px; font-weight: 800; color: #f1f5f9; margin-bottom: 28px; padding: 0 8px; }
+.nav-section { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: .1em; padding: 0 8px; margin: 16px 0 6px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #94a3b8; margin-bottom: 2px; cursor: pointer; }
+.nav-item.active { background: rgba(59,130,246,0.12); color: #60a5fa; }
+.nav-sub { padding-left: 28px; font-size: 12px; color: #64748b; padding-top: 5px; padding-bottom: 5px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; }
+.nav-sub.active { color: #93c5fd; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #0f2744; flex-shrink: 0; }
+.content { padding: 24px; overflow-y: auto; flex: 1; }
+.pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.pill.active { background: #3b82f6; color: white; }
+.pill.inactive { background: rgba(255,255,255,0.04); color: #64748b; border: 1px solid rgba(255,255,255,0.08); }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.kpi-card { background: #0f2744; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 16px; }
+.kpi-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+.kpi-sub { font-size: 11px; color: #64748b; }
+.card { background: #0f2744; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px; }
+.card-title { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 16px; }
+.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+.site-color-1 { color: #3b82f6; }
+.site-color-2 { color: #10b981; }
+.site-color-3 { color: #f59e0b; }
+.site-color-4 { color: #8b5cf6; }
+
+/* Grouped bar chart */
+.grouped-chart { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
+.bar-group { display: flex; align-items: flex-end; gap: 2px; flex: 1; }
+.bar { border-radius: 3px 3px 0 0; min-width: 8px; }
+.bar-label { font-size: 9px; color: #475569; text-align: center; margin-top: 4px; }
+
+/* Ranking table */
+.rank-table { width: 100%; border-collapse: collapse; }
+.rank-table th { text-align: left; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.rank-table td { padding: 11px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12px; }
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.rank-1 { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.rank-2 { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.rank-3 { background: rgba(205,127,50,0.15); color: #cd7f32; }
+.rank-4 { background: rgba(100,116,139,0.08); color: #64748b; }
+
+/* Site breakdown in KPI card */
+.site-breakdown { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+.site-line { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+
+/* Delta badge */
+.delta { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.delta-up { background: rgba(16,185,129,0.12); color: #10b981; }
+.delta-down { background: rgba(239,68,68,0.12); color: #ef4444; }
+.delta-neutral { background: rgba(245,158,11,0.12); color: #f59e0b; }
+
+/* Site selector pill (active all) */
+.site-selector { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Progress bar in ranking */
+.rank-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin: 0 12px; }
+.rank-fill { height: 4px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">🍪 Allocookie</div>
+    <div class="nav-section">Caisse</div>
+    <div class="nav-item">🧾 POS</div>
+    <div class="nav-section">Back-office</div>
+    <div class="nav-item">📦 Produits</div>
+    <div class="nav-item">🏪 Stocks</div>
+    <div class="nav-item">📖 Recettes</div>
+    <div class="nav-item">📋 SOPs</div>
+    <div class="nav-item">🧾 Journal fiscal</div>
+    <div class="nav-item active">📊 Analytics</div>
+    <div class="nav-sub active">↳ Vue d'ensemble</div>
+    <div class="nav-sub">↳ Rapport ventes</div>
+    <div class="nav-item">👥 CRM Fidélité</div>
+    <div class="nav-section">Admin</div>
+    <div class="nav-item">⚙️ Paramètres</div>
+  </div>
+
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div style="font-size:14px;font-weight:600;">Analytics — Vue réseau</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;gap:4px;">
+          <div class="pill inactive">Aujourd'hui</div>
+          <div class="pill inactive">7 jours</div>
+          <div class="pill active">30 jours</div>
+          <div class="pill inactive">Mois</div>
+        </div>
+        <select style="height:34px;padding:0 10px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;font-size:12px;font-weight:600;">
+          <option>Tous les sites</option>
+          <option>Allocookie Paris 1er</option>
+          <option>Allocookie Paris 11e</option>
+          <option>Allocookie Lyon</option>
+          <option>Allocookie Bordeaux</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Site filter chips -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Sites :</span>
+        <div class="site-selector">
+          <div style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);cursor:pointer;">📍 Paris 1er</div>
+          <div style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);cursor:pointer;">📍 Paris 11e</div>
+          <div style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);cursor:pointer;">📍 Lyon</div>
+          <div style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);cursor:pointer;">📍 Bordeaux</div>
+        </div>
+      </div>
+
+      <!-- KPI cards (aggregate + per-site deltas) -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">CA TTC Réseau</div>
+          <div class="kpi-value" style="color:#3b82f6;">17 240 €</div>
+          <div class="kpi-sub" style="color:#10b981;">↑ +11,2% vs période préc.</div>
+          <div class="site-breakdown">
+            <div class="site-line">
+              <span style="color:#60a5fa;">Paris 1er</span>
+              <span style="color:#f1f5f9;font-weight:600;">5 284 €
+                <span class="delta delta-up">+12%</span>
+              </span>
+            </div>
+            <div class="site-line">
+              <span style="color:#34d399;">Paris 11e</span>
+              <span style="color:#f1f5f9;font-weight:600;">4 780 €
+                <span class="delta delta-up">+8%</span>
+              </span>
+            </div>
+            <div class="site-line">
+              <span style="color:#fbbf24;">Lyon</span>
+              <span style="color:#f1f5f9;font-weight:600;">4 190 €
+                <span class="delta delta-neutral">+3%</span>
+              </span>
+            </div>
+            <div class="site-line">
+              <span style="color:#a78bfa;">Bordeaux</span>
+              <span style="color:#f1f5f9;font-weight:600;">2 986 €
+                <span class="delta delta-down">-2%</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Transactions totales</div>
+          <div class="kpi-value" style="color:#f1f5f9;">3 048</div>
+          <div class="kpi-sub">↑ +214 vs période préc.</div>
+          <div class="site-breakdown">
+            <div class="site-line"><span style="color:#60a5fa;">Paris 1er</span><span style="color:#94a3b8;">938 tx</span></div>
+            <div class="site-line"><span style="color:#34d399;">Paris 11e</span><span style="color:#94a3b8;">854 tx</span></div>
+            <div class="site-line"><span style="color:#fbbf24;">Lyon</span><span style="color:#94a3b8;">751 tx</span></div>
+            <div class="site-line"><span style="color:#a78bfa;">Bordeaux</span><span style="color:#94a3b8;">505 tx</span></div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Ticket moyen réseau</div>
+          <div class="kpi-value" style="color:#f1f5f9;">5,65 €</div>
+          <div class="kpi-sub" style="color:#10b981;">↑ +0,22 € vs période préc.</div>
+          <div class="site-breakdown">
+            <div class="site-line"><span style="color:#60a5fa;">Paris 1er</span><span style="color:#f1f5f9;font-weight:600;">5,63 €</span></div>
+            <div class="site-line"><span style="color:#34d399;">Paris 11e</span><span style="color:#f1f5f9;font-weight:600;">5,60 €</span></div>
+            <div class="site-line"><span style="color:#fbbf24;">Lyon</span><span style="color:#f1f5f9;font-weight:600;">5,58 €</span></div>
+            <div class="site-line"><span style="color:#a78bfa;">Bordeaux</span><span style="color:#f1f5f9;font-weight:600;">5,91 €</span></div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-label">Meilleur site</div>
+          <div class="kpi-value" style="color:#3b82f6;font-size:20px;padding-top:4px;">📍 Paris 1er</div>
+          <div class="kpi-sub" style="color:#10b981;margin-top:4px;">5 284 € · +12% croissance</div>
+          <div class="site-breakdown">
+            <div class="site-line" style="color:#64748b;">
+              <span>Site en retrait</span>
+              <span style="color:#ef4444;">📍 Bordeaux ↓</span>
+            </div>
+            <div class="site-line" style="margin-top:4px;">
+              <span style="color:#64748b;font-size:10px;">Écart min/max</span>
+              <span style="color:#94a3b8;font-size:11px;">+77%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <!-- Grouped bar chart CA par site par semaine -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div class="card-title" style="margin:0;">CA par site — 4 dernières semaines</div>
+            <div style="display:flex;gap:10px;font-size:10px;color:#64748b;">
+              <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#3b82f6;border-radius:2px;display:inline-block;"></span>Paris 1er</span>
+              <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#10b981;border-radius:2px;display:inline-block;"></span>Paris 11e</span>
+              <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Lyon</span>
+              <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#8b5cf6;border-radius:2px;display:inline-block;"></span>Bordeaux</span>
+            </div>
+          </div>
+          <div class="grouped-chart">
+            <!-- S1 -->
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+              <div style="display:flex;align-items:flex-end;gap:2px;height:110px;">
+                <div class="bar" style="height:72%;background:#3b82f6;width:10px;"></div>
+                <div class="bar" style="height:65%;background:#10b981;width:10px;"></div>
+                <div class="bar" style="height:58%;background:#f59e0b;width:10px;"></div>
+                <div class="bar" style="height:42%;background:#8b5cf6;width:10px;"></div>
+              </div>
+              <div class="bar-label">Sem 1</div>
+            </div>
+            <!-- S2 -->
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+              <div style="display:flex;align-items:flex-end;gap:2px;height:110px;">
+                <div class="bar" style="height:78%;background:#3b82f6;width:10px;"></div>
+                <div class="bar" style="height:70%;background:#10b981;width:10px;"></div>
+                <div class="bar" style="height:62%;background:#f59e0b;width:10px;"></div>
+                <div class="bar" style="height:45%;background:#8b5cf6;width:10px;"></div>
+              </div>
+              <div class="bar-label">Sem 2</div>
+            </div>
+            <!-- S3 -->
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+              <div style="display:flex;align-items:flex-end;gap:2px;height:110px;">
+                <div class="bar" style="height:82%;background:#3b82f6;width:10px;"></div>
+                <div class="bar" style="height:75%;background:#10b981;width:10px;"></div>
+                <div class="bar" style="height:60%;background:#f59e0b;width:10px;"></div>
+                <div class="bar" style="height:40%;background:#8b5cf6;width:10px;"></div>
+              </div>
+              <div class="bar-label">Sem 3</div>
+            </div>
+            <!-- S4 (current) -->
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+              <div style="display:flex;align-items:flex-end;gap:2px;height:110px;">
+                <div class="bar" style="height:100%;background:#3b82f6;width:10px;opacity:0.9;"></div>
+                <div class="bar" style="height:90%;background:#10b981;width:10px;opacity:0.9;"></div>
+                <div class="bar" style="height:79%;background:#f59e0b;width:10px;opacity:0.9;"></div>
+                <div class="bar" style="height:56%;background:#8b5cf6;width:10px;opacity:0.9;"></div>
+              </div>
+              <div class="bar-label" style="color:#3b82f6;">Sem 4 ●</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;font-size:11px;color:#64748b;">
+            <span>Total réseau S4</span>
+            <span style="color:#f1f5f9;font-weight:700;">17 240 €</span>
+          </div>
+        </div>
+
+        <!-- Tickets moyens comparaison -->
+        <div class="card">
+          <div class="card-title">Ticket moyen par site</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <span style="font-size:12px;color:#60a5fa;font-weight:600;">📍 Paris 1er</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:13px;font-weight:700;color:#f1f5f9;">5,63 €</span>
+                  <span class="delta delta-up">+5%</span>
+                </div>
+              </div>
+              <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;"><div style="width:95%;height:5px;background:#3b82f6;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <span style="font-size:12px;color:#34d399;font-weight:600;">📍 Paris 11e</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:13px;font-weight:700;color:#f1f5f9;">5,60 €</span>
+                  <span class="delta delta-up">+3%</span>
+                </div>
+              </div>
+              <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;"><div style="width:90%;height:5px;background:#10b981;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <span style="font-size:12px;color:#fbbf24;font-weight:600;">📍 Lyon</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:13px;font-weight:700;color:#f1f5f9;">5,58 €</span>
+                  <span class="delta delta-neutral">+1%</span>
+                </div>
+              </div>
+              <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;"><div style="width:85%;height:5px;background:#f59e0b;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <span style="font-size:12px;color:#a78bfa;font-weight:600;">📍 Bordeaux</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:13px;font-weight:700;color:#f1f5f9;">5,91 €</span>
+                  <span class="delta delta-up">+8%</span>
+                </div>
+              </div>
+              <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;"><div style="width:75%;height:5px;background:#8b5cf6;border-radius:3px;"></div></div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);font-size:11px;color:#64748b;">
+            Bordeaux · ticket le plus élevé malgré un CA plus faible — potentiel de croissance en volume
+          </div>
+        </div>
+      </div>
+
+      <!-- Ranking table -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="card-title" style="margin:0;">Classement des sites — CA sur 30 jours</div>
+          <span style="font-size:11px;color:#64748b;">Période : 28 fév. – 27 mar. 2026</span>
+        </div>
+        <table class="rank-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Site</th>
+              <th>CA TTC</th>
+              <th>Transactions</th>
+              <th>Ticket moyen</th>
+              <th>vs période préc.</th>
+              <th>Part réseau</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="rank-num rank-1" style="display:inline-flex;">1</div></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div>
+                    <div style="font-size:13px;font-weight:600;color:#f1f5f9;">📍 Paris 1er</div>
+                    <div style="font-size:11px;color:#64748b;">Opérationnel depuis jan. 2024</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-size:15px;font-weight:700;color:#3b82f6;">5 284 €</td>
+              <td style="color:#94a3b8;">938 tx</td>
+              <td style="color:#f1f5f9;">5,63 €</td>
+              <td><span class="delta delta-up">↑ +12%</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="rank-bar"><div class="rank-fill" style="width:100%;background:#3b82f6;"></div></div>
+                  <span style="font-size:12px;font-weight:700;color:#60a5fa;min-width:32px;">30,7%</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="rank-num rank-2" style="display:inline-flex;">2</div></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div>
+                    <div style="font-size:13px;font-weight:600;color:#f1f5f9;">📍 Paris 11e</div>
+                    <div style="font-size:11px;color:#64748b;">Opérationnel depuis mars 2024</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-size:15px;font-weight:700;color:#10b981;">4 780 €</td>
+              <td style="color:#94a3b8;">854 tx</td>
+              <td style="color:#f1f5f9;">5,60 €</td>
+              <td><span class="delta delta-up">↑ +8%</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="rank-bar"><div class="rank-fill" style="width:90%;background:#10b981;"></div></div>
+                  <span style="font-size:12px;font-weight:700;color:#34d399;min-width:32px;">27,7%</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="rank-num rank-3" style="display:inline-flex;">3</div></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div>
+                    <div style="font-size:13px;font-weight:600;color:#f1f5f9;">📍 Lyon</div>
+                    <div style="font-size:11px;color:#64748b;">Opérationnel depuis juin 2024</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-size:15px;font-weight:700;color:#f59e0b;">4 190 €</td>
+              <td style="color:#94a3b8;">751 tx</td>
+              <td style="color:#f1f5f9;">5,58 €</td>
+              <td><span class="delta delta-neutral">↑ +3%</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="rank-bar"><div class="rank-fill" style="width:79%;background:#f59e0b;"></div></div>
+                  <span style="font-size:12px;font-weight:700;color:#fbbf24;min-width:32px;">24,3%</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="rank-num rank-4" style="display:inline-flex;">4</div></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div>
+                    <div style="font-size:13px;font-weight:600;color:#f1f5f9;">📍 Bordeaux</div>
+                    <div style="font-size:11px;color:#64748b;">Opérationnel depuis nov. 2024</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-size:15px;font-weight:700;color:#8b5cf6;">2 986 €</td>
+              <td style="color:#94a3b8;">505 tx</td>
+              <td style="color:#f1f5f9;">5,91 €</td>
+              <td><span class="delta delta-down">↓ -2%</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="rank-bar"><div class="rank-fill" style="width:56%;background:#8b5cf6;"></div></div>
+                  <span style="font-size:12px;font-weight:700;color:#a78bfa;min-width:32px;">17,3%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;padding:12px;">Total réseau</td>
+              <td style="font-size:16px;font-weight:800;color:#3b82f6;padding:12px;">17 240 €</td>
+              <td style="color:#94a3b8;padding:12px;">3 048 tx</td>
+              <td style="color:#f1f5f9;padding:12px;">5,65 €</td>
+              <td><span class="delta delta-up">↑ +11,2%</span></td>
+              <td style="padding:12px;color:#64748b;font-size:12px;">100%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
