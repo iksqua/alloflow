@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { createHash } from 'crypto'
 
 const paySchema = z.object({
   method: z.enum(['card', 'cash', 'split']),
@@ -13,6 +14,18 @@ const paySchema = z.object({
     cash_given: z.number().optional(),
   })).optional(),
 })
+
+function computeEntryHash(
+  previousHash: string,
+  sequenceNo: number,
+  orderId: string,
+  amountTtc: number,
+  occurredAt: string
+): string {
+  return createHash('sha256')
+    .update(`${previousHash}|${sequenceNo}|${orderId}|${amountTtc}|${occurredAt}`)
+    .digest('hex')
+}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -80,6 +93,48 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .from('restaurant_tables')
       .update({ status: 'free', current_order_id: null })
       .eq('id', order.table_id)
+  }
+
+  // --- Fiscal journal entry (NF525 chain hash) ---
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('establishment_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.establishment_id) {
+      // Get last entry for this establishment to chain hash
+      const { data: lastEntry } = await supabase
+        .from('fiscal_journal_entries')
+        .select('sequence_no, entry_hash')
+        .eq('establishment_id', profile.establishment_id)
+        .order('sequence_no', { ascending: false })
+        .limit(1)
+        .single()
+
+      const prevSeq    = lastEntry?.sequence_no ?? 0
+      const prevHash   = lastEntry?.entry_hash  ?? ''
+      const nextSeq    = prevSeq + 1
+      const occurredAt = new Date().toISOString()
+      const entryHash  = computeEntryHash(prevHash, nextSeq, id, order.total_ttc, occurredAt)
+
+      await supabase.from('fiscal_journal_entries').insert({
+        establishment_id: profile.establishment_id,
+        sequence_no:      nextSeq,
+        event_type:       'sale',
+        order_id:         id,
+        amount_ttc:       order.total_ttc,
+        cashier_id:       user.id,
+        occurred_at:      occurredAt,
+        previous_hash:    prevHash,
+        entry_hash:       entryHash,
+        meta:             { method: parsed.data.method, session_id: null },
+      })
+    }
+  } catch {
+    // Journal write failure must not block the payment success response
+    console.error('[fiscal-journal] Failed to write journal entry')
   }
 
   return NextResponse.json({ success: true, payments })
