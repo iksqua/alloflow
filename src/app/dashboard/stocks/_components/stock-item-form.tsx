@@ -43,11 +43,20 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
     }
   }, [open, item])
 
+  // Auto-apply computed price — MUST be before early return (Rules of Hooks)
+  useEffect(() => {
+    const total = parseFloat(purchaseTotal)
+    const qty   = parseFloat(purchaseQty)
+    if (total > 0 && qty > 0) {
+      setUnitPrice((total / qty).toFixed(4))
+    }
+  }, [purchaseTotal, purchaseQty])
+
   if (!open) return null
 
-  // Auto-compute unit_price when calculator fields change
-  const purchaseTotalNum = parseFloat(purchaseTotal)
-  const purchaseQtyNum   = parseFloat(purchaseQty)
+  // Derived display value (render-only, not for hooks)
+  const purchaseTotalNum  = parseFloat(purchaseTotal)
+  const purchaseQtyNum    = parseFloat(purchaseQty)
   const computedUnitPrice = purchaseTotalNum > 0 && purchaseQtyNum > 0
     ? purchaseTotalNum / purchaseQtyNum
     : null
@@ -55,12 +64,6 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
   function applyComputed() {
     if (computedUnitPrice !== null) setUnitPrice(computedUnitPrice.toFixed(4))
   }
-
-  // Auto-apply whenever the calculator changes
-  useEffect(() => {
-    if (computedUnitPrice !== null) setUnitPrice(computedUnitPrice.toFixed(4))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [purchaseTotal, purchaseQty])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
