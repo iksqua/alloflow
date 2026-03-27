@@ -36,6 +36,7 @@ export const updateRecipeSchema = z.object({
   category:    z.string().max(80).nullable().optional(),
   portion:     z.string().max(50).nullable().optional(),
   is_internal: z.boolean().optional(),
+  ingredients: z.array(ingredientSchema).optional(),
   pos:         posParamsSchema.nullable().optional(),
 })
 

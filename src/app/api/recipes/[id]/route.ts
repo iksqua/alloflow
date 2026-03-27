@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const result = updateRecipeSchema.safeParse(body)
   if (!result.success) return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
 
-  const { title, description, category, portion, is_internal, pos } = result.data
+  const { title, description, category, portion, is_internal, ingredients, pos } = result.data
 
   // Build recipe update payload
   const recipeUpdate: Record<string, unknown> = {}
@@ -31,6 +31,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .single()
 
   if (recipeError) return NextResponse.json({ error: recipeError.message }, { status: 500 })
+
+  // Update ingredients: replace all existing with the new list
+  if (ingredients !== undefined) {
+    // Delete all existing ingredients for this recipe, then re-insert
+    const { error: deleteError } = await supabase
+      .from('recipe_ingredients')
+      .delete()
+      .eq('recipe_id', id)
+
+    if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+
+    if (ingredients.length > 0) {
+      const { error: insertError } = await supabase
+        .from('recipe_ingredients')
+        .insert(
+          ingredients.map((ing, idx) => ({
+            recipe_id:  id,
+            name:       ing.name,
+            quantity:   ing.quantity,
+            unit:       ing.unit,
+            unit_cost:  ing.unit_cost,
+            sort_order: ing.sort_order ?? idx,
+          }))
+        )
+
+      if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+    }
+  }
 
   // Propagate name and price to linked product
   const linkedProductId = recipe.product?.[0]?.id ?? null
