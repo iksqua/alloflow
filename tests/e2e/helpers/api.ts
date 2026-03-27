@@ -6,7 +6,7 @@ export async function createProduct(request: APIRequestContext, overrides = {}) 
   const res = await request.post(`${BASE}/api/products`, {
     data: {
       name:      'Test E2E Produit',
-      price:     4.09,   // HT — displayed as 4.50 TTC at TVA 10%
+      price:     4.09,   // TTC — stored and displayed as-is in the product form
       tva_rate:  10,
       is_active: true,
       ...overrides,
