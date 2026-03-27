@@ -11,9 +11,14 @@ export const ingredientSchema = z.object({
 })
 
 export const posParamsSchema = z.object({
-  price:       z.number().positive('Le prix est requis'),
+  price:       z.number().positive('Le prix de vente est requis'),
   tva_rate:    z.number().refine(v => [5.5, 10, 20].includes(v), 'TVA invalide'),
-  category_id: z.string().uuid().nullable().optional(),
+  // Preprocess: empty string / null / undefined → null to avoid "Invalid uuid" from unselected <select>
+  // z.union instead of .nullable() because Zod v4 runs uuid() before null check
+  category_id: z.preprocess(
+    v => (v == null || v === '' ? null : v),
+    z.union([z.string().uuid(), z.null()]).optional()
+  ),
 })
 
 export const createRecipeSchema = z.object({
