@@ -65,7 +65,10 @@ export async function getRecipes(request: APIRequestContext) {
   const json = await res.json()
   return json.recipes as Array<{
     id: string
+    title: string
     is_internal: boolean
+    food_cost_pct: number | null
+    food_cost_amount: number | null
     product: Array<{ id: string; category_id: string | null }> | null
   }>
 }

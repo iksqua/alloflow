@@ -1,28 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { createRecipe, deleteRecipe } from './helpers/api'
-
-const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
-
-/** Fetch all recipes and return raw JSON array (includes title + food_cost_pct). */
-async function getRawRecipes(request: import('@playwright/test').APIRequestContext) {
-  const res  = await request.get(`${BASE}/api/recipes`)
-  if (!res.ok()) throw new Error(`getRawRecipes failed: ${res.status()}`)
-  const json = await res.json()
-  return (json.recipes ?? []) as Array<{
-    id:            string
-    title:         string
-    is_internal:   boolean
-    food_cost_pct: number | null
-    product:       Array<{ id: string; category_id: string | null }> | null
-  }>
-}
+import { createRecipe, deleteRecipe, getRecipes } from './helpers/api'
 
 test.describe('Recipes', () => {
   const createdIds: string[] = []
 
   test.afterEach(async ({ request }) => {
     for (const id of createdIds) {
-      await deleteRecipe(request, id).catch(() => { /* already deleted or never created */ })
+      await deleteRecipe(request, id)
     }
     createdIds.length = 0
   })
@@ -44,8 +28,9 @@ test.describe('Recipes', () => {
     await expect(page.getByText('Recette Interne E2E')).toBeVisible()
 
     // Collect ID for cleanup
-    const recipes = await getRawRecipes(request)
+    const recipes = await getRecipes(request)
     const match   = recipes.find(r => r.title === 'Recette Interne E2E')
+    expect(match).toBeDefined()
     if (match) createdIds.push(match.id)
   })
 
@@ -73,13 +58,11 @@ test.describe('Recipes', () => {
     await expect(page.getByText('Recette POS E2E')).toBeVisible()
 
     // Verify via API: linked product must have category_id = null
-    const recipes = await getRawRecipes(request)
+    const recipes = await getRecipes(request)
     const match   = recipes.find(r => r.title === 'Recette POS E2E')
     expect(match).toBeDefined()
-    if (match) {
-      createdIds.push(match.id)
-      expect(match.product?.[0]?.category_id ?? null).toBeNull()
-    }
+    createdIds.push(match!.id)
+    expect(match!.product?.[0]?.category_id ?? null).toBeNull()
   })
 
   // ── Test 3: food cost % ───────────────────────────────────────────────────
@@ -102,13 +85,14 @@ test.describe('Recipes', () => {
     createdIds.push(recipe.id)
 
     // Verify food_cost_pct computed by the API
-    const recipes = await getRawRecipes(request)
+    const recipes = await getRecipes(request)
     const match   = recipes.find(r => r.id === recipe.id)
     expect(match).toBeDefined()
     expect(match!.food_cost_pct).toBe(50)
 
     // Navigate to recipes page and verify the food cost % is displayed
     await page.goto('/dashboard/recettes')
-    await expect(page.getByText('50%')).toBeVisible()
+    const card = page.locator('div').filter({ hasText: 'Recette Food Cost E2E' }).first()
+    await expect(card.getByText('50%')).toBeVisible()
   })
 })
