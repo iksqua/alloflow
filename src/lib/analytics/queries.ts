@@ -115,25 +115,49 @@ export async function fetchTopProducts(
   limit = 5
 ): Promise<TopProduct[]> {
   const supabase = await createClient()
-  let query = (supabase as any)
-    .from('v_top_products')
-    .select('product_id, product_name, qty_sold, ca_ttc')
-    .order('ca_ttc', { ascending: false })
-    .limit(limit)
 
-  if (establishmentId) query = query.eq('establishment_id', establishmentId)
+  // Query order_items with orders filtered by date range to respect the range parameter
+  // (the v_top_products view hardcodes 30 days and ignores range)
+  let query = supabase
+    .from('order_items')
+    .select(`
+      product_id,
+      product_name,
+      quantity,
+      line_total,
+      orders!inner ( status, created_at, establishment_id )
+    `)
+    .eq('orders.status', 'paid')
+    .gte('orders.created_at', range.from.toISOString())
+    .lte('orders.created_at', range.to.toISOString())
+
+  if (establishmentId) query = query.eq('orders.establishment_id', establishmentId)
 
   const { data, error } = await query
   if (error) throw error
 
-  const rows = data ?? []
-  const total = rows.reduce((s: number, r: any) => s + (r.ca_ttc ?? 0), 0)
-  return rows.map((r: any) => ({
-    productId: r.product_id,
-    productName: r.product_name,
-    qtySold: r.qty_sold,
-    caTtc: r.ca_ttc,
-    pct: total > 0 ? Math.round((r.ca_ttc / total) * 100) : 0,
+  // Aggregate by product_id
+  const map = new Map<string, { productId: string; productName: string; qtySold: number; caTtc: number }>()
+  for (const item of data ?? []) {
+    const existing = map.get(item.product_id) ?? {
+      productId: item.product_id,
+      productName: (item.product_name as string | null) ?? 'Inconnu',
+      qtySold: 0,
+      caTtc: 0,
+    }
+    existing.qtySold += (item.quantity as number) ?? 0
+    existing.caTtc += (item.line_total as number) ?? 0
+    map.set(item.product_id, existing)
+  }
+
+  const rows = Array.from(map.values())
+    .sort((a, b) => b.caTtc - a.caTtc)
+    .slice(0, limit)
+
+  const total = rows.reduce((s, r) => s + r.caTtc, 0)
+  return rows.map(r => ({
+    ...r,
+    pct: total > 0 ? Math.round((r.caTtc / total) * 100) : 0,
   }))
 }
 

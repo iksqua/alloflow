@@ -1,4 +1,5 @@
--- supabase/migrations/20260327000008_analytics_views.sql
+-- supabase/migrations/20260327000009_analytics_views_security_invoker.sql
+-- Fix: add security_invoker = true to all analytics views to enforce RLS
 
 -- View: daily CA for bar chart (last 90 days)
 create or replace view public.v_daily_ca
@@ -55,9 +56,3 @@ from public.order_items oi
 join public.orders o on o.id = oi.order_id
 where o.status = 'paid'
 group by 1, 2, 3;
-
--- Grant read access to authenticated role
-grant select on public.v_daily_ca       to authenticated;
-grant select on public.v_hourly_tx      to authenticated;
-grant select on public.v_top_products   to authenticated;
-grant select on public.v_tva_breakdown  to authenticated;
