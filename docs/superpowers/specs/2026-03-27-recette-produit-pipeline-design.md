@@ -92,6 +92,7 @@ Calculé à la volée côté serveur — pas de colonne stockée (les ingrédien
 - Modifier le **nom** → `products.name` mis à jour automatiquement
 - Modifier les **ingrédients/coûts** → food cost recalculé à la prochaine lecture
 - Modifier le **prix** → `products.price` mis à jour automatiquement
+- Modifier la **catégorie caisse** → modifiable uniquement dans la section POS du formulaire recette (pas dans le module Produits) ; mis à jour via `PATCH /api/recipes/[id]`
 - Désactiver le toggle → `products.active = false` (soft delete), recette reste
 
 ### Supprimer une recette liée
@@ -141,7 +142,8 @@ POST   /api/recipes                     → créer recette (+ produit si is_inte
                                           Atomique : recette + produit créés dans la même transaction
 PATCH  /api/recipes/[id]                → modifier recette (propage nom/prix au produit lié)
 DELETE /api/recipes/[id]                → soft delete recette + produit lié
-GET    /api/recipes/[id]/food-cost      → recalcule le food cost à la demande
+GET    /api/recipes/[id]/food-cost      → recalcule le food cost à la demande (utile pour
+                                          afficher le résultat temps réel sans recharger la liste)
 
 GET    /api/recipe-ingredients/[recipeId]          → ingrédients d'une recette
 POST   /api/recipe-ingredients/[recipeId]          → ajouter un ingrédient
