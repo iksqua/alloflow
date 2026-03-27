@@ -72,7 +72,9 @@ export async function getRecipes(request: APIRequestContext) {
 
 export async function getProduct(request: APIRequestContext, id: string) {
   const res  = await request.get(`${BASE}/api/products`)
+  if (!res.ok()) throw new Error(`getProduct failed: ${res.status()}`)
   const json = await res.json()
+  // No GET /api/products/:id endpoint — fetch all and filter client-side
   const products = json.products as Array<{ id: string; price: number; is_active: boolean }>
   return products.find(p => p.id === id) ?? null
 }
