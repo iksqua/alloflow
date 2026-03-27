@@ -29,7 +29,15 @@ const NAV_ITEMS: NavItem[] = [
       { href: '/dashboard/analytics/report', label: 'Rapport ventes' },
     ],
   },
-  { href: '/dashboard/crm', label: 'CRM', icon: '👥', disabled: true },
+  {
+    href: '/dashboard/crm',
+    label: 'CRM',
+    icon: '👥',
+    subItems: [
+      { href: '/dashboard/crm', label: 'Clients', exact: true },
+      { href: '/dashboard/crm/programme', label: 'Programme' },
+    ],
+  },
 ]
 
 const SETTINGS_ITEM = { href: '/dashboard/settings', label: 'Paramètres', icon: '⚙️' }

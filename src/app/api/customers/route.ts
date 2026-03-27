@@ -8,6 +8,36 @@ async function getEstablishmentId(supabase: Awaited<ReturnType<typeof createClie
   return data?.establishment_id ?? null
 }
 
+export async function GET(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  const establishmentId = profile?.establishment_id
+  if (!establishmentId) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
+
+  const url = new URL(req.url)
+  const tier = url.searchParams.get('tier') // optional filter
+  const limit = parseInt(url.searchParams.get('limit') ?? '100', 10)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
+    .from('customers')
+    .select('id, first_name, last_name, tier, points, phone, email, created_at')
+    .eq('establishment_id', establishmentId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (tier && ['standard', 'silver', 'gold'].includes(tier)) {
+    query = query.eq('tier', tier)
+  }
+
+  const { data, error } = await query
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ customers: data ?? [] })
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
