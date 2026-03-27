@@ -7,11 +7,19 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', exact: true },
   { href: '/dashboard/products', label: 'Produits', icon: '🍽️' },
   { href: '/dashboard/orders', label: 'Commandes', icon: '📋', disabled: true },
-  { href: '/dashboard/analytics', label: 'Analytique', icon: '📈', disabled: true },
   { href: '/dashboard/stocks', label: 'Stocks', icon: '📦' },
   { href: '/dashboard/recettes', label: 'Recettes', icon: '📖' },
   { href: '/dashboard/sops', label: 'SOPs', icon: '📋' },
   { href: '/dashboard/fiscal', label: 'Journal fiscal', icon: '🗂️' },
+  {
+    href: '/dashboard/analytics',
+    label: 'Analytics',
+    icon: '📊',
+    subItems: [
+      { href: '/dashboard/analytics', label: 'Vue d\'ensemble', exact: true },
+      { href: '/dashboard/analytics/report', label: 'Rapport ventes' },
+    ],
+  },
   { href: '/dashboard/crm', label: 'CRM', icon: '👥', disabled: true },
 ]
 
@@ -111,6 +119,54 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
                   <span className="ml-auto text-[10px] bg-[var(--surface)] px-1.5 py-0.5 rounded text-[var(--text4)] md:hidden lg:block">
                     Bientôt
                   </span>
+                </div>
+              )
+            }
+
+            if ((item as { subItems?: { href: string; label: string; exact?: boolean }[] }).subItems) {
+              const subItems = (item as { subItems: { href: string; label: string; exact?: boolean }[] }).subItems
+              return (
+                <div key={item.href}>
+                  <Link
+                    href={item.href}
+                    title={item.label}
+                    onClick={() => setMobileOpen(false)}
+                    className={[
+                      'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                      isActive
+                        ? 'text-white'
+                        : 'text-[var(--text2)] hover:bg-[var(--surface2)]',
+                    ].join(' ')}
+                    style={isActive ? { background: 'var(--blue)' } : undefined}
+                  >
+                    <span className="flex-shrink-0">{item.icon}</span>
+                    <span className="md:hidden lg:block">{item.label}</span>
+                  </Link>
+                  {isActive && (
+                    <div className="mt-0.5 ml-3 flex flex-col space-y-0.5 md:hidden lg:flex">
+                      {subItems.map((sub) => {
+                        const isSubActive = sub.exact
+                          ? pathname === sub.href
+                          : pathname.startsWith(sub.href)
+                        return (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={[
+                              'flex items-center gap-2 pl-6 pr-3 py-1.5 rounded-lg text-xs transition-colors',
+                              isSubActive
+                                ? 'text-white font-medium'
+                                : 'text-[var(--text2)] hover:bg-[var(--surface2)]',
+                            ].join(' ')}
+                            style={isSubActive ? { background: 'var(--blue)' } : undefined}
+                          >
+                            {sub.label}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )
             }
