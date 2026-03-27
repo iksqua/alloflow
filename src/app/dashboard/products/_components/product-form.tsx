@@ -174,6 +174,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
                 placeholder="0.00"
                 step="0.01"
                 min="0"
+                data-testid="product-price-input"
                 className="w-full h-10 px-3 rounded-lg text-sm border border-[var(--border)] text-[var(--text1)] placeholder:text-[var(--text4)] focus:outline-none focus:border-[var(--blue)]"
                 style={{ background: 'var(--surface2)' }}
                 required
@@ -211,7 +212,9 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
               <div className="text-sm font-medium text-[var(--text1)]">Produit actif</div>
               <div className="text-xs text-[var(--text3)]">Visible et disponible à la caisse</div>
             </div>
-            <StatusToggle active={isActive} onChange={setIsActive} />
+            <div data-testid="product-active-toggle">
+              <StatusToggle active={isActive} onChange={setIsActive} />
+            </div>
           </div>
 
           {/* Erreur */}

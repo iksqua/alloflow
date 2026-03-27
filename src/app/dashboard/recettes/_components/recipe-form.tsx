@@ -217,9 +217,15 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) {
         const j = await res.json()
-        const msg = typeof j.error === 'string'
-          ? j.error
-          : j.error?.formErrors?.[0] ?? JSON.stringify(j.error) ?? 'Erreur serveur'
+        let msg = 'Erreur serveur'
+        if (typeof j.error === 'string') {
+          msg = j.error
+        } else if (j.error?.formErrors?.length) {
+          msg = j.error.formErrors[0]
+        } else if (j.error?.fieldErrors) {
+          const firstField = Object.values(j.error.fieldErrors as Record<string, string[]>).flat()[0]
+          msg = firstField ?? msg
+        }
         throw new Error(msg)
       }
       await onSave()
@@ -413,6 +419,7 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
               </div>
               <button
                 type="button"
+                data-testid="recipe-pos-toggle"
                 onClick={() => setIsInternal(v => !v)}
                 className="relative w-11 h-6 rounded-full transition-colors"
                 style={{ background: !isInternal ? 'var(--blue)' : 'var(--border)' }}
@@ -429,6 +436,7 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
                     <div className="relative">
                       <input type="number" step="0.01" value={posPrice} onChange={e => setPosPrice(e.target.value)}
                         placeholder="4,50"
+                        data-testid="recipe-pos-price-input"
                         className="w-full px-3 py-2 pr-7 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
                         style={{ background: 'var(--surface2)' }} />
                       <span className="absolute right-3 top-2.5 text-xs text-[var(--text4)]">€</span>
@@ -463,7 +471,7 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
             )}
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p data-testid="recipe-form-error" className="text-sm text-red-400">{error}</p>}
 
           <div className="flex gap-3 mt-6 pt-5 border-t border-[var(--border)]">
             <button type="button" onClick={onClose}

@@ -184,6 +184,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={tpeStep === 'idle' ? onClose : undefined} />
       <div
+        data-testid="payment-modal"
         className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
@@ -282,7 +283,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         {/* Normal payment form (hidden when TPE overlay active) */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-[var(--text1)]">Encaissement</h2>
-          <button onClick={onClose} className="text-[var(--text4)] hover:text-[var(--text2)] text-xl">×</button>
+          <button onClick={onClose} className="text-[var(--text4)] hover:text-[var(--text2)] text-xl">✕</button>
         </div>
 
         <div className="text-center mb-6">

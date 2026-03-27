@@ -124,6 +124,7 @@ export function ProductsTable({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => onEdit(product)}
+                    data-testid={`product-edit-btn-${product.id}`}
                     className="w-7 h-7 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--text1)] hover:bg-[var(--surface2)] transition-colors"
                     title="Modifier"
                   >
