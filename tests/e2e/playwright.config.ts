@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
+import path from 'path'
 
-dotenv.config({ path: '.env.test' })
+dotenv.config({ path: path.resolve(__dirname, '../../.env.test') })
 
 export default defineConfig({
   testDir: '.',
@@ -10,7 +11,7 @@ export default defineConfig({
   retries: 1,
   use: {
     baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
-    storageState: '.auth/user.json',
+    storageState: path.join(__dirname, '.auth/user.json'),
     trace: 'on-first-retry',
   },
   projects: [

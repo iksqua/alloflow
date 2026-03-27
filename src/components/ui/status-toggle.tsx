@@ -9,6 +9,7 @@ interface StatusToggleProps {
 export function StatusToggle({ active, onChange, loading = false }: StatusToggleProps) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={active}
       disabled={loading}

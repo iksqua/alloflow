@@ -110,6 +110,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
                 />
               </div>
               <input
+                data-testid="product-name-input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Latte Vanille, Cookie Choco..."
@@ -238,6 +239,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
               Annuler
             </button>
             <button
+              data-testid="product-submit-btn"
               type="submit"
               disabled={loading}
               className="h-9 px-4 rounded-lg text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"

@@ -162,6 +162,7 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
           return (
             <div
               key={recipe.id}
+              data-testid={`recipe-card-${recipe.id}`}
               className="rounded-xl border overflow-hidden transition-all hover:shadow-lg"
               style={{
                 background:   'var(--surface)',

@@ -92,7 +92,9 @@ test.describe('Recipes', () => {
 
     // Navigate to recipes page and verify the food cost % is displayed
     await page.goto('/dashboard/recettes')
-    const card = page.locator('div').filter({ hasText: 'Recette Food Cost E2E' }).first()
-    await expect(card.getByText('50%')).toBeVisible()
+    // Find the recipe card by its unique title text, then verify 50% is visible within it
+    const card = page.locator(`[data-testid="recipe-card-${recipe.id}"]`)
+    await expect(card).toBeVisible({ timeout: 5_000 })
+    await expect(card.getByText('50%').first()).toBeVisible()
   })
 })

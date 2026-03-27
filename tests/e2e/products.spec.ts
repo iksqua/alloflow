@@ -26,7 +26,7 @@ test.describe('Products', () => {
     expect(parseFloat(displayed)).toBeCloseTo(4.09, 2)
 
     // Save without modifying price
-    await page.getByRole('button', { name: /enregistrer/i }).click()
+    await page.locator('[data-testid="product-submit-btn"]').click()
     await expect(page.locator('[data-testid="product-price-input"]')).not.toBeVisible()
 
     // Verify HT price in DB has not changed
@@ -39,11 +39,11 @@ test.describe('Products', () => {
     await page.goto('/dashboard/products')
     await page.locator(`[data-testid="product-edit-btn-${productId}"]`).click()
 
-    const nameInput = page.getByPlaceholder(/latte|cookie|produit/i)
+    const nameInput = page.locator('[data-testid="product-name-input"]')
     await nameInput.clear()
     await nameInput.fill('Produit Modifié E2E')
 
-    await page.getByRole('button', { name: /enregistrer/i }).click()
+    await page.locator('[data-testid="product-submit-btn"]').click()
     await expect(page.getByText('Produit Modifié E2E')).toBeVisible()
   })
 
@@ -51,9 +51,9 @@ test.describe('Products', () => {
     await page.goto('/dashboard/products')
     await page.locator(`[data-testid="product-edit-btn-${productId}"]`).click()
 
-    // Toggle active → OFF (click the wrapper div, which contains the toggle button)
-    await page.locator('[data-testid="product-active-toggle"]').click()
-    await page.getByRole('button', { name: /enregistrer/i }).click()
+    // Toggle active → OFF (click the switch button inside the wrapper)
+    await page.locator('[data-testid="product-active-toggle"] button[role="switch"]').click()
+    await page.locator('[data-testid="product-submit-btn"]').click()
     // Wait for form to close before querying API
     await expect(page.locator('[data-testid="product-active-toggle"]')).not.toBeVisible()
 
