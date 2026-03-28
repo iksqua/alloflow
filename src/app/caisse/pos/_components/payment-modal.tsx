@@ -80,7 +80,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: session?.id,
-          table_id: ticket.tableId,
+          table_id: ticket.tableId ?? undefined,
           customer_id:            linkedCustomer?.id ?? undefined,
           reward_id:              linkedReward?.id   ?? undefined,
           reward_discount_amount: loyaltyDiscountAmount > 0 ? loyaltyDiscountAmount : undefined,
@@ -94,7 +94,10 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           })),
         }),
       })
-      if (!orderRes.ok) throw new Error('Order creation failed')
+      if (!orderRes.ok) {
+        const errBody = await orderRes.json().catch(() => ({}))
+        throw new Error(`Order creation failed (${orderRes.status}): ${JSON.stringify(errBody)}`)
+      }
       const orderData = await orderRes.json()
       const order = orderData.order
 
@@ -140,10 +143,13 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payBody),
       })
-      if (!payRes.ok) throw new Error('Payment failed')
+      if (!payRes.ok) {
+        const errBody = await payRes.json().catch(() => ({}))
+        throw new Error(`Payment failed (${payRes.status}): ${JSON.stringify(errBody)}`)
+      }
       onSuccess({ ...order, total_ttc: total, items: order.items ?? [] })
-    } catch {
-      toast.error('Erreur lors du paiement')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur lors du paiement')
       setTpeStep('idle')
     } finally {
       setIsPaying(false)
