@@ -17,6 +17,12 @@ export async function POST(
   if (!['admin', 'super_admin'].includes(profile.role as string))
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
 
+  // Cross-tenant check: verify target belongs to caller's establishment
+  const { data: target } = await supabase
+    .from('profiles').select('establishment_id').eq('id', userId).single()
+  if (!target || target.establishment_id !== profile.establishment_id)
+    return NextResponse.json({ error: 'Membre introuvable' }, { status: 404 })
+
   const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

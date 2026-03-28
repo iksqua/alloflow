@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   // inviteUserByEmail sends a magic link email.
   // raw_user_meta_data is read by the handle_new_user trigger to create the profile.
-  const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(body.data.email, {
+  const { data: { user: invitedUser }, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(body.data.email, {
     data: {
       first_name:       body.data.first_name,
       role:             body.data.role,
@@ -39,5 +39,20 @@ export async function POST(req: NextRequest) {
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Upsert profile to handle re-inviting existing users (trigger only fires for new users)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabaseAdmin as any)
+    .from('profiles')
+    .upsert(
+      {
+        id:               invitedUser!.id,
+        role:             body.data.role,
+        establishment_id: profile.establishment_id,
+        first_name:       body.data.first_name,
+      },
+      { onConflict: 'id' }
+    )
+
   return NextResponse.json({ ok: true }, { status: 201 })
 }

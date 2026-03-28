@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 
+const TIMEZONES = ['Europe/Paris', 'Europe/Brussels', 'Europe/Luxembourg', 'Europe/Zurich', 'Africa/Casablanca', 'Africa/Tunis'] as const
+
 const schema = z.object({
   name:     z.string().min(1).max(80),
   siret:    z.string().regex(/^\d{14}$/, '14 chiffres').optional().or(z.literal('')),
   address:  z.string().max(200).optional(),
-  timezone: z.string().min(1),
+  timezone: z.enum(TIMEZONES),
 })
 
 export async function GET() {
