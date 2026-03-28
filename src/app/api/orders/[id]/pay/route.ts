@@ -53,20 +53,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const authorizedTotal = order.total_ttc
 
   // Marquer la commande payée — filtre sur status pour éviter double-paiement concurrent
-  const { error: statusError, count } = await supabase
+  const { error: statusError, data: updatedRows } = await supabase
     .from('orders')
     .update({ status: 'paid', updated_at: new Date().toISOString() })
     .eq('id', id)
     .in('status', ['open', 'paying'])
-    .select('id', { count: 'exact', head: true })
-
-  if (count === 0) {
-    return NextResponse.json({ error: 'order_already_paid' }, { status: 409 })
-  }
+    .select('id')
 
   if (statusError) {
     console.error('[pay] Failed to update order status:', statusError)
     return NextResponse.json({ error: 'Failed to update order status', detail: statusError.message }, { status: 500 })
+  }
+
+  if (!updatedRows || updatedRows.length === 0) {
+    return NextResponse.json({ error: 'order_already_paid' }, { status: 409 })
   }
 
   // Validate split totals
