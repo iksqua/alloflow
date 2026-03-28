@@ -166,26 +166,17 @@ export async function GET() {
   const networkCaMonth = estResults.reduce((s: number, e: { ca_month: number })     => s + e.ca_month, 0)
   const networkCaPrev  = Array.from(caPrevMap.values()).reduce((s, v) => s + v, 0)
 
-  // 8. Loyalty network stats
-  const [
-    { data: networkCustomersData },
-    { data: networkCustIds },
-  ] = await Promise.all([
-    (supabaseAdmin as any)
-      .from('network_customers')
-      .select('tier')
-      .eq('org_id', orgId),
-    (supabaseAdmin as any)
-      .from('network_customers')
-      .select('id')
-      .eq('org_id', orgId),
-  ])
+  // 9. Loyalty network stats
+  const { data: networkCustomersData } = await (supabaseAdmin as any)
+    .from('network_customers')
+    .select('id, tier')
+    .eq('org_id', orgId)
 
-  const nc = (networkCustomersData ?? []) as Array<{ tier: string }>
+  const nc = (networkCustomersData ?? []) as Array<{ id: string; tier: string }>
   let pointsIssuedMonth = 0
 
-  if (networkCustIds && networkCustIds.length > 0) {
-    const ncIds = (networkCustIds as Array<{ id: string }>).map(n => n.id)
+  if (nc.length > 0) {
+    const ncIds = nc.map(n => n.id)
     const { data: linkedCustomers } = await (supabaseAdmin as any)
       .from('customers')
       .select('id')
