@@ -1,5 +1,4 @@
 // src/app/dashboard/franchise/loyalty/page.tsx
-import { cookies } from 'next/headers'
 import { NetworkLoyaltyClient } from './_components/network-loyalty-client'
 
 interface LoyaltyLevel {
@@ -36,13 +35,14 @@ const DEFAULT_CONFIG: NetworkConfig = {
 }
 
 export default async function FranchiseLoyaltyPage() {
-  const cookieStore = await cookies()
-  const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const cookieHeader = (await import('next/headers')).cookies()
+  const cookieStr = (await cookieHeader).toString()
 
   let config: NetworkConfig = DEFAULT_CONFIG
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/loyalty/network-config`, {
-      headers: { cookie: cookieHeader },
+    const res = await fetch(`${baseUrl}/api/loyalty/network-config`, {
+      headers: { Cookie: cookieStr },
       cache: 'no-store',
     })
     if (res.ok) config = await res.json()

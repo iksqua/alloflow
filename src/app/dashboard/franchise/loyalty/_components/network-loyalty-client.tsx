@@ -165,7 +165,7 @@ export function NetworkLoyaltyClient({ initialConfig }: Props) {
               </div>
               <div className="rounded-lg p-3" style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}>
                 <p className="text-xs font-medium" style={{ color: '#94a3b8' }}>Silver</p>
-                <p className="text-xs text-[var(--text4)] mt-1">{parseInt(standardMax) + 1} pts —</p>
+                <p className="text-xs text-[var(--text4)] mt-1">{parseInt(standardMax, 10) + 1} pts —</p>
                 <div className="flex items-center gap-1 mt-1">
                   <input
                     type="number"
@@ -180,7 +180,7 @@ export function NetworkLoyaltyClient({ initialConfig }: Props) {
               </div>
               <div className="rounded-lg p-3" style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}>
                 <p className="text-xs font-medium" style={{ color: '#fbbf24' }}>Gold</p>
-                <p className="text-xs text-[var(--text4)] mt-1">{parseInt(silverMax) + 1} pts+</p>
+                <p className="text-xs text-[var(--text4)] mt-1">{parseInt(silverMax, 10) + 1} pts+</p>
                 <p className="text-xs text-[var(--text4)] mt-1">Sans maximum</p>
               </div>
             </div>
