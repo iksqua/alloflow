@@ -16,7 +16,9 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [selectedSop, setSelectedSop] = useState<SopWithSteps | null>(null)
 
-  useEffect(() => {
+  function loadSops() {
+    setLoading(true)
+    setError(null)
     fetch('/api/sops')
       .then(r => r.json())
       .then(data => {
@@ -25,7 +27,9 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { loadSops() }, [])
 
   // Dériver les catégories uniques depuis les SOPs chargées
   const categories = Array.from(
@@ -93,6 +97,7 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="🔍 Rechercher une procédure…"
+            autoFocus
             className="w-full px-3 py-2 rounded-lg text-sm"
             style={{
               background: 'var(--surface2)',
@@ -144,7 +149,7 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <p className="text-sm text-[var(--red)]">{error}</p>
               <button
-                onClick={() => { setError(null); setLoading(true); fetch('/api/sops').then(r => r.json()).then(d => { setSops(d.sops ?? []); setLoading(false) }).catch(e => { setError(e.message); setLoading(false) }) }}
+                onClick={loadSops}
                 className="text-xs px-3 py-1.5 rounded-lg"
                 style={{ background: 'var(--surface2)', color: 'var(--text2)' }}
               >
@@ -162,9 +167,10 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
                 </p>
               )}
               {filtered.map(sop => (
-                <div
+                <button
                   key={sop.id}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl transition-colors"
+                  onClick={() => setSelectedSop(sop)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors text-left"
                   style={{ background: 'var(--surface2)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--blue-light)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface2)')}
@@ -177,14 +183,10 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
                       {sop.total_duration_seconds > 0 ? ` · ${formatDuration(sop.total_duration_seconds)}` : ''}
                     </span>
                   </div>
-                  <button
-                    onClick={() => setSelectedSop(sop)}
-                    className="flex-shrink-0 ml-3 text-xs font-medium"
-                    style={{ color: 'var(--blue)' }}
-                  >
+                  <span className="flex-shrink-0 ml-3 text-xs font-medium" style={{ color: 'var(--blue)' }}>
                     Suivre →
-                  </button>
-                </div>
+                  </span>
+                </button>
               ))}
             </div>
           )}

@@ -57,7 +57,7 @@ export function PosShell({
   const [linkedReward,   setLinkedReward]   = useState<LoyaltyReward | null>(null)
   const [loyaltyDone,    setLoyaltyDone]    = useState(false)
   const [showLoyalty,    setShowLoyalty]    = useState(false)
-  const [showSops, setShowSops] = useState(false)
+  const [showSops,       setShowSops]       = useState(false)
 
   const addItem = (product: typeof initialProducts[0]) => {
     setTicket((prev) => {
