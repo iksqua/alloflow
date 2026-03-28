@@ -8,7 +8,7 @@ alter table public.organizations
 
 -- 3. Ensure type column exists with correct constraint
 alter table public.organizations
-  add column if not exists type text default 'independent';
+  add column if not exists type text not null default 'independent';
 
 alter table public.organizations
   drop constraint if exists organizations_type_check;
@@ -41,6 +41,8 @@ create policy "franchise_admin_manages_orgs"
     parent_org_id = (select org_id from public.profiles where id = auth.uid() and role = 'franchise_admin' and org_id is not null)
   )
   with check (
+    -- On INSERT of new franchise org: parent_org_id must belong to caller's network
+    -- On UPDATE of caller's own siege org: id = <my org_id> passes
     parent_org_id = (select org_id from public.profiles where id = auth.uid() and role = 'franchise_admin' and org_id is not null)
     or
     id = (select org_id from public.profiles where id = auth.uid() and role = 'franchise_admin' and org_id is not null)
@@ -60,6 +62,11 @@ create table if not exists public.franchise_contracts (
   updated_at       timestamptz not null default now(),
   unique(org_id, establishment_id)
 );
+
+-- Performance indexes for frequently-queried FK columns
+create index if not exists idx_organizations_parent_org_id on public.organizations(parent_org_id);
+create index if not exists idx_franchise_contracts_org_id on public.franchise_contracts(org_id);
+create index if not exists idx_franchise_contracts_establishment_id on public.franchise_contracts(establishment_id);
 
 alter table public.franchise_contracts enable row level security;
 
