@@ -1,36 +1,11 @@
 // src/lib/brevo.ts
+export { renderTemplate, type TemplateVars } from './template'
+
 const BREVO_SMS_URL = 'https://api.brevo.com/v3/transactionalSMS/sms'
 
 export interface BrevoSmsResult {
   messageId: string
   smsCount: number
-}
-
-export interface TemplateVars {
-  prenom?: string
-  points?: number
-  tier?: string
-  segment?: string
-  lien_avis?: string
-  etablissement?: string
-}
-
-/**
- * Replace {{variable}} tokens in a template string.
- * Unknown tokens are left as-is.
- */
-export function renderTemplate(template: string, vars: TemplateVars): string {
-  const map: Record<string, string> = {
-    prenom:        vars.prenom        ?? '',
-    points:        String(vars.points ?? ''),
-    tier:          vars.tier          ?? '',
-    segment:       vars.segment       ?? '',
-    lien_avis:     vars.lien_avis     ?? '',
-    etablissement: vars.etablissement ?? '',
-  }
-  return template.replace(/\{\{(\w+)\}\}/g, (match, key) =>
-    key in map ? map[key] : match
-  )
 }
 
 /**

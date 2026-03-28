@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renderTemplate } from '../brevo'
+import { renderTemplate } from '../template'
 
 describe('renderTemplate', () => {
   it('replaces all known variables', () => {
