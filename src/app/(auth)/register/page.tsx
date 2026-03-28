@@ -20,6 +20,7 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setSignInFailed(false)
 
     // 1. Create org + user via API
     let res: Response
