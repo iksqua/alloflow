@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       id, title, content, category_id, recipe_id, active,
       category:sop_categories(id, name, emoji),
       recipe:recipes(id, title),
-      steps:sop_steps(id, sort_order, duration_seconds, media_url)
+      steps:sop_steps(id, sop_id, sort_order, title, description, duration_seconds, media_url, note_type, note_text)
     `)
     .eq('establishment_id', establishmentId)
     .eq('active', true)
