@@ -17,11 +17,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   const parsed = emailSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'invalid_email' }, { status: 400 })
 
-  // Vérifier que la commande est payée
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Establishment not found' }, { status: 400 })
+
+  // Vérifier que la commande appartient à l'établissement et est payée
   const { data: order } = await supabase
     .from('orders')
     .select('status')
     .eq('id', orderId)
+    .eq('establishment_id', profile.establishment_id)
     .single()
 
   if (!order) return NextResponse.json({ error: 'order_not_found' }, { status: 404 })

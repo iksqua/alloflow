@@ -17,8 +17,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   const parsed = smsSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'invalid_phone' }, { status: 400 })
 
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Establishment not found' }, { status: 400 })
+
   const { data: order } = await supabase
-    .from('orders').select('status').eq('id', orderId).single()
+    .from('orders').select('status').eq('id', orderId).eq('establishment_id', profile.establishment_id).single()
 
   if (!order) return NextResponse.json({ error: 'order_not_found' }, { status: 404 })
   if (order.status !== 'paid') return NextResponse.json({ error: 'order_not_paid' }, { status: 422 })
