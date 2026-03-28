@@ -63,19 +63,14 @@ export async function GET() {
       .single(),
     (supabaseAdmin as any)
       .from('network_customers')
-      .select('tier')
+      .select('id, tier')
       .eq('org_id', orgId),
   ])
 
-  // Sum points issued this month via loyalty_transactions scoped to this network
-  const { data: networkCustomerIds } = await (supabaseAdmin as any)
-    .from('network_customers')
-    .select('id')
-    .eq('org_id', orgId)
-
+  // Use networkCustomers IDs directly — no second query needed
   let pointsIssuedMonth = 0
-  if (networkCustomerIds && networkCustomerIds.length > 0) {
-    const ncIds = (networkCustomerIds as Array<{ id: string }>).map(nc => nc.id)
+  if (networkCustomers && networkCustomers.length > 0) {
+    const ncIds = (networkCustomers as Array<{ id: string; tier: string }>).map(nc => nc.id)
     const { data: linkedCustomers } = await (supabaseAdmin as any)
       .from('customers')
       .select('id')
@@ -96,7 +91,7 @@ export async function GET() {
     }
   }
 
-  const nc = (networkCustomers ?? []) as Array<{ tier: string }>
+  const nc = (networkCustomers ?? []) as Array<{ id: string; tier: string }>
   const goldCount             = nc.filter(c => c.tier === 'gold').length
   const silverCount           = nc.filter(c => c.tier === 'silver').length
   const networkCustomersCount = nc.length
@@ -110,7 +105,7 @@ export async function GET() {
       networkCustomersCount,
       goldCount,
       silverCount,
-      points_issued_month:  pointsIssuedMonth,
+      pointsIssuedMonth,
     })
   }
 
@@ -122,7 +117,7 @@ export async function GET() {
     networkCustomersCount,
     goldCount,
     silverCount,
-    points_issued_month:  pointsIssuedMonth,
+    pointsIssuedMonth,
   })
 }
 
