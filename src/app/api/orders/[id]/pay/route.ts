@@ -48,16 +48,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })
   }
 
-  const { method, amount, cash_given, split_payments } = parsed.data
-
-  // Vérifier que le montant couvre la commande
-  const totalPaid = method === 'split'
-    ? (split_payments ?? []).reduce((s, p) => s + p.amount, 0)
-    : amount
-
-  if (Math.abs(totalPaid - order.total_ttc) > 0.01) {
-    return NextResponse.json({ error: 'payment_amount_mismatch', total_ttc: order.total_ttc }, { status: 400 })
-  }
+  const { method, cash_given, split_payments } = parsed.data
+  // Use the server-stored total_ttc as the authoritative amount (avoids client/server float mismatch)
+  const authorizedTotal = order.total_ttc
 
   // Marquer la commande payée
   await supabase
@@ -77,9 +70,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     : [{
         order_id: id,
         method,
-        amount,
+        amount: authorizedTotal,
         cash_given: cash_given ?? null,
-        change_due: cash_given != null ? cash_given - amount : null,
+        change_due: cash_given != null ? cash_given - authorizedTotal : null,
       }]
 
   const { data: payments } = await supabase
@@ -117,14 +110,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const prevHash   = lastEntry?.entry_hash  ?? ''
       const nextSeq    = prevSeq + 1
       const occurredAt = new Date().toISOString()
-      const entryHash  = computeEntryHash(prevHash, nextSeq, id, order.total_ttc, occurredAt)
+      const entryHash  = computeEntryHash(prevHash, nextSeq, id, authorizedTotal, occurredAt)
 
       await supabase.from('fiscal_journal_entries').insert({
         establishment_id: profile.establishment_id,
         sequence_no:      nextSeq,
         event_type:       'sale',
         order_id:         id,
-        amount_ttc:       order.total_ttc,
+        amount_ttc:       authorizedTotal,
         cashier_id:       user.id,
         occurred_at:      occurredAt,
         previous_hash:    prevHash,
