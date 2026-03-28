@@ -190,13 +190,6 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
       return 0
   }
 
-  // Deduplicate: skip customers who already received this automation trigger recently
-  if (rule.trigger_type !== 'google_review') {
-    // For non-google_review automations: check campaign_sends for this trigger_type
-    // (welcome/birthday once per year logic is handled by the trigger conditions above)
-    // No additional dedup needed beyond what trigger conditions already filter
-  }
-
   // Send to eligible customers
   let sent = 0
   for (const customer of customers) {
