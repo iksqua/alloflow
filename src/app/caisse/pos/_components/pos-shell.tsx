@@ -23,6 +23,7 @@ interface PosShellProps {
   cashierId: string
   cashierName: string
   userRole: string
+  establishmentId: string
 }
 
 const EMPTY_TICKET: LocalTicket = { items: [], discount: null, tableId: null, note: '' }
@@ -35,6 +36,7 @@ export function PosShell({
   cashierId,
   cashierName,
   userRole,
+  establishmentId,
 }: PosShellProps) {
   const [session, setSession] = useState<CashSession | null>(initialSession)
   const [ticket, setTicket] = useState<LocalTicket>(EMPTY_TICKET)

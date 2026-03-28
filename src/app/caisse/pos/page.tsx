@@ -54,6 +54,7 @@ export default async function PosPage() {
       cashierId={user.id}
       cashierName={user.email?.split('@')[0] ?? 'Caissier'}
       userRole={(profile?.role as string) ?? 'caissier'}
+      establishmentId={establishmentId}
     />
   )
 }
