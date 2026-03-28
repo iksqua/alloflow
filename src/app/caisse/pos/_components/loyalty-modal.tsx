@@ -33,6 +33,8 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   const [newLastName,  setNewLastName]  = useState('')
   const [newPhone,     setNewPhone]     = useState('')
   const [newEmail,     setNewEmail]     = useState('')
+  const [newOptInSms,  setNewOptInSms]  = useState(false)
+  const [newOptInEmail,setNewOptInEmail]= useState(false)
   const [saving,       setSaving]       = useState(false)
   const [formError,    setFormError]    = useState<string | null>(null)
 
@@ -42,7 +44,8 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
     if (open) {
       setQuery(''); setState('searching'); setCustomers([]); setSelected(null)
       setRewards([]); setChosenReward(null); setSearching(false)
-      setNewFirstName(''); setNewLastName(''); setNewPhone(''); setNewEmail(''); setFormError(null)
+      setNewFirstName(''); setNewLastName(''); setNewPhone(''); setNewEmail('')
+      setNewOptInSms(false); setNewOptInEmail(false); setFormError(null)
     }
   }, [open])
 
@@ -83,10 +86,12 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          first_name: newFirstName.trim(),
-          last_name:  newLastName.trim() || null,
-          phone:      newPhone.trim() || null,
-          email:      newEmail.trim() || null,
+          first_name:   newFirstName.trim(),
+          last_name:    newLastName.trim() || null,
+          phone:        newPhone.trim() || null,
+          email:        newEmail.trim() || null,
+          opt_in_sms:   newOptInSms,
+          opt_in_email: newOptInEmail,
         }),
       })
       if (!res.ok) { const j = await res.json(); throw new Error(j.error ?? 'Erreur') }
@@ -117,7 +122,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
             <h2 className="text-sm font-bold text-[var(--text1)]">🎁 Programme fidélité</h2>
             <p className="text-xs text-[var(--text4)]">Identifiez le client pour créditer ses points</p>
           </div>
-          <button onClick={onClose} className="text-[var(--text4)] hover:text-[var(--text2)] text-xl">×</button>
+          <button onClick={onClose} className="text-[var(--text4)] hover:text-[var(--text2)] text-xl">✕</button>
         </div>
 
         <div className="p-5 space-y-4">
@@ -262,6 +267,33 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
                 <label className="text-[10px] text-[var(--text4)]">Email</label>
                 <input value={newEmail} onChange={e => setNewEmail(e.target.value)}
                   className="mt-0.5 w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text1)] text-sm" />
+              </div>
+              {/* RGPD opt-ins */}
+              <div className="mt-3 border-t border-[var(--border)] pt-3">
+                <p className="text-xs text-[var(--text3)] mb-2">Consentements communications (RGPD)</p>
+                <div className="flex flex-col gap-1.5">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newOptInSms}
+                      onChange={e => setNewOptInSms(e.target.checked)}
+                      className="w-4 h-4 rounded accent-[var(--blue)]"
+                    />
+                    <span className="text-xs text-[var(--text2)]">Opt-in SMS</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newOptInEmail}
+                      onChange={e => setNewOptInEmail(e.target.checked)}
+                      className="w-4 h-4 rounded accent-[var(--blue)]"
+                    />
+                    <span className="text-xs text-[var(--text2)]">Opt-in Email</span>
+                  </label>
+                </div>
+                <p className="text-[10px] text-[var(--text4)] mt-1">
+                  Le client consent à recevoir des communications de notre établissement.
+                </p>
               </div>
               {formError && <p className="text-xs text-red-400">{formError}</p>}
               <button

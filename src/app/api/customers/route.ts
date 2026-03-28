@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   const result = createCustomerSchema.safeParse(body)
   if (!result.success) return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('customers')
     .insert({
       establishment_id: establishmentId,
@@ -62,6 +63,9 @@ export async function POST(req: NextRequest) {
       email:            result.data.email ?? null,
       points:           0,
       tier:             'standard',
+      opt_in_sms:       result.data.opt_in_sms ?? false,
+      opt_in_email:     result.data.opt_in_email ?? false,
+      opt_in_whatsapp:  result.data.opt_in_whatsapp ?? false,
     })
     .select('id, first_name, last_name, phone, email, points, tier')
     .single()
