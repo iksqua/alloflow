@@ -98,6 +98,7 @@ export interface LoyaltyReward {
   id: string
   name: string
   points_required: number
-  discount_type: 'percent' | 'fixed'
-  discount_value: number
+  type: 'percent' | 'fixed' | 'product' | 'produit_offert' | 'reduction_euros' | 'reduction_pct'
+  value: number
+  active?: boolean
 }

@@ -19,8 +19,8 @@ interface LoyaltyReward {
   id: string
   name: string
   points_required: number
-  discount_type: string
-  discount_value: number
+  type: string
+  value: number
   active: boolean
 }
 
@@ -42,8 +42,8 @@ function formatDate(iso: string) {
 }
 
 function formatDiscountType(type: string, value: number) {
-  if (type === 'percentage') return `−${value}%`
-  if (type === 'fixed') return `−${value} €`
+  if (type === 'percent' || type === 'reduction_pct') return `−${value}%`
+  if (type === 'fixed' || type === 'reduction_euros') return `−${value} €`
   return type
 }
 
@@ -118,7 +118,7 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards }: Props)
                   <div className="flex-1 min-w-0 mr-2">
                     <div className="text-sm text-[var(--text1)] truncate">{reward.name}</div>
                     <div className="text-xs text-[var(--text3)] mt-0.5">
-                      {reward.points_required.toLocaleString('fr-FR')} pts · {formatDiscountType(reward.discount_type, reward.discount_value)}
+                      {reward.points_required.toLocaleString('fr-FR')} pts · {formatDiscountType(reward.type, reward.value)}
                     </div>
                   </div>
                   <span

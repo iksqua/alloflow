@@ -45,9 +45,9 @@ function computeTicketTotals(ticket: LocalTicket) {
 
 function computeLoyaltyDiscount(reward: LoyaltyReward | null, total: number): number {
   if (!reward) return 0
-  return reward.discount_type === 'percent'
-    ? Math.round(total * (reward.discount_value / 100) * 100) / 100
-    : reward.discount_value
+  return reward.type === 'percent' || reward.type === 'reduction_pct'
+    ? Math.round(total * (reward.value / 100) * 100) / 100
+    : reward.value
 }
 
 export function TicketPanel({

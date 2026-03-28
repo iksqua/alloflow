@@ -107,9 +107,9 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   if (!open) return null
 
   const pointsToEarn = Math.round(orderTotal - (chosenReward
-    ? chosenReward.discount_type === 'percent'
-      ? Math.round(orderTotal * (chosenReward.discount_value / 100) * 100) / 100
-      : chosenReward.discount_value
+    ? (chosenReward.type === 'percent' || chosenReward.type === 'reduction_pct')
+      ? Math.round(orderTotal * (chosenReward.value / 100) * 100) / 100
+      : chosenReward.value
     : 0))
 
   return (
@@ -218,7 +218,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
                         }`}>
                         <span>{r.name}</span>
                         <span className="text-xs font-semibold">
-                          {r.discount_type === 'percent' ? `−${r.discount_value}%` : `−${r.discount_value.toFixed(2)} €`}
+                          {(r.type === 'percent' || r.type === 'reduction_pct') ? `−${r.value}%` : `−${r.value.toFixed(2)} €`}
                         </span>
                       </button>
                     ))}

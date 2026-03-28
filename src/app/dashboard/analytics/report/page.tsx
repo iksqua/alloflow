@@ -24,9 +24,16 @@ export default async function ReportPage({
 
   const params = await searchParams
   const period = (params.period ?? '30d') as Period
-  const siteId = params.site || undefined
   const page = parseInt(params.page ?? '1', 10)
   const range = getPeriodRange(period)
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  const siteId = params.site || profile?.establishment_id || undefined
 
   // Fetch establishments for PeriodPicker
   const { data: establishments } = await supabase

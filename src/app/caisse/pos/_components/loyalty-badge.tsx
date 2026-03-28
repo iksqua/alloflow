@@ -9,9 +9,9 @@ interface Props {
 
 export function LoyaltyBadge({ customer, reward, orderTotal }: Props) {
   const rewardDiscount = reward
-    ? reward.discount_type === 'percent'
-      ? Math.round(orderTotal * (reward.discount_value / 100) * 100) / 100
-      : reward.discount_value
+    ? (reward.type === 'percent' || reward.type === 'reduction_pct')
+      ? Math.round(orderTotal * (reward.value / 100) * 100) / 100
+      : reward.value
     : 0
   const pointsToEarn = Math.floor(orderTotal - rewardDiscount)
 

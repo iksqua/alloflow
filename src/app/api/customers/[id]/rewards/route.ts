@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   // Return rewards the customer can afford
   const { data, error } = await supabase
     .from('loyalty_rewards')
-    .select('id, name, points_required, discount_type, discount_value')
+    .select('id, name, points_required, type, value, active')
     .eq('establishment_id', profile.establishment_id)
     .lte('points_required', customer.points)
     .order('points_required')

@@ -53,10 +53,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const authorizedTotal = order.total_ttc
 
   // Marquer la commande payée
-  await supabase
+  const { error: statusError } = await supabase
     .from('orders')
     .update({ status: 'paid', updated_at: new Date().toISOString() })
     .eq('id', id)
+
+  if (statusError) {
+    console.error('[pay] Failed to update order status:', statusError)
+    return NextResponse.json({ error: 'Failed to update order status', detail: statusError.message }, { status: 500 })
+  }
 
   // Enregistrer le(s) paiement(s)
   const paymentsToInsert = method === 'split' && split_payments

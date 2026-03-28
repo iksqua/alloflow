@@ -80,12 +80,35 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
             </div>
           ))}
           <div className="receipt-divider" />
+          <div className="receipt-row">
+            <span>Sous-total HT</span>
+            <span>{order.subtotal_ht?.toFixed(2) ?? '—'} €</span>
+          </div>
           {order.discount_amount > 0 && (
             <div className="receipt-row">
               <span>Remise</span>
               <span>-{order.discount_amount.toFixed(2)} €</span>
             </div>
           )}
+          {order.tax_5_5 > 0 && (
+            <div className="receipt-row">
+              <span>TVA 5,5%</span>
+              <span>{order.tax_5_5.toFixed(2)} €</span>
+            </div>
+          )}
+          {order.tax_10 > 0 && (
+            <div className="receipt-row">
+              <span>TVA 10%</span>
+              <span>{order.tax_10.toFixed(2)} €</span>
+            </div>
+          )}
+          {order.tax_20 > 0 && (
+            <div className="receipt-row">
+              <span>TVA 20%</span>
+              <span>{order.tax_20.toFixed(2)} €</span>
+            </div>
+          )}
+          <div className="receipt-divider" />
           <div className="receipt-row receipt-bold" style={{ fontSize: '13px' }}>
             <span>TOTAL TTC</span>
             <span>{order.total_ttc.toFixed(2)} €</span>

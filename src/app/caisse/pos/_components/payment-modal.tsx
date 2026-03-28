@@ -35,9 +35,9 @@ function computeTotal(ticket: LocalTicket, loyaltyReward: LoyaltyReward | null):
   let total = discountedHt + totalTax * ratio
 
   if (loyaltyReward) {
-    const loyaltyDiscount = loyaltyReward.discount_type === 'percent'
-      ? Math.round(total * (loyaltyReward.discount_value / 100) * 100) / 100
-      : loyaltyReward.discount_value
+    const loyaltyDiscount = (loyaltyReward.type === 'percent' || loyaltyReward.type === 'reduction_pct')
+      ? Math.round(total * (loyaltyReward.value / 100) * 100) / 100
+      : loyaltyReward.value
     total = Math.max(0, total - loyaltyDiscount)
   }
   return total
@@ -70,9 +70,9 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     setIsPaying(true)
     try {
       const loyaltyDiscountAmount = linkedReward
-        ? linkedReward.discount_type === 'percent'
-          ? Math.round(total * (linkedReward.discount_value / 100) * 100) / 100
-          : linkedReward.discount_value
+        ? (linkedReward.type === 'percent' || linkedReward.type === 'reduction_pct')
+          ? Math.round(total * (linkedReward.value / 100) * 100) / 100
+          : linkedReward.value
         : 0
 
       const orderRes = await fetch('/api/orders', {
@@ -113,9 +113,14 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       if (mode === 'card') {
         payBody = { method: 'card', amount: total }
       } else if (mode === 'cash') {
-        const cashGivenAmount = parseFloat(cashGiven.replace(',', '.')) || 0
-        if (!cashGivenAmount || isNaN(cashGivenAmount)) {
+        const cashGivenAmount = parseFloat(cashGiven.replace(',', '.'))
+        if (isNaN(cashGivenAmount) || cashGivenAmount < 0) {
           toast.error('Montant invalide')
+          setIsPaying(false)
+          return
+        }
+        if (cashGivenAmount < total - 0.01) {
+          toast.error(`Montant insuffisant (minimum ${total.toFixed(2)} €)`)
           setIsPaying(false)
           return
         }

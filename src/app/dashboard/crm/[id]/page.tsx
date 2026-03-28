@@ -28,8 +28,8 @@ interface LoyaltyReward {
   id: string
   name: string
   points_required: number
-  discount_type: string
-  discount_value: number
+  type: string
+  value: number
   active: boolean
 }
 
@@ -72,7 +72,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       .limit(10),
     supabaseAny
       .from('loyalty_rewards')
-      .select('id, name, points_required, discount_type, discount_value, active')
+      .select('id, name, points_required, type, value, active')
       .eq('establishment_id', establishmentId)
       .eq('active', true)
       .order('points_required'),
