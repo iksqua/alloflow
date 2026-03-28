@@ -65,7 +65,7 @@ describe('GET /api/loyalty/network-config', () => {
     mockAnonClient()
     const admin = mockAdmin()
 
-    admin.from.mockImplementation((table: string) => {
+    admin.from.mockImplementation(((table: string) => {
       const listResult = { data: [] as unknown[], error: null }
       const singleResult = table === 'network_loyalty_config'
         ? { data: null, error: null }
@@ -83,7 +83,7 @@ describe('GET /api/loyalty/network-config', () => {
         then: (resolve: (v: unknown) => void) => resolve(listResult),
       }
       return chain
-    }) as any
+    }) as any)
 
     const res = await GET()
     expect(res.status).toBe(200)
