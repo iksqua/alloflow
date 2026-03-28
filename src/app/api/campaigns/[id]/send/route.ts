@@ -39,7 +39,10 @@ export async function POST(
     .eq('id', profile.establishment_id)
     .single()
 
-  if (!estab || estab.sms_credits <= 0) {
+  if (!estab) {
+    return NextResponse.json({ error: 'Établissement introuvable' }, { status: 500 })
+  }
+  if (estab.sms_credits <= 0) {
     return NextResponse.json({ error: 'Crédits SMS épuisés' }, { status: 402 })
   }
 
