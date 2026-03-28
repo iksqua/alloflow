@@ -61,6 +61,82 @@ export interface Database {
           { foreignKeyName: "franchise_contracts_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: false; referencedRelation: "establishments"; referencedColumns: ["id"] }
         ]
       }
+      network_customers: {
+        Row: {
+          id: string
+          org_id: string
+          phone: string
+          first_name: string
+          last_name: string | null
+          email: string | null
+          total_points: number
+          tier: 'standard' | 'silver' | 'gold'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          phone: string
+          first_name?: string
+          last_name?: string | null
+          email?: string | null
+          total_points?: number
+          tier?: 'standard' | 'silver' | 'gold'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          phone?: string
+          first_name?: string
+          last_name?: string | null
+          email?: string | null
+          total_points?: number
+          tier?: 'standard' | 'silver' | 'gold'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "network_customers_org_id_fkey"; columns: ["org_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] }
+        ]
+      }
+      network_loyalty_config: {
+        Row: {
+          id: string
+          org_id: string
+          active: boolean
+          pts_per_euro: number
+          min_redemption_pts: number
+          levels: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          active?: boolean
+          pts_per_euro?: number
+          min_redemption_pts?: number
+          levels?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          active?: boolean
+          pts_per_euro?: number
+          min_redemption_pts?: number
+          levels?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "network_loyalty_config_org_id_fkey"; columns: ["org_id"]; isOneToOne: true; referencedRelation: "organizations"; referencedColumns: ["id"] }
+        ]
+      }
       profiles: {
         Row: { id: string; first_name: string; email: string | null; role: 'super_admin' | 'admin' | 'caissier' | 'franchise_admin'; establishment_id: string | null; org_id: string | null; created_at: string }
         Insert: { id: string; first_name?: string; email?: string | null; role?: 'super_admin' | 'admin' | 'caissier' | 'franchise_admin'; establishment_id?: string | null; org_id?: string | null; created_at?: string }
@@ -207,11 +283,12 @@ export interface Database {
         ]
       }
       customers: {
-        Row: { id: string; establishment_id: string; first_name: string; last_name: string | null; name: string; phone: string | null; email: string | null; points: number; tier: 'standard' | 'silver' | 'gold'; created_by: string | null }
-        Insert: { id?: string; establishment_id: string; first_name?: string; last_name?: string | null; name?: string; phone?: string | null; email?: string | null; points?: number; tier?: 'standard' | 'silver' | 'gold'; created_by?: string | null }
-        Update: { id?: string; establishment_id?: string; first_name?: string; last_name?: string | null; name?: string; phone?: string | null; email?: string | null; points?: number; tier?: 'standard' | 'silver' | 'gold'; created_by?: string | null }
+        Row: { id: string; establishment_id: string; first_name: string; last_name: string | null; name: string; phone: string | null; email: string | null; points: number; tier: 'standard' | 'silver' | 'gold'; created_by: string | null; network_customer_id: string | null }
+        Insert: { id?: string; establishment_id: string; first_name?: string; last_name?: string | null; name?: string; phone?: string | null; email?: string | null; points?: number; tier?: 'standard' | 'silver' | 'gold'; created_by?: string | null; network_customer_id?: string | null }
+        Update: { id?: string; establishment_id?: string; first_name?: string; last_name?: string | null; name?: string; phone?: string | null; email?: string | null; points?: number; tier?: 'standard' | 'silver' | 'gold'; created_by?: string | null; network_customer_id?: string | null }
         Relationships: [
-          { foreignKeyName: "customers_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: false; referencedRelation: "establishments"; referencedColumns: ["id"] }
+          { foreignKeyName: "customers_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: false; referencedRelation: "establishments"; referencedColumns: ["id"] },
+          { foreignKeyName: "customers_network_customer_id_fkey"; columns: ["network_customer_id"]; isOneToOne: false; referencedRelation: "network_customers"; referencedColumns: ["id"] }
         ]
       }
       loyalty_rewards: {
