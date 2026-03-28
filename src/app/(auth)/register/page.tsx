@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [password,    setPassword]    = useState('')
   const [error,       setError]       = useState<string | null>(null)
   const [loading,     setLoading]     = useState(false)
+  const [signInFailed, setSignInFailed] = useState(false)
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,11 +22,18 @@ export default function RegisterPage() {
     setError(null)
 
     // 1. Create org + user via API
-    const res = await fetch('/api/auth/register-franchise', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ networkName, email, password }),
-    })
+    let res: Response
+    try {
+      res = await fetch('/api/auth/register-franchise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ networkName, email, password }),
+      })
+    } catch {
+      setError('Erreur lors de la création du compte')
+      setLoading(false)
+      return
+    }
 
     if (!res.ok) {
       const data = await res.json()
@@ -47,7 +55,7 @@ export default function RegisterPage() {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (signInError) {
-      setError('Compte créé. Connectez-vous sur la page de connexion →')
+      setSignInFailed(true)
       setLoading(false)
       return
     }
@@ -109,6 +117,15 @@ export default function RegisterPage() {
 
           {error && (
             <p className="text-sm" style={{ color: 'var(--red)' }}>{error}</p>
+          )}
+
+          {signInFailed && (
+            <p className="text-sm" style={{ color: 'var(--text3)' }}>
+              Compte créé.{' '}
+              <a href="/login" style={{ color: 'var(--blue)' }}>
+                Connectez-vous →
+              </a>
+            </p>
           )}
 
           <Button type="submit" className="w-full" disabled={loading}>
