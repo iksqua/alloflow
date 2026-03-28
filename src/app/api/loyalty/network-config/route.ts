@@ -105,7 +105,7 @@ export async function GET() {
       networkCustomersCount,
       goldCount,
       silverCount,
-      pointsIssuedMonth,
+      points_issued_month: pointsIssuedMonth,
     })
   }
 
@@ -117,7 +117,7 @@ export async function GET() {
     networkCustomersCount,
     goldCount,
     silverCount,
-    pointsIssuedMonth,
+    points_issued_month: pointsIssuedMonth,
   })
 }
 
