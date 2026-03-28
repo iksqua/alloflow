@@ -39,7 +39,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     if (nc) network = { id: nc.id, total_points: nc.total_points, tier: nc.tier }
   }
 
-  return NextResponse.json({ ...data, network })
+  const { network_customer_id: _omit, ...customerData } = data
+  return NextResponse.json({ ...customerData, network })
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
