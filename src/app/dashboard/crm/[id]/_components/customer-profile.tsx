@@ -1,5 +1,6 @@
 // src/app/dashboard/crm/[id]/_components/customer-profile.tsx
 import Link from 'next/link'
+import { CustomerProfileClient } from './customer-profile-client'
 
 interface Customer {
   id: string
@@ -10,6 +11,16 @@ interface Customer {
   phone: string | null
   email: string | null
   created_at: string
+  gender: string | null
+  birthdate: string | null
+  opt_in_sms: boolean
+  opt_in_email: boolean
+  opt_in_whatsapp: boolean
+  tags: string[]
+  notes: string | null
+  rfm_segment: 'vip' | 'fidele' | 'nouveau' | 'a_risque' | 'perdu'
+  avg_basket: number
+  order_count: number
 }
 
 interface Props {
@@ -29,6 +40,14 @@ const TIER_COLORS: Record<string, { bg: string; text: string }> = {
   gold: { bg: 'rgba(251,191,36,0.15)', text: '#fbbf24' },
   silver: { bg: 'rgba(148,163,184,0.15)', text: '#94a3b8' },
   standard: { bg: 'rgba(100,116,139,0.15)', text: '#94a3b8' },
+}
+
+const RFM_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  vip:      { bg: 'rgba(251,191,36,0.15)',  text: '#fbbf24', label: '👑 VIP' },
+  fidele:   { bg: 'rgba(16,185,129,0.15)',  text: '#10b981', label: '⭐ Fidèle' },
+  nouveau:  { bg: 'rgba(59,130,246,0.15)',  text: '#60a5fa', label: '🆕 Nouveau' },
+  a_risque: { bg: 'rgba(245,158,11,0.15)',  text: '#f59e0b', label: '⚠️ À risque' },
+  perdu:    { bg: 'rgba(239,68,68,0.15)',   text: '#ef4444', label: '💤 Perdu' },
 }
 
 function getInitials(firstName: string, lastName: string | null) {
@@ -78,6 +97,17 @@ export function CustomerProfile({ customer, totalRevenue, visitCount, avgTicket 
             >
               {TIER_LABELS[customer.tier]}
             </span>
+            {(() => {
+              const rfm = RFM_COLORS[customer.rfm_segment]
+              return rfm ? (
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ background: rfm.bg, color: rfm.text }}
+                >
+                  {rfm.label}
+                </span>
+              ) : null
+            })()}
           </div>
           <div className="flex flex-col gap-1">
             {customer.phone && (
@@ -115,6 +145,8 @@ export function CustomerProfile({ customer, totalRevenue, visitCount, avgTicket 
           </div>
         ))}
       </div>
+
+      <CustomerProfileClient customer={customer} />
     </div>
   )
 }
