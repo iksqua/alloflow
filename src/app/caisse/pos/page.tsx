@@ -11,7 +11,8 @@ export default async function PosPage() {
   const { data: profile } = await supabase
     .from('profiles').select('establishment_id, role').eq('id', user.id).single()
 
-  const establishmentId = profile?.establishment_id as string
+  if (!profile?.establishment_id) redirect('/login')
+  const establishmentId = profile.establishment_id
 
   const [{ data: products }, { data: categories }, { data: session }, { data: tables }] = await Promise.all([
     supabase
