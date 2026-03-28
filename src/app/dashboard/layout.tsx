@@ -22,11 +22,12 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, establishment_id')
+    .select('role, establishment_id, org_id')
     .eq('id', user.id)
     .single()
 
   if (!profile) redirect('/login?error=profile_not_found')
+  if (profile.role === 'franchise_admin') redirect('/dashboard/franchise')
   if (profile.role === 'caissier') redirect('/caisse/pos')
 
   const { data: establishment } = profile.establishment_id
