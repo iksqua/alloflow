@@ -32,12 +32,21 @@ function LoginForm() {
     }
 
     // Role-aware redirect
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', authData.user.id)
       .single()
 
+    if (profileError) {
+      // Fall back to products on profile fetch failure
+      setLoading(false)
+      router.push('/dashboard/products')
+      router.refresh()
+      return
+    }
+
+    setLoading(false)
     if (profile?.role === 'franchise_admin') {
       router.push('/dashboard/franchise/command-center')
     } else {
