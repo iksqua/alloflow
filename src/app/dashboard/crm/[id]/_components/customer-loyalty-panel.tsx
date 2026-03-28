@@ -28,6 +28,11 @@ interface Props {
   customer: Customer
   transactions: LoyaltyTransaction[]
   rewards: LoyaltyReward[]
+  network?: {
+    id: string
+    total_points: number
+    tier: 'standard' | 'silver' | 'gold'
+  } | null
 }
 
 // Standard → Silver: 500 pts, Silver → Gold: 2000 pts
@@ -47,7 +52,7 @@ function formatDiscountType(type: string, value: number) {
   return type
 }
 
-export function CustomerLoyaltyPanel({ customer, transactions, rewards }: Props) {
+export function CustomerLoyaltyPanel({ customer, transactions, rewards, network }: Props) {
   const threshold = TIER_THRESHOLDS[customer.tier]
   const progressPct = customer.tier === 'gold'
     ? 100
@@ -100,6 +105,32 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards }: Props)
             </button>
           </div>
         </div>
+
+        {/* Network identity */}
+        {network && (
+          <div className="pt-4 border-t border-white/[0.06]">
+            <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-2">Réseau</p>
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                style={{ background: 'rgba(96,165,250,0.12)', color: '#60a5fa' }}
+              >
+                🌐 Membre réseau
+              </span>
+            </div>
+            <p className="text-sm text-[var(--text2)] mt-2">
+              Points réseau :{' '}
+              <span className="font-semibold text-white">
+                {network.total_points.toLocaleString('fr-FR')} pts
+              </span>
+              {' · '}
+              Tier réseau :{' '}
+              <span className="font-semibold" style={{ color: network.tier === 'gold' ? '#fbbf24' : network.tier === 'silver' ? '#94a3b8' : 'var(--text2)' }}>
+                {network.tier.charAt(0).toUpperCase() + network.tier.slice(1)}
+              </span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Available rewards */}

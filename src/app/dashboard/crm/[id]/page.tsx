@@ -1,5 +1,6 @@
 // src/app/dashboard/crm/[id]/page.tsx
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect, notFound } from 'next/navigation'
 import { CustomerProfile } from './_components/customer-profile'
 import { CustomerOrderHistory } from './_components/customer-order-history'
@@ -59,7 +60,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   ] = await Promise.all([
     supabaseAny
       .from('customers')
-      .select('id, first_name, last_name, tier, points, phone, email, notes, last_order_at, gender, birthdate, opt_in_sms, opt_in_email, opt_in_whatsapp, tags, rfm_segment, avg_basket, order_count')
+      .select('id, first_name, last_name, tier, points, phone, email, notes, last_order_at, gender, birthdate, opt_in_sms, opt_in_email, opt_in_whatsapp, tags, rfm_segment, avg_basket, order_count, network_customer_id')
       .eq('id', id)
       .eq('establishment_id', establishmentId)
       .single(),
@@ -79,6 +80,21 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   ])
 
   if (!customer) notFound()
+
+  // Fetch network identity if customer is linked
+  let networkData: { id: string; total_points: number; tier: 'standard' | 'silver' | 'gold' } | null = null
+  if (customer.network_customer_id) {
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const { data: nc } = await (supabaseAdmin as any)
+      .from('network_customers')
+      .select('id, total_points, tier')
+      .eq('id', customer.network_customer_id)
+      .single()
+    if (nc) networkData = nc as typeof networkData
+  }
 
   const orders: Order[] = rawOrders.map((o) => ({
     id: o.id,
@@ -118,6 +134,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             customer={customer}
             transactions={transactions}
             rewards={rewards}
+            network={networkData}
           />
         </div>
       </div>
