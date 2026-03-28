@@ -10,6 +10,7 @@ import { DiscountModal } from './discount-modal'
 import { FloorPlanModal } from './floor-plan-modal'
 import { SessionModal } from './session-modal'
 import { LoyaltyModal } from './loyalty-modal'
+import { SopModal } from './sop-modal'
 import type { LocalTicket, LocalItem, CashSession, Order, LoyaltyCustomer, LoyaltyReward } from '../types'
 
 interface PosShellProps {
@@ -56,6 +57,7 @@ export function PosShell({
   const [linkedReward,   setLinkedReward]   = useState<LoyaltyReward | null>(null)
   const [loyaltyDone,    setLoyaltyDone]    = useState(false)
   const [showLoyalty,    setShowLoyalty]    = useState(false)
+  const [showSops, setShowSops] = useState(false)
 
   const addItem = (product: typeof initialProducts[0]) => {
     setTicket((prev) => {
@@ -136,6 +138,12 @@ export function PosShell({
             className="h-8 px-3 rounded-lg text-xs text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"
           >
             🗺 Plan de salle
+          </button>
+          <button
+            onClick={() => setShowSops(true)}
+            className="h-8 px-3 rounded-lg text-xs text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"
+          >
+            📋 SOPs
           </button>
           {userRole !== 'caissier' && (
             <a
@@ -262,6 +270,13 @@ export function PosShell({
             setLoyaltyDone(true)
             setShowLoyalty(false)
           }}
+        />
+      )}
+
+      {showSops && (
+        <SopModal
+          establishmentId={establishmentId}
+          onClose={() => setShowSops(false)}
         />
       )}
     </div>
