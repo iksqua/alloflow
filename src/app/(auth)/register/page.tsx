@@ -37,7 +37,6 @@ export default function RegisterPage() {
     }
 
     if (!res.ok) {
-      const data = await res.json()
       if (res.status === 409) {
         setError('Un compte existe déjà avec cet email')
       } else if (res.status === 422) {
@@ -45,6 +44,7 @@ export default function RegisterPage() {
       } else if (res.status === 429) {
         setError('Trop de tentatives. Réessayez dans une minute.')
       } else {
+        const data = await res.json().catch(() => ({}))
         setError(data.error ?? 'Erreur lors de la création du compte')
       }
       setLoading(false)
