@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createCustomerSchema } from '@/lib/validations/loyalty'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 async function getEstablishmentId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase.from('profiles').select('establishment_id').eq('id', userId).single()
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     .insert({
       establishment_id: establishmentId,
       created_by:       user.id,
-      name:             result.data.first_name,   // legacy `name` field (NOT NULL)
+      name:             result.data.first_name,
       first_name:       result.data.first_name,
       last_name:        result.data.last_name ?? null,
       phone:            result.data.phone ?? null,
@@ -71,5 +72,76 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Network auto-linking: if phone provided, try to link to network_customers
+  if (result.data.phone) {
+    try {
+      const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+
+      // Resolve org and root_org_id
+      const { data: est } = await supabaseAdmin
+        .from('establishments')
+        .select('org_id')
+        .eq('id', establishmentId)
+        .single()
+
+      if (est?.org_id) {
+        const { data: org } = await supabaseAdmin
+          .from('organizations')
+          .select('id, type, parent_org_id')
+          .eq('id', est.org_id)
+          .single()
+
+        if (org && org.type !== 'independent') {
+          const rootOrgId: string = (org.parent_org_id ?? org.id) as string
+
+          // Look up existing network_customers for (root_org_id, phone)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: existing } = await (supabaseAdmin as any)
+            .from('network_customers')
+            .select('id')
+            .eq('org_id', rootOrgId)
+            .eq('phone', result.data.phone)
+            .single()
+
+          let networkCustomerId: string
+
+          if (existing) {
+            networkCustomerId = existing.id as string
+          } else {
+            // Create new network_customers record
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: created } = await (supabaseAdmin as any)
+              .from('network_customers')
+              .insert({
+                org_id:     rootOrgId,
+                phone:      result.data.phone,
+                first_name: result.data.first_name,
+                last_name:  result.data.last_name ?? null,
+                email:      result.data.email ?? null,
+              })
+              .select('id')
+              .single()
+
+            if (!created) throw new Error('network_customers insert failed')
+            networkCustomerId = created.id as string
+          }
+
+          // Link the new customer to the network identity
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabaseAdmin as any)
+            .from('customers')
+            .update({ network_customer_id: networkCustomerId })
+            .eq('id', data.id)
+        }
+      }
+    } catch {
+      // Auto-linking is best-effort — customer was created successfully, don't fail the request
+    }
+  }
+
   return NextResponse.json(data, { status: 201 })
 }
