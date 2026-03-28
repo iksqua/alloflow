@@ -41,9 +41,10 @@ customers (per-establishment, inchangé)
 ```
 
 **Auto-linking** : à la création d'un client (`POST /api/customers`), si l'org de l'établissement est de type `siege` ou `franchise` et qu'un téléphone est fourni :
-- Cherche un `network_customers` existant pour `(org_id, phone)`
+- Résout `root_org_id` : si `org.parent_org_id` est non null → `root_org_id = org.parent_org_id` (franchise → utiliser le siège), sinon `root_org_id = org.id` (c'est déjà le siège)
+- Cherche un `network_customers` existant pour `(root_org_id, phone)` — garantit une identité réseau unique scoped au siège
 - Trouvé → `customers.network_customer_id = found.id`
-- Pas trouvé → crée le `network_customers`, puis lie
+- Pas trouvé → crée le `network_customers` avec `org_id = root_org_id`, puis lie
 
 **Points sync** : trigger PostgreSQL `AFTER UPDATE OF points ON customers`. Si `network_customer_id` présent et points ont changé → recalcule `network_customers.total_points` (SUM) + recalcule tier depuis les seuils de `network_loyalty_config` ou defaults.
 
@@ -82,6 +83,8 @@ create policy "franchise_admin_reads_network_customers"
   );
 
 -- admin d'un établissement voit les network_customers liés à ses clients
+-- Note: profiles.establishment_id existe (ajouté Sprint 1, utilisé par tous les admins établissement)
+-- Restreint au rôle 'admin' pour éviter que les caissiers accèdent aux données réseau (téléphone, tier global)
 create policy "admin_reads_linked_network_customers"
   on public.network_customers for select
   using (
@@ -90,6 +93,7 @@ create policy "admin_reads_linked_network_customers"
       from public.customers c
       join public.profiles p on p.establishment_id = c.establishment_id
       where p.id = auth.uid()
+        and p.role = 'admin'
         and c.network_customer_id is not null
     )
   );
@@ -142,13 +146,16 @@ create policy "franchise_admin_manages_network_config"
     )
   );
 
--- admin d'établissement peut lire la config réseau de son org
+-- admin d'établissement peut lire la config réseau de son org (siège)
+-- network_loyalty_config.org_id est toujours le root_org_id (siège), pas l'org franchisée.
+-- La policy résout parent_org_id pour matcher correctement.
 create policy "admin_reads_network_config"
   on public.network_loyalty_config for select
   using (
     org_id in (
-      select e.org_id
+      select coalesce(o.parent_org_id, o.id)
       from public.establishments e
+      join public.organizations o on o.id = e.org_id
       join public.profiles p on p.establishment_id = e.id
       where p.id = auth.uid()
     )
@@ -197,8 +204,13 @@ begin
   end if;
 
   -- Tier = le level le plus élevé dont min <= total
+  -- ORDER BY min ASC garantit que le dernier match est bien le tier le plus élevé,
+  -- indépendamment de l'ordre dans lequel l'admin a saisi les seuils.
   v_tier := 'standard';
-  for v_level in select * from jsonb_array_elements(v_levels) loop
+  for v_level in
+    select elem from jsonb_array_elements(v_levels) elem
+    order by (elem->>'min')::int asc
+  loop
     if v_total >= (v_level->>'min')::int then
       v_tier := v_level->>'key';
     end if;
@@ -259,6 +271,10 @@ Retourne la config réseau pour l'org du franchiseur (ou defaults si non configu
   networkCustomersCount: number  // total network_customers pour cette org
   goldCount: number
   silverCount: number
+  points_issued_month: number
+  // SUM(loyalty_transactions.points) WHERE type='earn' AND created_at >= monthStart
+  // AND customer_id IN (SELECT id FROM customers WHERE network_customer_id IN
+  //   (SELECT id FROM network_customers WHERE org_id = profile.org_id))
 }
 ```
 
@@ -278,16 +294,30 @@ Body Zod :
     min: z.number().min(0),
     max: z.number().nullable()
   })).min(1)
+  .refine(
+    levels => levels.every((l, i) => i === 0 || l.min > levels[i - 1].min),
+    { message: 'Les seuils doivent être en ordre croissant de min' }
+  )
 }
 ```
+
+**Note :** la validation Zod enforce l'ordre croissant des `min`, ce qui garantit que le trigger SQL (qui fait `ORDER BY min ASC`) produit toujours un tier correct.
 
 ### `POST /api/customers` (modifié)
 
 Après insertion du client, si `phone` fourni et `org.type !== 'independent'` :
-1. Récupère `org_id` de l'établissement via `supabaseAdmin`
-2. Cherche `network_customers` où `org_id = org_id AND phone = phone` via `supabaseAdmin`
+
+**Résolution de `root_org_id` (l'org racine = siège) :**
+- Récupère `establishments.org_id` → charge l'org correspondante via `supabaseAdmin`
+- Si `org.parent_org_id` est non null → `root_org_id = org.parent_org_id` (org franchisée → utiliser le siège)
+- Sinon → `root_org_id = org.id` (c'est déjà le siège)
+- **Toujours utiliser `root_org_id`** pour `network_customers.org_id` — garantit que toutes les boutiques du réseau partagent la même table de clients réseau (scoped au siège), et non une par franchisé.
+
+**Auto-linking :**
+1. Résoudre `root_org_id` comme ci-dessus
+2. Cherche `network_customers` où `org_id = root_org_id AND phone = phone` via `supabaseAdmin`
 3. Trouvé → `UPDATE customers SET network_customer_id = found.id`
-4. Pas trouvé → `INSERT INTO network_customers (org_id, phone, first_name, last_name, email)` → `UPDATE customers SET network_customer_id = new.id`
+4. Pas trouvé → `INSERT INTO network_customers (org_id: root_org_id, phone, first_name, last_name, email)` → `UPDATE customers SET network_customer_id = new.id`
 
 **Note :** le trigger `sync_network_customer_points` ne s'active pas ici (points = 0 au départ). Le `total_points` du `network_customers` reste 0 jusqu'à la première commande.
 
@@ -315,7 +345,10 @@ loyalty: {
   total_network_customers: number
   gold_count: number
   silver_count: number
-  points_issued_month: number  // SUM(loyalty_transactions.points) WHERE type='earn' et created_at >= monthStart
+  points_issued_month: number
+  // SUM(loyalty_transactions.points) WHERE type='earn' AND created_at >= monthStart
+  // Scoping: loyalty_transactions JOIN customers WHERE customers.establishment_id IN (network establishment ids)
+  // La table loyalty_transactions existe (Sprint 6) : customer_id, order_id, points int, type ('earn'|'redeem'), created_at
 }
 ```
 
@@ -325,7 +358,9 @@ loyalty: {
 
 ### `/dashboard/franchise/loyalty/page.tsx` (nouveau)
 
-Server component. Charge `/api/loyalty/network-config`. Passe à `NetworkLoyaltyClient`.
+Server component. Charge `/api/loyalty/network-config` (retourne config + stats membres en une seule requête). Passe à `NetworkLoyaltyClient`.
+
+**Note :** la page loyalty n'appelle PAS `/api/franchise/network-stats`. Les stats membres (total, gold, silver) sont incluses directement dans la réponse de `/api/loyalty/network-config` pour éviter une double requête. La section `loyalty` de `network-stats` est réservée au Command Center.
 
 ### `/dashboard/franchise/loyalty/_components/network-loyalty-client.tsx` (nouveau)
 
@@ -364,9 +399,10 @@ Caissier crée un client (avec téléphone)
   → POST /api/customers
     → Insert customers (establishment_id)
     → Check network: org.type != 'independent' + phone fourni?
-      → YES: chercher network_customers (org_id, phone)
-        → Trouvé: UPDATE customers.network_customer_id = existing
-        → Pas trouvé: CREATE network_customers + UPDATE customers.network_customer_id
+      → YES: résoudre root_org_id (parent_org_id si non null, sinon org.id)
+        → chercher network_customers (root_org_id, phone)
+          → Trouvé: UPDATE customers.network_customer_id = existing
+          → Pas trouvé: CREATE network_customers (org_id = root_org_id) + UPDATE customers.network_customer_id
 
 Client passe commande → trigger credit_loyalty_points() → UPDATE customers.points
   → trigger sync_network_customer_points()
