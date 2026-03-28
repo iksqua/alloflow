@@ -10,7 +10,7 @@ interface Customer {
   points: number
   phone: string | null
   email: string | null
-  created_at: string
+  last_order_at: string | null
   gender: string | null
   birthdate: string | null
   opt_in_sms: boolean
@@ -121,7 +121,7 @@ export function CustomerProfile({ customer, totalRevenue, visitCount, avgTicket 
               </span>
             )}
             <span className="text-xs text-[var(--text4)]">
-              Client depuis le {formatDate(customer.created_at)}
+              {customer.last_order_at ? `Dernière visite le ${formatDate(customer.last_order_at)}` : 'Aucune visite'}
             </span>
           </div>
         </div>

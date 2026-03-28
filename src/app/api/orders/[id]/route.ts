@@ -48,10 +48,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const body = await req.json()
-  const { status, customer_note } = body as { status?: string; customer_note?: string }
+  const { status, note } = body as { status?: string; note?: string }
   const allowedUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (status !== undefined) allowedUpdate.status = status
-  if (customer_note !== undefined) allowedUpdate.customer_note = customer_note
+  if (note !== undefined) allowedUpdate.note = note
 
   const { data, error } = await supabase
     .from('orders')

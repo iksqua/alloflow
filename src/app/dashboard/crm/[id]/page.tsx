@@ -59,7 +59,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   ] = await Promise.all([
     supabaseAny
       .from('customers')
-      .select('id, first_name, last_name, tier, points, phone, email, notes, created_at')
+      .select('id, first_name, last_name, tier, points, phone, email, notes, last_order_at, gender, birthdate, opt_in_sms, opt_in_email, opt_in_whatsapp, tags, rfm_segment, avg_basket, order_count')
       .eq('id', id)
       .eq('establishment_id', establishmentId)
       .single(),
