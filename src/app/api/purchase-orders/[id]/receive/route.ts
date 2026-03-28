@@ -9,6 +9,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Establishment not found' }, { status: 400 })
+
+  // Verify order belongs to this establishment
+  const { data: order, error: orderError } = await supabase
+    .from('purchase_orders')
+    .select('id')
+    .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
+    .single()
+
+  if (orderError || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+
   const body = await req.json()
   const result = receiveDeliverySchema.safeParse(body)
   if (!result.success) return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
