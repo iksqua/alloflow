@@ -79,7 +79,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session_id: session?.id,
+          session_id: session?.id ?? undefined,
           table_id: ticket.tableId ?? undefined,
           customer_id:            linkedCustomer?.id ?? undefined,
           reward_id:              linkedReward?.id   ?? undefined,

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('total_ttc, status, table_id')
+    .select('total_ttc, status, table_id, session_id')
     .eq('id', id)
     .single()
 
@@ -52,15 +52,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Use the server-stored total_ttc as the authoritative amount (avoids client/server float mismatch)
   const authorizedTotal = order.total_ttc
 
-  // Marquer la commande payée
-  const { error: statusError } = await supabase
+  // Marquer la commande payée — filtre sur status pour éviter double-paiement concurrent
+  const { error: statusError, count } = await supabase
     .from('orders')
     .update({ status: 'paid', updated_at: new Date().toISOString() })
     .eq('id', id)
+    .in('status', ['open', 'paying'])
+    .select('id', { count: 'exact', head: true })
+
+  if (count === 0) {
+    return NextResponse.json({ error: 'order_already_paid' }, { status: 409 })
+  }
 
   if (statusError) {
     console.error('[pay] Failed to update order status:', statusError)
     return NextResponse.json({ error: 'Failed to update order status', detail: statusError.message }, { status: 500 })
+  }
+
+  // Validate split totals
+  if (method === 'split' && split_payments) {
+    const splitTotal = split_payments.reduce((sum, p) => sum + p.amount, 0)
+    if (Math.abs(splitTotal - authorizedTotal) > 0.01) {
+      return NextResponse.json({ error: 'split_payments_total_mismatch', expected: authorizedTotal, got: splitTotal }, { status: 400 })
+    }
   }
 
   // Enregistrer le(s) paiement(s)
@@ -127,7 +141,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         occurred_at:      occurredAt,
         previous_hash:    prevHash,
         entry_hash:       entryHash,
-        meta:             { method: parsed.data.method, session_id: null },
+        meta:             { method: parsed.data.method, session_id: order.session_id ?? null },
       })
     }
   } catch {
