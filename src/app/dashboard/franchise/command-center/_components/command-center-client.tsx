@@ -54,8 +54,9 @@ export function CommandCenterClient({ initialData }: Props) {
   const { network, establishments } = data
 
   // Totals "dans ma poche"
-  const totalRoyalties  = establishments.reduce((s, e) => s + e.royalty_amount,   0)
-  const totalMarketing  = establishments.reduce((s, e) => s + e.marketing_amount, 0)
+  const franchiseEst    = establishments.filter(e => e.type === 'franchise')
+  const totalRoyalties  = franchiseEst.reduce((s, e) => s + e.royalty_amount,   0)
+  const totalMarketing  = franchiseEst.reduce((s, e) => s + e.marketing_amount, 0)
   const ownEst          = establishments.filter(e => e.type === 'own')
   const totalLaboSales  = ownEst.reduce((s, e) => s + e.ca_month, 0)
   const totalPocket     = totalRoyalties + totalMarketing + totalLaboSales
