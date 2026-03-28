@@ -20,8 +20,17 @@ export default async function AnalyticsPage({
 
   const params = await searchParams
   const period = (params.period ?? '30d') as Period
-  const siteId = params.site || undefined
   const range = getPeriodRange(period)
+
+  // Get user's establishment_id as the default filter
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  // siteId: use picker param if set, otherwise default to user's establishment
+  const siteId = params.site || profile?.establishment_id || undefined
 
   // Fetch establishments for the picker
   const { data: establishments } = await supabase
@@ -30,13 +39,33 @@ export default async function AnalyticsPage({
     .order('name')
 
   // Fetch analytics data in parallel
-  const [kpi, dailyCA, topProducts] = await Promise.all([
-    fetchKpiSummary(range, siteId),
-    fetchDailyCA(range, siteId),
-    fetchTopProducts(range, siteId, 5),
-  ])
+  let kpi: Awaited<ReturnType<typeof fetchKpiSummary>> | null = null
+  let dailyCA: Awaited<ReturnType<typeof fetchDailyCA>> = []
+  let topProducts: Awaited<ReturnType<typeof fetchTopProducts>> = []
+  let analyticsError: string | null = null
+
+  try {
+    ;[kpi, dailyCA, topProducts] = await Promise.all([
+      fetchKpiSummary(range, siteId),
+      fetchDailyCA(range, siteId),
+      fetchTopProducts(range, siteId, 5),
+    ])
+  } catch (err) {
+    analyticsError = err instanceof Error ? err.message : String(err)
+  }
 
   const establishmentList = (establishments ?? []) as { id: string; name: string }[]
+
+  if (analyticsError || !kpi) {
+    return (
+      <div className="p-6">
+        <h1 className="text-xl font-bold text-[var(--text1)] mb-4">Analytiques</h1>
+        <div className="px-4 py-3 rounded-lg text-sm font-mono" style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid var(--red)' }}>
+          Erreur: {analyticsError ?? 'Données indisponibles'}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
