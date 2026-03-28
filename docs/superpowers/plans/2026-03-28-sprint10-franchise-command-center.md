@@ -768,24 +768,35 @@ export async function GET() {
 
   const orgsMap = new Map((networkOrgs ?? []).map((o: { id: string; type: string }) => [o.id, o]))
 
-  // Get last_sign_in_at for each franchisee admin (to show invitation status)
-  const { data: profiles } = await supabaseAdmin
+  // Get admin profiles for each establishment (to retrieve their user IDs)
+  const { data: adminProfiles } = await supabaseAdmin
     .from('profiles')
-    .select('id, establishment_id, last_sign_in_at')
+    .select('id, establishment_id')
     .in('establishment_id', (establishments ?? []).map((e: { id: string }) => e.id))
     .eq('role', 'admin')
 
-  const profileByEst = new Map(
-    (profiles ?? []).map((p: { id: string; establishment_id: string; last_sign_in_at?: string | null }) => [
-      p.establishment_id,
-      p,
-    ])
-  )
+  // Get last_sign_in_at from auth.users (NOT from profiles — it's an auth.users field)
+  const adminProfileIds = (adminProfiles ?? []).map((p: { id: string }) => p.id)
+  let authUsersMap = new Map<string, string | null>()
+  if (adminProfileIds.length > 0) {
+    const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+    authUsersMap = new Map(
+      authUsers
+        .filter(u => adminProfileIds.includes(u.id))
+        .map(u => [u.id, u.last_sign_in_at ?? null])
+    )
+  }
+
+  // Map establishment_id → last_sign_in_at
+  const estLastSignIn = new Map<string, string | null>()
+  for (const p of (adminProfiles ?? []) as Array<{ id: string; establishment_id: string }>) {
+    estLastSignIn.set(p.establishment_id, authUsersMap.get(p.id) ?? null)
+  }
 
   const result = (establishments ?? []).map((est: { id: string; name: string; org_id: string }) => {
-    const org      = orgsMap.get(est.org_id)
-    const contract = contractMap.get(est.id)
-    const profile  = profileByEst.get(est.id) as { last_sign_in_at?: string | null } | undefined
+    const org           = orgsMap.get(est.org_id)
+    const contract      = contractMap.get(est.id)
+    const lastSignIn    = estLastSignIn.get(est.id) ?? null
     return {
       id:             est.id,
       name:           est.name,
@@ -793,7 +804,7 @@ export async function GET() {
       royalty_rate:   contract?.royalty_rate   ?? 0,
       marketing_rate: contract?.marketing_rate ?? 0,
       start_date:     contract?.start_date     ?? null,
-      status:         profile?.last_sign_in_at ? 'actif' : 'invitation_envoyee',
+      status:         lastSignIn ? 'actif' : 'invitation_envoyee',
     }
   })
 
