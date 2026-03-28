@@ -34,7 +34,8 @@ Form fields:
 On submit:
 1. `POST /api/auth/register-franchise` with `{ networkName, email, password }`
 2. On success → `supabase.auth.signInWithPassword({ email, password })`
-3. Redirect to `/dashboard/franchise/command-center`
+3. On sign-in success → redirect to `/dashboard/franchise/command-center`
+4. On sign-in failure (network error etc.) → show "Compte créé. Connectez-vous sur [/login](/login)"
 
 Error states:
 - Email already in use → "Un compte existe déjà avec cet email"
@@ -113,7 +114,7 @@ After `supabase.auth.signInWithPassword` succeeds, call `supabase.from('profiles
 
 ## Rate Limiting
 
-In `src/middleware.ts`, add a simple check on `POST /api/auth/register-franchise`: if more than 5 requests from the same IP in 1 minute, return 429. Use Next.js middleware with an in-memory counter (sufficient for MVP — can upgrade to Upstash Redis later).
+In `src/middleware.ts`, add a simple check on `POST /api/auth/register-franchise`: if more than 5 requests from the same IP in 1 minute, return 429. Use Next.js middleware with an in-memory counter (sufficient for MVP — can upgrade to Upstash Redis later). Note: in-memory counters reset on cold starts and don't work across multiple serverless instances — acceptable for MVP.
 
 ---
 
@@ -126,6 +127,12 @@ Vous êtes franchiseur ? Créer votre réseau →
 ```
 
 Pointing to `/register`.
+
+---
+
+## Existing Routes
+
+`/dashboard/franchise/command-center` already exists (built in Sprint 10). No stub needed.
 
 ---
 
