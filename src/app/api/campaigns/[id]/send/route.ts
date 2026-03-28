@@ -81,16 +81,22 @@ export async function POST(
 
     // Direct Brevo call (server-side, bypass HTTP round-trip)
     try {
-      const { sendBrevoSms } = await import('@/lib/brevo')
-      const result = await sendBrevoSms({
+      const { sendBrevoSms: brevoSend } = await import('@/lib/brevo')
+      const result = await brevoSend({
         sender:    estab.brevo_sender_name ?? 'Alloflow',
         recipient: customer.phone as string,
         content:   message,
       })
 
-      // Deduct credit atomically FIRST, then log
+      // Deduct credit atomically — throws if credits exhausted
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
+      const { error: deductError } = await (supabase as any).rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
+      if (deductError) {
+        // Credits exhausted mid-campaign — stop sending
+        failed++
+        break
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any).from('campaign_sends').insert({
         campaign_id:      id,

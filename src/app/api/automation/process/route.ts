@@ -62,6 +62,19 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .eq(`opt_in_${rule.channel}`, true)
         .lte('last_order_at', cutoff)
       customers = data ?? []
+      // Dedup: skip customers who already received welcome automation
+      if (customers.length > 0) {
+        const { data: alreadySent } = await supabase
+          .from('campaign_sends')
+          .select('customer_id')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .in('customer_id', customers.map((c: any) => c.id))
+          .eq('trigger_type', 'welcome')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const alreadySentIds = new Set((alreadySent ?? []).map((s: any) => s.customer_id))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        customers = customers.filter((c: any) => !alreadySentIds.has(c.id))
+      }
       break
     }
 
@@ -84,6 +97,21 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         const bmmdd = `${String(bd.getMonth() + 1).padStart(2, '0')}-${String(bd.getDate()).padStart(2, '0')}`
         return bmmdd === mmdd
       })
+      // Dedup: skip customers who already received birthday automation this year
+      const yearStart = new Date(now.getFullYear(), 0, 1).toISOString()
+      if (customers.length > 0) {
+        const { data: alreadySent } = await supabase
+          .from('campaign_sends')
+          .select('customer_id')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .in('customer_id', customers.map((c: any) => c.id))
+          .eq('trigger_type', 'birthday')
+          .gte('sent_at', yearStart)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const alreadySentIds = new Set((alreadySent ?? []).map((s: any) => s.customer_id))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        customers = customers.filter((c: any) => !alreadySentIds.has(c.id))
+      }
       break
     }
 
@@ -199,7 +227,19 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
       })
       sent++
     } catch {
-      // Log failure silently — don't block the loop
+      // Log failure — don't block the loop
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from('campaign_sends').insert({
+          campaign_id:  null,
+          customer_id:  customer.id,
+          channel:      rule.channel,
+          trigger_type: rule.trigger_type,
+          status:       'failed',
+        })
+      } catch {
+        // Ignore logging errors
+      }
     }
   }
 
