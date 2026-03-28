@@ -25,10 +25,11 @@ export default async function ProductsPage() {
 
   const { data: products = [] } = await query.order('sort_order').order('name')
 
-  const { data: categoriesData } = await supabase
-    .from('categories')
-    .select('*')
-    .order('sort_order')
+  let catQuery = supabase.from('categories').select('*').order('sort_order')
+  if (profile?.role !== 'super_admin' && profile?.establishment_id) {
+    catQuery = catQuery.eq('establishment_id', profile.establishment_id)
+  }
+  const { data: categoriesData } = await catQuery
 
   const categories: Category[] = categoriesData ?? []
 
