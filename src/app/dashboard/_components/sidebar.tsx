@@ -212,13 +212,21 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
           <div className="flex-1" />
 
           {/* Settings */}
-          <div
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--text4)] cursor-not-allowed"
+          <Link
+            href={SETTINGS_ITEM.href}
             title={SETTINGS_ITEM.label}
+            onClick={() => setMobileOpen(false)}
+            className={[
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              pathname.startsWith(SETTINGS_ITEM.href)
+                ? 'text-white'
+                : 'text-[var(--text2)] hover:bg-[var(--surface2)]',
+            ].join(' ')}
+            style={pathname.startsWith(SETTINGS_ITEM.href) ? { background: 'var(--blue)' } : undefined}
           >
             <span className="flex-shrink-0">{SETTINGS_ITEM.icon}</span>
             <span className="md:hidden lg:block">{SETTINGS_ITEM.label}</span>
-          </div>
+          </Link>
         </nav>
 
         {/* Footer — user info */}
