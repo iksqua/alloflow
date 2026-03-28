@@ -43,6 +43,7 @@ export function TeamPageClient({ initialMembers }: Props) {
         return
       }
       if (res.ok) await refreshMembers()
+      else alert('Erreur lors de la suppression')
     } finally {
       setRemoving(null)
     }
@@ -51,7 +52,8 @@ export function TeamPageClient({ initialMembers }: Props) {
   async function handleResend(memberId: string) {
     setResendings(prev => new Set([...prev, memberId]))
     try {
-      await fetch(`/api/settings/team/${memberId}/resend`, { method: 'POST' })
+      const res = await fetch(`/api/settings/team/${memberId}/resend`, { method: 'POST' })
+      if (!res.ok) alert('Erreur lors du renvoi')
     } finally {
       setResendings(prev => { const s = new Set(prev); s.delete(memberId); return s })
     }
