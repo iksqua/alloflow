@@ -35,7 +35,10 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
       setName(product?.name ?? '')
       setEmoji(product?.emoji ?? '')
       setDescription(product?.description ?? '')
-      setPrice(product?.price?.toFixed(2) ?? '')
+      // product.price is stored as HT — convert to TTC for display
+      const ht = product?.price ?? 0
+      const rate = product?.tva_rate ?? 10
+      setPrice(ht > 0 ? (ht * (1 + rate / 100)).toFixed(2) : '')
       setTvaRate(product?.tva_rate ?? 10)
       setCategoryId(product?.category_id ?? '')
       setIsActive(product?.is_active ?? true)
@@ -57,7 +60,7 @@ export function ProductForm({ open, product, categories, onClose, onSave }: Prod
         name: name.trim(),
         emoji: emoji.trim() || null,
         description: description.trim() || null,
-        price: priceTtc,
+        price: parseFloat(String(priceHt)),
         tva_rate: tvaRate,
         category_id: categoryId || null,
         is_active: isActive,
