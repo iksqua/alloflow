@@ -64,20 +64,27 @@ describe('GET /api/loyalty/network-config', () => {
   it('returns defaults when no config exists', async () => {
     mockAnonClient()
     const admin = mockAdmin()
-    // network_loyalty_config returns null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(admin.from as any).mockImplementation((table: string) => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      in: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue(
-        table === 'network_loyalty_config'
-          ? { data: null, error: null }
-          : { data: [], error: null }
-      ),
-      then: undefined,
-    }))
+
+    admin.from.mockImplementation((table: string) => {
+      const listResult = { data: [] as unknown[], error: null }
+      const singleResult = table === 'network_loyalty_config'
+        ? { data: null, error: null }
+        : { data: [] as unknown[], error: null }
+
+      // Build a chain that is properly thenable for list queries
+      // and has a .single() that resolves for single queries
+      const chain: Record<string, unknown> = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue(singleResult),
+        // Make the chain itself awaitable (for list queries that don't call .single())
+        then: (resolve: (v: unknown) => void) => resolve(listResult),
+      }
+      return chain
+    }) as any
+
     const res = await GET()
     expect(res.status).toBe(200)
     const body = await res.json()
