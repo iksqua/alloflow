@@ -28,19 +28,10 @@ SELECT
   count(*) FILTER (WHERE date_part('year', age(c.birthdate)) BETWEEN 36 AND 45)::int AS age_36_45,
   count(*) FILTER (WHERE date_part('year', age(c.birthdate)) BETWEEN 46 AND 55)::int AS age_46_55,
   count(*) FILTER (WHERE date_part('year', age(c.birthdate)) > 55)::int              AS age_55_plus,
-  -- Visit frequency buckets (per month avg)
-  count(*) FILTER (WHERE c.order_count > 0
-    AND c.order_count::float / GREATEST(
-      date_part('month', age(c.created_at)) + 1, 1
-    ) < 2)::int                                          AS freq_low,
-  count(*) FILTER (WHERE c.order_count > 0
-    AND c.order_count::float / GREATEST(
-      date_part('month', age(c.created_at)) + 1, 1
-    ) BETWEEN 2 AND 3)::int                              AS freq_mid,
-  count(*) FILTER (WHERE c.order_count > 0
-    AND c.order_count::float / GREATEST(
-      date_part('month', age(c.created_at)) + 1, 1
-    ) > 3)::int                                          AS freq_high,
+  -- Visit frequency buckets (total order count)
+  count(*) FILTER (WHERE c.order_count = 1)::int         AS freq_low,
+  count(*) FILTER (WHERE c.order_count BETWEEN 2 AND 3)::int AS freq_mid,
+  count(*) FILTER (WHERE c.order_count >= 4)::int        AS freq_high,
   -- Basket by gender
   avg(c.avg_basket) FILTER (WHERE c.gender = 'femme')::numeric(10,2) AS avg_basket_women,
   avg(c.avg_basket) FILTER (WHERE c.gender = 'homme')::numeric(10,2) AS avg_basket_men
