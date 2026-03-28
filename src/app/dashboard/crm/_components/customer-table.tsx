@@ -41,6 +41,28 @@ function TierBadge({ tier }: { tier: 'standard' | 'silver' | 'gold' }) {
   )
 }
 
+const RFM_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  vip:      { label: '👑 VIP',      color: '#fbbf24', bg: 'rgba(251,191,36,0.12)' },
+  fidele:   { label: '⭐ Fidèle',   color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  nouveau:  { label: '🆕 Nouveau',  color: '#60a5fa', bg: 'rgba(59,130,246,0.12)' },
+  a_risque: { label: '⚠ À risque', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  perdu:    { label: '💤 Perdu',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)'  },
+}
+
+function RfmBadge({ segment }: { segment: string | null }) {
+  if (!segment) return null
+  const cfg = RFM_CONFIG[segment]
+  if (!cfg) return null
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap"
+      style={{ background: cfg.bg, color: cfg.color }}
+    >
+      {cfg.label}
+    </span>
+  )
+}
+
 function PointsCell({ points }: { points: number }) {
   // Gold threshold = GOLD_THRESHOLD_PTS = 100%
   const pct = Math.min(100, Math.round((points / GOLD_THRESHOLD_PTS) * 100))
@@ -122,7 +144,7 @@ export function CustomerTable({ customers }: Props) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.06]">
-                {['Client', 'Statut', 'Points', 'CA total', 'Dernière visite', ''].map((col) => (
+                {['Client', 'Statut', 'Segment', 'Points', 'CA total', 'Dernière visite', ''].map((col) => (
                   <th
                     key={col}
                     className="px-4 py-3 text-left text-xs font-medium text-[var(--text3)] uppercase tracking-wide"
@@ -164,6 +186,11 @@ export function CustomerTable({ customers }: Props) {
                   {/* Statut */}
                   <td className="px-4 py-3">
                     <TierBadge tier={customer.tier} />
+                  </td>
+
+                  {/* Segment */}
+                  <td className="px-4 py-3">
+                    <RfmBadge segment={customer.rfm_segment} />
                   </td>
 
                   {/* Points */}

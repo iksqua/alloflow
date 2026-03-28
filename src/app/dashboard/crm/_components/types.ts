@@ -9,6 +9,7 @@ export interface Customer {
   phone: string | null
   email: string | null
   created_at: string
+  rfm_segment: string | null
 }
 
 export interface CrmStats {
