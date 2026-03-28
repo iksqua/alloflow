@@ -157,11 +157,13 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
                     ▶ Mode cuisine
                   </button>
                   <button onClick={() => openEditForm(sop)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text4)] hover:text-[var(--text2)]">
-                    Modifier
+                    className="w-7 h-7 rounded flex items-center justify-center text-[var(--text4)] hover:text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"
+                    title="Modifier">
+                    ✏️
                   </button>
                   <button onClick={() => handleDelete(sop.id)}
-                    className="px-2 py-1.5 rounded-lg text-xs text-red-500/60 hover:text-red-400">✕</button>
+                    className="w-7 h-7 rounded flex items-center justify-center text-red-500/60 hover:text-red-400 hover:bg-[var(--red-bg)] transition-colors"
+                    title="Supprimer">🗑️</button>
                 </div>
               </div>
             ))}

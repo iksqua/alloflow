@@ -28,7 +28,7 @@ export function FloorPlanModal({ tables, onSelectTable, onClose }: FloorPlanModa
       >
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-semibold text-[var(--text1)]">Plan de salle</h3>
-          <button onClick={onClose} className="text-[var(--text4)] hover:text-[var(--text2)] text-xl">×</button>
+          <button onClick={onClose} className="text-[var(--text4)] hover:text-[var(--text2)] text-xl">✕</button>
         </div>
 
         {/* Légende */}

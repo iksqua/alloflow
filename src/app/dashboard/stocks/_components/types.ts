@@ -15,6 +15,11 @@ export interface StockItem {
   supplier_ref: string | null
   purchase_price: number
   purchase_qty: number
+  is_pos: boolean
+  pos_price: number | null
+  pos_tva_rate: number
+  pos_category_id: string | null
+  product_id: string | null
   active: boolean
   status: StockStatus
 }

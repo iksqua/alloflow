@@ -65,7 +65,8 @@ export function SopCategoryManager({ open, categories: initialCategories, onClos
               <span className="text-lg">{cat.emoji ?? '📋'}</span>
               <span className="flex-1 text-sm text-[var(--text2)]">{cat.name}</span>
               <button onClick={() => deleteCategory(cat.id)}
-                className="text-xs text-red-500/60 hover:text-red-400">Suppr.</button>
+                className="w-7 h-7 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--red)] hover:bg-[var(--red-bg)] transition-colors"
+                title="Supprimer">🗑️</button>
             </div>
           ))}
         </div>

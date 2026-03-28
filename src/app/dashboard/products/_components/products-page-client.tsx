@@ -9,6 +9,7 @@ import { ProductForm } from './product-form'
 import { CategoriesModal } from './categories-modal'
 import { BulkActionBar } from './bulk-action-bar'
 import { DeleteConfirmModal } from './delete-confirm-modal'
+import { StockImportModal } from './stock-import-modal'
 import type { Product, Category, BulkAction } from './types'
 
 interface ProductsPageClientProps {
@@ -36,6 +37,7 @@ export function ProductsPageClient({ initialProducts, initialCategories }: Produ
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
+  const [stockImportOpen, setStockImportOpen] = useState(false)
 
   // Filtrage client-side
   const filteredProducts = useMemo(() => {
@@ -208,13 +210,21 @@ export function ProductsPageClient({ initialProducts, initialCategories }: Produ
           {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''}
           {search || filterCategoryId || filterStatus !== 'all' ? ' (filtré)' : ''}
         </p>
-        <button
-          onClick={openCreate}
-          className="h-9 px-4 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-          style={{ background: 'var(--blue)' }}
-        >
-          + Nouveau produit
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setStockImportOpen(true)}
+            className="h-9 px-4 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--text3)] hover:bg-[var(--surface2)] transition-colors"
+          >
+            📦 Depuis le stock
+          </button>
+          <button
+            onClick={openCreate}
+            className="h-9 px-4 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            style={{ background: 'var(--blue)' }}
+          >
+            + Nouveau produit
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -256,6 +266,13 @@ export function ProductsPageClient({ initialProducts, initialCategories }: Produ
         product={deletingProduct}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingProduct(null)}
+      />
+
+      <StockImportModal
+        open={stockImportOpen}
+        categories={categories}
+        onClose={() => setStockImportOpen(false)}
+        onImported={() => router.refresh()}
       />
 
       <BulkActionBar

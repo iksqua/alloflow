@@ -202,7 +202,11 @@ export function CustomerTable({ customers }: Props) {
                   <td className="px-4 py-3 text-sm text-[var(--text3)]">—</td>
 
                   {/* Dernière visite */}
-                  <td className="px-4 py-3 text-sm text-[var(--text3)]">—</td>
+                  <td className="px-4 py-3 text-sm text-[var(--text3)]">
+                    {customer.last_order_at
+                      ? new Date(customer.last_order_at).toLocaleDateString('fr-FR')
+                      : '—'}
+                  </td>
 
                   {/* Actions */}
                   <td className="px-4 py-3">

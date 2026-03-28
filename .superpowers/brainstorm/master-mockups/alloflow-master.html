@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Master Mockup Complet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{background:#050c18;color:#f1f5f9;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOP NAV */
+.top-nav{background:#0a1120;border-bottom:1px solid #1e293b;padding:0 20px;display:flex;align-items:center;gap:0;height:44px;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:8px;margin-right:20px;padding-right:20px;border-right:1px solid #1e293b;}
+.logo-mark{width:26px;height:26px;background:#1d4ed8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;}
+.logo-text{font-size:13px;font-weight:800;color:#f1f5f9;}
+.logo-badge{font-size:9px;font-weight:700;color:#64748b;background:#1e293b;border-radius:4px;padding:1px 5px;margin-left:4px;}
+
+.module-nav{display:flex;align-items:center;gap:2px;flex:1;}
+.mod-btn{padding:6px 12px;border-radius:7px;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;border:none;background:transparent;white-space:nowrap;}
+.mod-btn.active{background:#1e293b;color:#f1f5f9;}
+.mod-btn:hover:not(.active){color:#94a3b8;}
+
+.right-nav{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.avatar-sm{width:26px;height:26px;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;}
+.nav-user{font-size:11px;color:#64748b;}
+
+/* SCREEN NAV */
+.screen-nav{background:#0d1526;border-bottom:1px solid #1a2540;padding:0 20px;display:flex;align-items:center;gap:4px;height:36px;flex-shrink:0;overflow-x:auto;}
+.screen-btn{padding:4px 12px;border-radius:5px;font-size:10px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;border:none;background:transparent;}
+.screen-btn.active{background:#1e293b;color:#cbd5e1;}
+.screen-btn:hover:not(.active){color:#94a3b8;}
+.screen-sep{width:1px;height:16px;background:#1e293b;margin:0 4px;flex-shrink:0;}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;position:relative;}
+.screen-frame{width:100%;height:100%;border:none;display:none;}
+.screen-frame.active{display:block;}
+
+/* LEGEND */
+.legend{position:fixed;bottom:12px;right:16px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:6px 10px;font-size:9px;color:#475569;display:flex;align-items:center;gap:12px;}
+.legend-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:3px;}
+.dot-done{background:#10b981;}
+.dot-new{background:#1d4ed8;}
+.dot-wip{background:#f59e0b;}
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <div class="logo">
+    <div class="logo-mark">A</div>
+    <div class="logo-text">Alloflow</div>
+    <div class="logo-badge">Mockups</div>
+  </div>
+  <div class="module-nav" id="modNav">
+    <button class="mod-btn active" onclick="setModule('dashboard')">🏠 Dashboard</button>
+    <button class="mod-btn" onclick="setModule('pos')">🧾 Caisse POS</button>
+    <button class="mod-btn" onclick="setModule('produits')">📦 Produits</button>
+    <button class="mod-btn" onclick="setModule('recettes')">📖 Recettes</button>
+    <button class="mod-btn" onclick="setModule('sops')">📋 SOPs</button>
+    <button class="mod-btn" onclick="setModule('stocks')">📊 Stocks</button>
+    <button class="mod-btn" onclick="setModule('fidelite')">🎁 Fidélité</button>
+    <button class="mod-btn" onclick="setModule('analytics')">📈 Analytics</button>
+    <button class="mod-btn" onclick="setModule('params')">⚙️ Paramètres</button>
+  </div>
+  <div class="right-nav">
+    <div class="avatar-sm">MA</div>
+    <div class="nav-user">Marc Antoine</div>
+  </div>
+</div>
+
+<div class="screen-nav" id="screenNav"></div>
+
+<div class="main" id="main"></div>
+
+<div class="legend">
+  <span><span class="legend-dot dot-done"></span>Existant</span>
+  <span><span class="legend-dot dot-new"></span>Nouveau</span>
+  <span><span class="legend-dot dot-wip"></span>En cours</span>
+</div>
+
+<script>
+const MODULES = {
+  dashboard: {
+    screens: [
+      { id:'dash-main', label:'Dashboard principal', file:'s2-layouts-dashboard.html', status:'done' },
+      { id:'dash-analytics', label:'Analytics', file:'s6-analytics-dashboard.html', status:'done' },
+    ]
+  },
+  pos: {
+    screens: [
+      { id:'pos-main', label:'Sélection produits', file:'s3-caisse-pos.html', status:'done' },
+      { id:'pos-empty', label:'Ticket vide', file:'empty-states.html#pos', status:'new', tab:5 },
+      { id:'pos-tpe', label:'Flow TPE', file:'s4-tpe-flow.html', status:'done' },
+      { id:'pos-fid1', label:'Fidélité — déclencheur', file:'fidelite-pos-flow-complet.html', status:'done' },
+      { id:'pos-fid2', label:'Fidélité — client trouvé', file:'fidelite-pos-flow-complet.html', status:'done' },
+      { id:'pos-fid3', label:'Fidélité — nouveau client', file:'fidelite-pos-flow-complet.html', status:'done' },
+      { id:'pos-fid4', label:'Ticket avec réduction', file:'fidelite-pos-flow-complet.html', status:'done' },
+      { id:'pos-fid5', label:'Confirmation points', file:'fidelite-pos-flow-complet.html', status:'done' },
+    ]
+  },
+  produits: {
+    screens: [
+      { id:'prod-list', label:'Liste produits', file:'s2-products-dashboard.html', status:'done' },
+      { id:'prod-create', label:'Créer un produit', file:'backoffice-screens.html', status:'new', tab:1 },
+      { id:'prod-recipe-link', label:'Produit avec recette liée', file:'backoffice-screens.html', status:'new', tab:1 },
+    ]
+  },
+  recettes: {
+    screens: [
+      { id:'rec-list', label:'Liste recettes', file:'s5-recettes-liste.html', status:'done' },
+      { id:'rec-detail', label:'Fiche recette', file:'s5-recette-fiche.html', status:'done' },
+      { id:'rec-create-int', label:'Créer — recette interne', file:'recipe-form.html', status:'new', tab:1 },
+      { id:'rec-create-pos', label:'Créer — vendable POS', file:'recipe-form.html', status:'new', tab:2 },
+      { id:'rec-edit', label:'Modifier recette', file:'recipe-form.html', status:'new', tab:3 },
+      { id:'rec-empty', label:'État vide', file:'empty-states.html', status:'new', tab:1 },
+    ]
+  },
+  sops: {
+    screens: [
+      { id:'sop-list', label:'Liste SOPs', file:'sop-system.html', status:'new', tab:1 },
+      { id:'sop-form', label:'Créer / modifier', file:'sop-system.html', status:'new', tab:2 },
+      { id:'sop-kitchen', label:'Mode cuisine', file:'sop-system.html', status:'new', tab:3 },
+      { id:'sop-cats', label:'Gérer catégories', file:'sop-system.html', status:'new', tab:4 },
+      { id:'sop-empty', label:'État vide', file:'empty-states.html', status:'new', tab:2 },
+    ]
+  },
+  stocks: {
+    screens: [
+      { id:'stk-main', label:'Dashboard stocks', file:'s4-stocks-dashboard.html', status:'done' },
+      { id:'stk-commande', label:'Bon de commande', file:'s4-bon-commande.html', status:'done' },
+      { id:'stk-ok', label:'État — tout au vert', file:'empty-states.html', status:'new', tab:4 },
+    ]
+  },
+  fidelite: {
+    screens: [
+      { id:'fid-clients', label:'Liste clients', file:'s6-crm-clients.html', status:'done' },
+      { id:'fid-profil', label:'Profil client', file:'backoffice-screens.html', status:'new', tab:2 },
+      { id:'fid-rewards', label:'Config récompenses', file:'backoffice-screens.html', status:'new', tab:3 },
+      { id:'fid-empty', label:'Programme vide', file:'empty-states.html', status:'new', tab:3 },
+    ]
+  },
+  analytics: {
+    screens: [
+      { id:'ana-main', label:'Dashboard analytics', file:'s6-analytics-dashboard.html', status:'done' },
+    ]
+  },
+  params: {
+    screens: [
+      { id:'par-etablissement', label:'Établissement', file:'backoffice-screens.html', status:'new', tab:4 },
+    ]
+  }
+};
+
+let currentModule = 'dashboard';
+let frameCache = {};
+
+function setModule(mod) {
+  currentModule = mod;
+  document.querySelectorAll('.mod-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderScreenNav(mod);
+  const first = MODULES[mod].screens[0];
+  if (first) showScreen(first);
+}
+
+function renderScreenNav(mod) {
+  const nav = document.getElementById('screenNav');
+  nav.innerHTML = '';
+  MODULES[mod].screens.forEach((s, i) => {
+    if (i > 0) {
+      const sep = document.createElement('div');
+      sep.className = 'screen-sep';
+      nav.appendChild(sep);
+    }
+    const btn = document.createElement('button');
+    btn.className = 'screen-btn' + (i === 0 ? ' active' : '');
+    const dot = s.status === 'new' ? '🔵 ' : s.status === 'wip' ? '🟡 ' : '';
+    btn.textContent = dot + s.label;
+    btn.onclick = () => {
+      document.querySelectorAll('.screen-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      showScreen(s);
+    };
+    nav.appendChild(btn);
+  });
+}
+
+function showScreen(s) {
+  const main = document.getElementById('main');
+  const frameId = 'frame-' + s.id;
+
+  // Hide all frames
+  main.querySelectorAll('.screen-frame').forEach(f => f.classList.remove('active'));
+
+  // Check if frame exists
+  let frame = document.getElementById(frameId);
+  if (!frame) {
+    frame = document.createElement('iframe');
+    frame.id = frameId;
+    frame.className = 'screen-frame';
+    let src = s.file;
+    if (s.tab) {
+      // For tabbed files, we can't directly jump to a tab via URL,
+      // but we'll load the file and note which tab
+      src = s.file;
+    }
+    frame.src = '/' + src;
+    main.appendChild(frame);
+  }
+  frame.classList.add('active');
+}
+
+// Init
+renderScreenNav('dashboard');
+const firstScreen = MODULES['dashboard'].screens[0];
+if (firstScreen) showScreen(firstScreen);
+</script>
+</body>
+</html>

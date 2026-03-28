@@ -1,0 +1,69 @@
+<h2>Campagnes — Manuelle ou automatique ?</h2>
+<p class="subtitle">Ce choix définit la puissance du moteur de campagnes à construire.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="manual" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>📤 Campagnes manuelles uniquement</h3>
+      <p>Tu écris un message, tu choisis un segment (ex: "Gold + À risque"), tu envoies. Simple. Promotions flash, annonces, soldes.</p>
+      <div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(30,41,59,.6);border:1px solid rgba(255,255,255,.08)">
+        <div style="font-size:12px;color:var(--text3)">
+          <strong style="color:var(--text2)">Exemples :</strong><br>
+          "☕ Promo du vendredi — café offert pour tout achat de cookie ce soir !"<br>
+          "🎄 Fermeture exceptionnelle le 25 décembre — à très bientôt !"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="automated" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>⚙️ Campagnes automatiques (triggers)</h3>
+      <p>Le système envoie seul quand une condition est remplie. Zéro action manuelle une fois configuré.</p>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)">
+          <span style="color:#fbbf24">🎂</span> <strong style="color:var(--text2)">Anniversaire</strong> — SMS automatique J-2 avec code promo
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)">
+          <span style="color:#ef4444">⚠️</span> <strong style="color:var(--text2)">Réactivation</strong> — "On ne t'a pas vu depuis 30 jours..."
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)">
+          <span style="color:#10b981">🆕</span> <strong style="color:var(--text2)">Bienvenue</strong> — SMS après 1ère commande
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)">
+          <span style="color:#60a5fa">⭐</span> <strong style="color:var(--text2)">Avis Google</strong> — Lien envoyé 1h après paiement
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)">
+          <span style="color:#a78bfa">👑</span> <strong style="color:var(--text2)">Passage VIP</strong> — "Tu viens de rejoindre le club Gold !"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="both" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>🔀 Les deux — Recommandé</h3>
+      <p>Campagnes manuelles pour les promos ponctuelles + automations pour les moments clés du cycle client.</p>
+      <div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2)">
+        <div style="font-size:12px;color:#a78bfa;line-height:1.7">
+          <strong>Manuel :</strong> flash sales, actualités, fermetures, nouveaux produits<br>
+          <strong>Auto :</strong> anniversaire, réactivation, bienvenue, Google reviews, upgrade tier
+        </div>
+      </div>
+      <div style="margin-top:8px;padding:6px 10px;border-radius:8px;background:rgba(16,185,129,.1);font-size:12px;color:#10b981">
+        ✓ Maximum d'impact avec minimum d'efforts quotidiens
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px;padding:14px;border-radius:12px;background:rgba(30,41,59,.6);border:1px solid rgba(255,255,255,.08)">
+  <p style="margin:0;font-size:12px;color:var(--text3)">
+    <strong style="color:var(--text2)">Question liée :</strong> Est-ce que tu as déjà un <strong style="color:var(--text2)">compte Google Business</strong> avec une fiche établissement ? (Pour les avis Google automatiques, on a besoin du lien direct vers ta page d'avis.)
+  </p>
+</div>

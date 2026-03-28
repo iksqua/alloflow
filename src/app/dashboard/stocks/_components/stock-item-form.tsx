@@ -4,15 +4,19 @@ import { useState, useEffect } from 'react'
 import type { StockItem } from './types'
 
 const UNITS = ['kg', 'g', 'L', 'cL', 'mL', 'u.', 'boîte', 'sac', 'carton']
+const TVA_RATES = [5.5, 10, 20]
+
+interface Category { id: string; name: string; color_hex: string }
 
 interface Props {
   open: boolean
   item: StockItem | null
+  categories: Category[]
   onClose: () => void
   onSave: () => Promise<void>
 }
 
-export function StockItemForm({ open, item, onClose, onSave }: Props) {
+export function StockItemForm({ open, item, categories, onClose, onSave }: Props) {
   const [name,          setName]          = useState('')
   const [category,      setCategory]      = useState('')
   const [unit,          setUnit]          = useState('kg')
@@ -21,9 +25,15 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
   const [unitPrice,     setUnitPrice]     = useState('0')
   const [orderQuantity, setOrderQuantity] = useState('0')
   const [supplier,      setSupplier]      = useState('')
+  const [supplierRef,   setSupplierRef]   = useState('')
   // Purchase price calculator
   const [purchaseTotal, setPurchaseTotal] = useState('')
   const [purchaseQty,   setPurchaseQty]   = useState('')
+  // POS / Vendu en caisse
+  const [isPos,         setIsPos]         = useState(false)
+  const [posPrice,      setPosPrice]      = useState('')
+  const [posTvaRate,    setPosTvaRate]    = useState(10)
+  const [posCategoryId, setPosCategoryId] = useState('')
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState<string | null>(null)
 
@@ -37,9 +47,15 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
       setUnitPrice(String(item?.unit_price ?? 0))
       setOrderQuantity(String(item?.order_quantity ?? 0))
       setSupplier(item?.supplier ?? '')
+      setSupplierRef(item?.supplier_ref ?? '')
       // Restore calculator values if previously saved
       setPurchaseTotal(item?.purchase_price ? String(item.purchase_price) : '')
       setPurchaseQty(item?.purchase_qty ? String(item.purchase_qty) : '')
+      // POS
+      setIsPos(item?.is_pos ?? false)
+      setPosPrice(item?.pos_price != null ? String(item.pos_price) : '')
+      setPosTvaRate(item?.pos_tva_rate ?? 10)
+      setPosCategoryId(item?.pos_category_id ?? '')
       setError(null)
     }
   }, [open, item])
@@ -69,6 +85,7 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) { setError('Le nom est requis'); return }
+    if (isPos && !posPrice) { setError('Le prix de vente est requis pour un article vendu en caisse'); return }
     setLoading(true); setError(null)
     try {
       const payload = {
@@ -80,8 +97,13 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
         unit_price:      parseFloat(unitPrice) || 0,
         order_quantity:  parseFloat(orderQuantity) || 0,
         supplier:        supplier.trim() || null,
+        supplier_ref:    supplierRef.trim() || null,
         purchase_price:  parseFloat(purchaseTotal) || 0,
         purchase_qty:    parseFloat(purchaseQty) || 0,
+        is_pos:          isPos,
+        pos_price:       isPos && posPrice ? parseFloat(posPrice) : null,
+        pos_tva_rate:    posTvaRate,
+        pos_category_id: posCategoryId || null,
       }
       const url    = item ? `/api/stock-items/${item.id}` : '/api/stock-items'
       const method = item ? 'PATCH' : 'POST'
@@ -132,6 +154,14 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
                 className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
                 style={{ background: 'var(--surface2)' }} />
             </div>
+          </div>
+
+          {/* Référence fournisseur */}
+          <div>
+            <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Référence fournisseur</label>
+            <input value={supplierRef} onChange={e => setSupplierRef(e.target.value)} placeholder="REF-001"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+              style={{ background: 'var(--surface2)' }} />
           </div>
 
           {/* Unité + Stock + Seuil */}
@@ -238,6 +268,76 @@ export function StockItemForm({ open, item, onClose, onSave }: Props) {
                 className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
                 style={{ background: 'var(--surface2)' }} />
             </div>
+          </div>
+
+          {/* Vendu en caisse */}
+          <div className="rounded-xl border border-[var(--border)] overflow-hidden" style={{ background: 'var(--bg)' }}>
+            <button
+              type="button"
+              onClick={() => setIsPos(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left"
+            >
+              <div>
+                <span className="text-sm font-semibold text-[var(--text1)]">Vendu en caisse</span>
+                <span className="ml-2 text-xs text-[var(--text4)]">Produit prêt à vendre (Coca-Cola, Fanta…)</span>
+              </div>
+              <div className={`relative w-10 h-5 rounded-full transition-colors ${isPos ? 'bg-[var(--blue)]' : 'bg-[var(--border)]'}`}>
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isPos ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </button>
+
+            {isPos && (
+              <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)]">
+                <div className="grid grid-cols-2 gap-3 pt-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Prix de vente TTC (€) *</label>
+                    <div className="relative">
+                      <input
+                        type="number" step="0.01" value={posPrice}
+                        onChange={e => setPosPrice(e.target.value)}
+                        placeholder="2.50"
+                        className="w-full px-3 py-2 pr-7 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                        style={{ background: 'var(--surface2)' }}
+                      />
+                      <span className="absolute right-2.5 top-2 text-xs text-[var(--text4)]">€</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">TVA</label>
+                    <select
+                      value={posTvaRate} onChange={e => setPosTvaRate(parseFloat(e.target.value))}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                      style={{ background: 'var(--surface2)' }}
+                    >
+                      {TVA_RATES.map(r => <option key={r} value={r}>{r}%</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Catégorie caisse</label>
+                  <select
+                    value={posCategoryId} onChange={e => setPosCategoryId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm focus:outline-none focus:border-[var(--blue)] transition-colors"
+                    style={{ background: 'var(--surface2)' }}
+                  >
+                    <option value="">— Aucune catégorie —</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {posPrice && (
+                  <p className="text-xs text-[var(--text4)]">
+                    {(() => {
+                      const priceHT = parseFloat(posPrice) / (1 + posTvaRate / 100)
+                      const cost    = parseFloat(unitPrice) || 0
+                      const margin  = cost > 0 ? ((priceHT - cost) / priceHT * 100).toFixed(1) : '—'
+                      return `Prix HT : ${priceHT.toFixed(2)} € · Marge brute : ${margin}${cost > 0 ? '%' : ''}`
+                    })()}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-400">{error}</p>}

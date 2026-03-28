@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Navigation & Lien Dashboard / Caisse</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f172a;--bg-caisse:#0a1628;--surface:#1e293b;--surface2:#263348;
+  --border:#334155;--blue:#1d4ed8;--blue-light:#1e3a5f;
+  --green:#10b981;--amber:#f59e0b;--red:#ef4444;
+  --text1:#f8fafc;--text2:#e2e8f0;--text3:#94a3b8;--text4:#475569;
+}
+body{background:var(--bg);color:var(--text1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;overflow:hidden;height:100vh}
+
+/* ── TABS ── */
+.tabs{position:fixed;top:0;left:0;right:0;z-index:999;background:#060e1a;border-bottom:1px solid #1e293b;display:flex;gap:2px;padding:6px 10px;overflow-x:auto;scrollbar-width:none}
+.tab{padding:4px 14px;border-radius:5px;border:none;cursor:pointer;font-size:11px;font-weight:500;background:transparent;color:var(--text4);white-space:nowrap;transition:all .15s}
+.tab.active{background:var(--blue);color:#fff}
+.tab:hover:not(.active){background:var(--surface);color:var(--text2)}
+.screen{display:none;height:calc(100vh - 36px);margin-top:36px;flex-direction:column}
+.screen.active{display:flex}
+
+/* ── SHARED ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;padding:0 16px;height:36px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#1e40af}
+.btn-ghost{background:transparent;color:var(--text3);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface);color:var(--text2)}
+.btn-green{background:var(--green);color:#fff}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-blue{background:rgba(29,78,216,.2);color:#93c5fd}
+.badge-green{background:rgba(16,185,129,.15);color:#6ee7b7}
+.badge-amber{background:rgba(245,158,11,.15);color:#fcd34d}
+.badge-red{background:rgba(239,68,68,.15);color:#fca5a5}
+.tooltip-wrap{position:relative}
+.tooltip{position:absolute;top:calc(100% + 8px);right:0;background:#1e293b;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:100;pointer-events:none;opacity:0;transition:opacity .15s}
+.tooltip-wrap:hover .tooltip{opacity:1}
+.tooltip::before{content:'';position:absolute;top:-5px;right:14px;width:8px;height:8px;background:#1e293b;border-top:1px solid var(--border);border-left:1px solid var(--border);transform:rotate(45deg)}
+
+/* ══════════════════════════════════════════
+   S1 — DASHBOARD ADMIN (vue produits)
+   avec bouton "Ouvrir la caisse" visible
+══════════════════════════════════════════ */
+.admin-layout{display:flex;height:100%}
+.admin-sidebar{width:220px;background:#111827;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.admin-sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0}
+.logo-text{font-size:15px;font-weight:700;color:var(--text1)}
+.logo-sub{font-size:10px;color:var(--text3)}
+.admin-nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:var(--text3);font-size:13px;cursor:pointer;transition:all .1s}
+.nav-item:hover{background:var(--surface);color:var(--text2)}
+.nav-item.active{background:var(--blue);color:#fff}
+.nav-icon{width:16px;text-align:center;font-size:14px}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700}
+.sidebar-footer{margin-top:auto;border-top:1px solid var(--border);padding:12px}
+.user-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer}
+.user-row:hover{background:var(--surface)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:12px;font-weight:500;color:var(--text2)}
+.user-role{font-size:10px;color:var(--text3)}
+
+/* Admin topbar */
+.admin-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.admin-topbar{height:52px;border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(15,23,42,.8);backdrop-filter:blur(8px)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-breadcrumb{font-size:13px;color:var(--text3)}
+.topbar-breadcrumb span{color:var(--text2);font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:10px}
+
+/* BOUTON CAISSE — le lien principal */
+.btn-caisse{
+  height:36px;padding:0 16px;border-radius:8px;border:1px solid rgba(16,185,129,.4);
+  background:rgba(16,185,129,.1);color:var(--green);
+  font-size:13px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:7px;transition:all .2s;
+}
+.btn-caisse:hover{background:rgba(16,185,129,.2);border-color:var(--green);box-shadow:0 0 0 3px rgba(16,185,129,.15)}
+.btn-caisse .dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Notif badge */
+.notif-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;font-size:16px}
+.notif-btn .notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--bg)}
+
+/* Admin content */
+.admin-content{flex:1;overflow:auto;padding:24px}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:18px;font-weight:700;color:var(--text1)}
+.page-subtitle{font-size:13px;color:var(--text3);margin-top:3px}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table{width:100%;border-collapse:collapse}
+.table thead tr{background:var(--bg);border-bottom:1px solid var(--border)}
+.table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.06em}
+.table tbody tr{border-bottom:1px solid rgba(51,65,85,.4);transition:background .1s}
+.table tbody tr:hover{background:var(--surface2)}
+.table td{padding:0 14px;height:40px;vertical-align:middle;font-size:13px;color:var(--text2)}
+.tva-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(245,158,11,.15);color:var(--amber)}
+.toggle{width:36px;height:20px;border-radius:10px;background:var(--green);position:relative;cursor:pointer}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .15s}
+.toggle.on::after{transform:translateX(16px)}
+.toggle.off{background:var(--text4)}
+.toggle.off::after{transform:none}
+.cat-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:12px}
+.cat-plat{background:#172554;color:#93c5fd}
+.cat-entree{background:#14532d;color:#86efac}
+.cat-boisson{background:#1e1b4b;color:#a5b4fc}
+.cat-dessert{background:#4a1d96;color:#d8b4fe}
+
+/* ══════════════════════════════════════════
+   S2 — SPLASH / TRANSITION
+══════════════════════════════════════════ */
+.splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--bg-caisse);gap:24px}
+.splash-logo{display:flex;align-items:center;gap:12px}
+.splash-icon{width:48px;height:48px;background:var(--blue);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff}
+.splash-name{font-size:28px;font-weight:800;color:var(--text1)}
+.splash-label{font-size:14px;color:var(--text3);letter-spacing:.02em}
+.splash-progress{width:200px;height:3px;background:var(--surface);border-radius:3px;overflow:hidden}
+.splash-bar{height:100%;background:var(--green);border-radius:3px;animation:load 1.8s ease-in-out forwards}
+@keyframes load{0%{width:0}60%{width:70%}100%{width:100%}}
+.splash-sub{font-size:12px;color:var(--text4)}
+
+/* ══════════════════════════════════════════
+   S3 — CAISSE VUE ADMIN (avec lien retour)
+══════════════════════════════════════════ */
+.pos{display:flex;height:100%}
+.caisse-header{height:48px;background:rgba(10,22,40,.95);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;backdrop-filter:blur(8px)}
+.caisse-context{display:flex;align-items:center;gap:10px}
+.caisse-back{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:12px;font-weight:500;transition:all .1s}
+.caisse-back:hover{background:var(--surface);color:var(--text2)}
+.caisse-sep{width:1px;height:20px;background:var(--border)}
+.caisse-mode-badge{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text2)}
+.mode-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.caisse-right{display:flex;align-items:center;gap:10px}
+.caisse-user{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3)}
+.caisse-close{width:32px;height:32px;border-radius:7px;border:1px solid rgba(239,68,68,.3);background:transparent;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .1s}
+.caisse-close:hover{background:rgba(239,68,68,.1)}
+
+.cats{width:200px;background:#060e1a;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;padding-top:48px}
+.cats-inner{padding:10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.cat-pill{height:56px;border-radius:12px;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:15px;font-weight:600;background:var(--surface);color:var(--text3);transition:all .15s;border-left:4px solid transparent;width:100%}
+.cat-pill.active{background:var(--blue);color:#fff;border-left-color:#60a5fa}
+.cat-pill:hover:not(.active){background:var(--surface2);color:var(--text2)}
+.cats-footer{padding:10px;border-top:1px solid var(--border)}
+.cat-footer-btn{height:44px;width:100%;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
+
+.products-area{flex:1;display:flex;flex-direction:column;padding-top:48px;overflow:hidden}
+.prod-header{padding:12px 16px 8px;border-bottom:1px solid var(--border);font-size:17px;font-weight:700}
+.prod-grid{flex:1;padding:14px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;overflow-y:auto;align-content:start}
+.prod-card{height:120px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:12px;cursor:pointer;display:flex;flex-direction:column;transition:all .15s}
+.prod-card:hover{background:var(--surface2);border-color:var(--blue)}
+.prod-card .emoji{font-size:24px;margin-bottom:4px}
+.prod-card .name{font-size:14px;font-weight:600;color:var(--text2);flex:1;line-height:1.3}
+.prod-card .price{font-size:18px;font-weight:700;color:var(--text1)}
+
+.ticket-area{width:360px;background:#060e1a;border-left:1px solid var(--border);display:flex;flex-direction:column;padding-top:48px}
+.ticket-hd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ticket-title{font-size:16px;font-weight:700}
+.ticket-body{flex:1;overflow-y:auto;padding:8px 0}
+.t-line{padding:9px 16px;border-bottom:1px solid rgba(51,65,85,.3);display:flex;align-items:center;gap:8px}
+.t-name{flex:1;font-size:14px;font-weight:600;color:var(--text2)}
+.t-qty{font-size:13px;color:var(--text3);white-space:nowrap}
+.t-price{font-size:14px;font-weight:700;color:var(--text1);white-space:nowrap}
+.ticket-totals{padding:12px 16px;border-top:1px solid var(--border)}
+.tot-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text3);margin-bottom:4px}
+.tot-grand{display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:var(--text1);margin-top:8px}
+.btn-encaisser{width:calc(100% - 28px);margin:12px 14px;height:72px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(16,185,129,.35)}
+
+/* ══════════════════════════════════════════
+   S4 — CAISSE VUE CAISSIER (sans lien admin)
+══════════════════════════════════════════ */
+.caissier-header{height:48px;background:rgba(10,22,40,.95);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0}
+.ch-left{display:flex;align-items:center;gap:10px}
+.ch-logo{width:28px;height:28px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff}
+.ch-name{font-size:13px;font-weight:700;color:var(--text2)}
+.ch-mode{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--green)}
+.ch-right{display:flex;align-items:center;gap:10px}
+.ch-time{font-size:13px;color:var(--text3)}
+.ch-user{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;cursor:pointer}
+.ch-avatar{width:26px;height:26px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2)}
+.ch-username{font-size:12px;color:var(--text3)}
+/* Pas de bouton "dashboard" dans la vue caissier */
+
+/* ══════════════════════════════════════════
+   S5 — MODAL SWITCH EN COURS DE COMMANDE
+══════════════════════════════════════════ */
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:440px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px}
+.modal-icon{font-size:28px;flex-shrink:0}
+.modal-title{font-size:17px;font-weight:700;color:var(--text1)}
+.modal-sub{font-size:13px;color:var(--text3);margin-top:4px;line-height:1.5}
+.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:12px}
+.modal-info{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.mi-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text3);margin-bottom:6px}
+.mi-row:last-child{margin-bottom:0;font-weight:700;color:var(--text1)}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px}
+
+/* ══════════════════════════════════════════
+   S6 — CONNEXION / SÉLECTION RÔLE
+══════════════════════════════════════════ */
+.login-screen{display:flex;height:100%;background:var(--bg)}
+.login-left{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;border-right:1px solid var(--border)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+.ll-icon{width:44px;height:44px;background:var(--blue);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff}
+.ll-name{font-size:26px;font-weight:800;color:var(--text1)}
+.login-form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+.login-title{font-size:20px;font-weight:700;color:var(--text1);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--text3);margin-bottom:8px}
+.lf-label{font-size:12px;font-weight:500;color:var(--text3);margin-bottom:5px}
+.lf-input{width:100%;height:44px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 12px;color:var(--text1);font-size:14px;outline:none}
+.lf-input:focus{border-color:var(--blue)}
+.btn-login{width:100%;height:48px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px}
+
+.login-right{width:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;background:#060e1a}
+.lr-title{font-size:16px;font-weight:600;color:var(--text2);margin-bottom:24px;text-align:center}
+.role-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px}
+.role-card{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:16px 20px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:14px}
+.role-card:hover{border-color:var(--blue);background:var(--blue-light)}
+.role-card.active{border-color:var(--green);background:rgba(16,185,129,.08)}
+.rc-icon{font-size:28px;flex-shrink:0}
+.rc-name{font-size:15px;font-weight:700;color:var(--text1)}
+.rc-desc{font-size:12px;color:var(--text3);margin-top:2px}
+.rc-access{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+.rc-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(29,78,216,.2);color:#93c5fd}
+.rc-tag.green{background:rgba(16,185,129,.2);color:#6ee7b7}
+.rc-arrow{margin-left:auto;font-size:18px;color:var(--text4)}
+
+/* ══════════════════════════════════════════
+   S7 — URL STRUCTURE
+══════════════════════════════════════════ */
+.url-screen{flex:1;overflow-y:auto;padding:32px;display:flex;flex-direction:column;gap:24px;align-items:center}
+.url-title{font-size:22px;font-weight:800;color:var(--text1)}
+.url-sub{font-size:14px;color:var(--text3)}
+.url-map{width:100%;max-width:800px;display:flex;flex-direction:column;gap:16px}
+.url-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.url-section-title{padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:10px}
+.url-section-title .role-tags{margin-left:auto;display:flex;gap:6px}
+.url-rows{padding:4px 0}
+.url-row{padding:10px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(51,65,85,.3)}
+.url-row:last-child{border-bottom:none}
+.url-path{font-family:'SF Mono','Fira Code',monospace;font-size:13px;color:#93c5fd;width:260px;flex-shrink:0}
+.url-desc{font-size:13px;color:var(--text3);flex:1}
+.url-redirect{font-size:11px;color:var(--text4);font-style:italic}
+.url-row-group{padding:6px 18px;background:rgba(29,78,216,.06);border-bottom:1px solid rgba(51,65,85,.3)}
+.url-row-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text4)}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('s1',this)">1 · Dashboard + bouton caisse</button>
+  <button class="tab" onclick="show('s2',this)">2 · Splash (transition)</button>
+  <button class="tab" onclick="show('s3',this)">3 · Caisse vue Admin</button>
+  <button class="tab" onclick="show('s4',this)">4 · Caisse vue Caissier</button>
+  <button class="tab" onclick="show('s5',this)">5 · Modal commande en cours</button>
+  <button class="tab" onclick="show('s6',this)">6 · Connexion / Rôles</button>
+  <button class="tab" onclick="show('s7',this)">7 · Structure URL</button>
+</div>
+
+<!-- ══════ S1 — DASHBOARD + BOUTON CAISSE ══════ -->
+<div id="s1" class="screen">
+  <div class="admin-layout">
+    <div class="admin-sidebar">
+      <div class="admin-sidebar-logo">
+        <div class="logo-icon">A</div>
+        <div><div class="logo-text">Alloflow</div><div class="logo-sub">L'Entrecôte Dorée</div></div>
+      </div>
+      <div class="admin-nav">
+        <div style="font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.06em;padding:6px 10px 4px">Principal</div>
+        <div class="nav-item"><span class="nav-icon">📊</span>Dashboard</div>
+        <div class="nav-item active"><span class="nav-icon">🍽️</span>Produits</div>
+        <div class="nav-item"><span class="nav-icon">📋</span>Commandes<span class="nav-badge">3</span></div>
+        <div class="nav-item"><span class="nav-icon">📈</span>Analytics</div>
+        <div class="nav-item"><span class="nav-icon">📦</span>Stocks</div>
+        <div class="nav-item"><span class="nav-icon">👥</span>CRM</div>
+        <div style="height:1px;background:var(--border);margin:8px 0"></div>
+        <div class="nav-item"><span class="nav-icon">⚙️</span>Paramètres</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-row">
+          <div class="avatar">MA</div>
+          <div><div class="user-name">Marc Antoine</div><div class="user-role">Propriétaire</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-main">
+      <!-- TOPBAR avec le bouton caisse bien visible -->
+      <div class="admin-topbar">
+        <div class="topbar-left">
+          <div class="topbar-breadcrumb">Dashboard / <span>Produits</span></div>
+        </div>
+        <div class="topbar-right">
+
+          <!-- BOUTON CLEF : Ouvrir la caisse -->
+          <div class="tooltip-wrap">
+            <button class="btn-caisse" onclick="show('s2',document.querySelectorAll('.tab')[1])">
+              <div class="dot"></div>
+              Ouvrir la caisse ↗
+            </button>
+            <div class="tooltip">S'ouvre dans un nouvel onglet<br>La caisse tourne en parallèle</div>
+          </div>
+
+          <button class="notif-btn">🔔<span class="notif-dot"></span></button>
+          <div class="avatar" style="cursor:pointer">MA</div>
+        </div>
+      </div>
+
+      <!-- CONTENU PAGE PRODUITS (fond, non focus) -->
+      <div class="admin-content">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Produits</div>
+            <div class="page-subtitle">84 produits · 76 actifs · 6 catégories</div>
+          </div>
+          <button class="btn btn-primary">+ Nouveau produit</button>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr>
+              <th style="width:40px"><input type="checkbox" style="accent-color:var(--blue)"></th>
+              <th>Nom</th><th>Catégorie</th><th style="text-align:right">Prix TTC</th><th style="text-align:center">TVA</th><th style="text-align:center">Statut</th><th></th>
+            </tr></thead>
+            <tbody>
+              <tr><td><input type="checkbox" style="accent-color:var(--blue)"></td><td style="font-weight:600">Entrecôte 300g</td><td><span class="cat-badge cat-plat">🍽️ Plat</span></td><td style="text-align:right;font-weight:700">26,40€</td><td style="text-align:center"><span class="tva-badge">10%</span></td><td style="text-align:center"><div class="toggle on"></div></td><td style="text-align:center;color:var(--text4)">✏️ ⋯</td></tr>
+              <tr><td><input type="checkbox" style="accent-color:var(--blue)"></td><td style="font-weight:600">Burger Maison</td><td><span class="cat-badge cat-plat">🍽️ Plat</span></td><td style="text-align:right;font-weight:700">16,50€</td><td style="text-align:center"><span class="tva-badge">10%</span></td><td style="text-align:center"><div class="toggle on"></div></td><td style="text-align:center;color:var(--text4)">✏️ ⋯</td></tr>
+              <tr><td><input type="checkbox" style="accent-color:var(--blue)"></td><td style="font-weight:600">Salade César</td><td><span class="cat-badge cat-entree">🥗 Entrée</span></td><td style="text-align:right;font-weight:700">9,90€</td><td style="text-align:center"><span class="tva-badge">10%</span></td><td style="text-align:center"><div class="toggle on"></div></td><td style="text-align:center;color:var(--text4)">✏️ ⋯</td></tr>
+              <tr><td><input type="checkbox" style="accent-color:var(--blue)"></td><td style="font-weight:600">Côtes du Rhône 75cl</td><td><span class="cat-badge cat-boisson">🍹 Boisson</span></td><td style="text-align:right;font-weight:700">24,00€</td><td style="text-align:center"><span class="tva-badge">20%</span></td><td style="text-align:center"><div class="toggle on"></div></td><td style="text-align:center;color:var(--text4)">✏️ ⋯</td></tr>
+              <tr style="opacity:.55"><td><input type="checkbox" style="accent-color:var(--blue)"></td><td style="font-weight:600;color:var(--text3)">Soupe à l'oignon</td><td><span class="cat-badge cat-entree">🥗 Entrée</span></td><td style="text-align:right;font-weight:700;color:var(--text3)">7,15€</td><td style="text-align:center"><span class="tva-badge">10%</span></td><td style="text-align:center"><div class="toggle off"></div></td><td style="text-align:center;color:var(--text4)">✏️ ⋯</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ S2 — SPLASH TRANSITION ══════ -->
+<div id="s2" class="screen" style="background:var(--bg-caisse)">
+  <div class="splash">
+    <div class="splash-logo">
+      <div class="splash-icon">A</div>
+      <div class="splash-name">Alloflow</div>
+    </div>
+    <div class="splash-label">Chargement de la caisse…</div>
+    <div class="splash-progress"><div class="splash-bar"></div></div>
+    <div class="splash-sub">L'Entrecôte Dorée · Service du midi</div>
+  </div>
+</div>
+
+<!-- ══════ S3 — CAISSE VUE ADMIN ══════ -->
+<div id="s3" class="screen" style="background:var(--bg-caisse);flex-direction:column">
+  <!-- Header spécial avec lien retour -->
+  <div class="caisse-header">
+    <div class="caisse-context">
+      <button class="caisse-back" onclick="show('s1',document.querySelectorAll('.tab')[0])">
+        ← Dashboard admin
+      </button>
+      <div class="caisse-sep"></div>
+      <div class="caisse-mode-badge">
+        <div class="mode-dot"></div>
+        Mode caisse · L'Entrecôte Dorée
+      </div>
+    </div>
+    <div class="caisse-right">
+      <div class="caisse-user">
+        <div class="avatar" style="width:26px;height:26px;font-size:11px">MA</div>
+        Marc Antoine (Admin)
+      </div>
+      <button class="caisse-close" title="Fermer la caisse">✕</button>
+    </div>
+  </div>
+
+  <!-- Interface caisse normale en dessous -->
+  <div class="pos" style="flex:1;overflow:hidden">
+    <div class="cats">
+      <div class="cats-inner">
+        <button class="cat-pill active">🍽️ Plats</button>
+        <button class="cat-pill">🥗 Entrées</button>
+        <button class="cat-pill">🍹 Boissons</button>
+        <button class="cat-pill">🍮 Desserts</button>
+        <button class="cat-pill">🥤 Menus</button>
+      </div>
+      <div class="cats-footer">
+        <button class="cat-footer-btn">🗺️ Plan de salle</button>
+      </div>
+    </div>
+    <div class="products-area">
+      <div class="prod-header">Plats <span style="font-size:13px;font-weight:400;color:var(--text3)">· 12 disponibles</span></div>
+      <div class="prod-grid">
+        <div class="prod-card"><div class="emoji">🥩</div><div class="name">Entrecôte 300g</div><div class="price">26,40€</div></div>
+        <div class="prod-card"><div class="emoji">🍔</div><div class="name">Burger Maison</div><div class="price">16,50€</div></div>
+        <div class="prod-card"><div class="emoji">🍗</div><div class="name">Poulet rôti fermier</div><div class="price">18,70€</div></div>
+        <div class="prod-card"><div class="emoji">🐟</div><div class="name">Dos de cabillaud</div><div class="price">22,00€</div></div>
+        <div class="prod-card"><div class="emoji">🍝</div><div class="name">Tagliatelles maison</div><div class="price">14,30€</div></div>
+        <div class="prod-card"><div class="emoji">🥩</div><div class="name">Côte de veau</div><div class="price">29,70€</div></div>
+      </div>
+    </div>
+    <div class="ticket-area">
+      <div class="ticket-hd">
+        <div class="ticket-title">Table 4</div>
+        <span style="font-size:11px;color:var(--text3)">Ouvert à 12:47</span>
+      </div>
+      <div class="ticket-body">
+        <div class="t-line"><div class="t-name">Entrecôte 300g<div style="font-size:11px;font-weight:400;color:var(--text3)">26,40€ × 2</div></div><div class="t-price">52,80€</div></div>
+        <div class="t-line"><div class="t-name">Coca-Cola 33cl<div style="font-size:11px;font-weight:400;color:var(--text3)">3,50€ × 2</div></div><div class="t-price">7,00€</div></div>
+        <div class="t-line"><div class="t-name">Tiramisu maison<div style="font-size:11px;font-weight:400;color:var(--text3)">7,70€ × 1</div></div><div class="t-price">7,70€</div></div>
+      </div>
+      <div class="ticket-totals">
+        <div class="tot-row"><span>Sous-total HT</span><span>61,36€</span></div>
+        <div class="tot-row" style="font-size:11px"><span>TVA 10%</span><span>6,14€</span></div>
+        <div class="tot-row" style="font-size:11px"><span>TVA 20%</span><span>1,17€</span></div>
+        <div class="tot-grand"><span>TOTAL TTC</span><span>67,50€</span></div>
+      </div>
+      <button class="btn-encaisser">💳 Encaisser · 67,50€</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ S4 — CAISSE VUE CAISSIER (pas de lien admin) ══════ -->
+<div id="s4" class="screen" style="background:var(--bg-caisse);flex-direction:column">
+  <!-- Header caissier : pas de "← Dashboard admin" -->
+  <div class="caissier-header">
+    <div class="ch-left">
+      <div class="ch-logo">A</div>
+      <div class="ch-name">Alloflow</div>
+      <div style="width:1px;height:18px;background:var(--border)"></div>
+      <div class="ch-mode"><div class="mode-dot"></div>Caisse ouverte</div>
+    </div>
+    <div class="ch-right">
+      <div class="ch-time">12:53</div>
+      <div style="width:1px;height:18px;background:var(--border)"></div>
+      <div class="ch-user">
+        <div class="ch-avatar">TD</div>
+        <span class="ch-username">Thomas D. — Caissier</span>
+      </div>
+      <!-- Pas de bouton "Dashboard" ici — le caissier n'y a pas accès -->
+    </div>
+  </div>
+
+  <div class="pos" style="flex:1;overflow:hidden">
+    <div class="cats">
+      <div class="cats-inner">
+        <button class="cat-pill active">🍽️ Plats</button>
+        <button class="cat-pill">🥗 Entrées</button>
+        <button class="cat-pill">🍹 Boissons</button>
+        <button class="cat-pill">🍮 Desserts</button>
+        <button class="cat-pill">🥤 Menus</button>
+      </div>
+      <div class="cats-footer">
+        <button class="cat-footer-btn">🗺️ Plan de salle</button>
+      </div>
+    </div>
+    <div class="products-area">
+      <div class="prod-header">Plats</div>
+      <div class="prod-grid">
+        <div class="prod-card"><div class="emoji">🥩</div><div class="name">Entrecôte 300g</div><div class="price">26,40€</div></div>
+        <div class="prod-card"><div class="emoji">🍔</div><div class="name">Burger Maison</div><div class="price">16,50€</div></div>
+        <div class="prod-card"><div class="emoji">🍗</div><div class="name">Poulet rôti</div><div class="price">18,70€</div></div>
+        <div class="prod-card"><div class="emoji">🐟</div><div class="name">Dos de cabillaud</div><div class="price">22,00€</div></div>
+        <div class="prod-card"><div class="emoji">🍝</div><div class="name">Tagliatelles maison</div><div class="price">14,30€</div></div>
+        <div class="prod-card"><div class="emoji">🥩</div><div class="name">Côte de veau</div><div class="price">29,70€</div></div>
+      </div>
+    </div>
+    <div class="ticket-area">
+      <div class="ticket-hd">
+        <div class="ticket-title">Emporter</div>
+        <span style="font-size:11px;color:var(--text3)">0 articles</span>
+      </div>
+      <div class="ticket-body" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text4)">
+        <div style="font-size:36px;opacity:.3">🛒</div>
+        <div style="font-size:13px">Sélectionnez des articles</div>
+      </div>
+      <div class="ticket-totals">
+        <div class="tot-grand"><span>TOTAL TTC</span><span>— €</span></div>
+      </div>
+      <button class="btn-encaisser" style="background:var(--surface);color:var(--text4);box-shadow:none;cursor:not-allowed">Encaisser</button>
+    </div>
+  </div>
+
+  <!-- Annotation explicative -->
+  <div style="position:absolute;top:96px;right:16px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 16px;max-width:260px;z-index:100">
+    <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:4px">DIFFÉRENCE CAISSIER</div>
+    <div style="font-size:12px;color:var(--text3);line-height:1.5">Pas de bouton "← Dashboard". Le caissier n'a accès qu'à la caisse. Le bouton n'est pas grisé — il est absent.</div>
+  </div>
+</div>
+
+<!-- ══════ S5 — MODAL COMMANDE EN COURS ══════ -->
+<div id="s5" class="screen" style="background:var(--bg-caisse);position:relative">
+  <!-- Fond caisse flouté -->
+  <div style="position:absolute;inset:0;filter:blur(2px);opacity:.4">
+    <div class="pos" style="height:100%">
+      <div class="cats"><div class="cats-inner"><button class="cat-pill active">🍽️ Plats</button></div></div>
+      <div class="products-area"><div class="prod-header">Plats</div><div class="prod-grid"><div class="prod-card"><div class="emoji">🥩</div><div class="name">Entrecôte</div><div class="price">26€</div></div><div class="prod-card"><div class="emoji">🍔</div><div class="name">Burger</div><div class="price">16€</div></div></div></div>
+      <div class="ticket-area"><div class="ticket-hd"><div class="ticket-title">Table 4</div></div><div class="ticket-body"><div class="t-line"><div class="t-name">Entrecôte</div><div class="t-price">52,80€</div></div></div><div class="ticket-totals"><div class="tot-grand"><span>TOTAL</span><span>67,50€</span></div></div></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">⚠️</div>
+        <div>
+          <div class="modal-title">Commande en cours</div>
+          <div class="modal-sub">Une commande non encaissée est ouverte sur la caisse. Si vous quittez maintenant, elle restera en attente.</div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info">
+          <div class="mi-row"><span>Table</span><span>Table 4</span></div>
+          <div class="mi-row"><span>Articles</span><span>3 articles</span></div>
+          <div class="mi-row"><span>Ouverte à</span><span>12:47 (il y a 18 min)</span></div>
+          <div class="mi-row"><span>Total</span><span>67,50€</span></div>
+        </div>
+        <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#6ee7b7">
+          💡 La commande sera sauvegardée. Vous pourrez y revenir depuis le plan de salle.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" style="flex:1" onclick="show('s3',document.querySelectorAll('.tab')[2])">Rester sur la caisse</button>
+        <button class="btn btn-primary" style="flex:1" onclick="show('s1',document.querySelectorAll('.tab')[0])">Quitter vers le dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ S6 — CONNEXION / SÉLECTION RÔLE ══════ -->
+<div id="s6" class="screen">
+  <div class="login-screen">
+    <div class="login-left">
+      <div class="login-logo">
+        <div class="ll-icon">A</div>
+        <div class="ll-name">Alloflow</div>
+      </div>
+      <div class="login-form">
+        <div class="login-title">Connexion</div>
+        <div class="login-sub">L'Entrecôte Dorée · Paris 11e</div>
+        <div>
+          <div class="lf-label">Email</div>
+          <input class="lf-input" type="email" value="marc@lentrecotedoree.fr" />
+        </div>
+        <div>
+          <div class="lf-label">Mot de passe</div>
+          <input class="lf-input" type="password" value="••••••••" />
+        </div>
+        <button class="btn-login">Se connecter</button>
+        <div style="font-size:12px;color:var(--text4);text-align:center;margin-top:8px">Mot de passe oublié ?</div>
+      </div>
+    </div>
+
+    <div class="login-right">
+      <div class="lr-title">Après connexion, vous accédez à…</div>
+      <div class="role-cards">
+
+        <div class="role-card active">
+          <div class="rc-icon">👑</div>
+          <div>
+            <div class="rc-name">Propriétaire / Admin</div>
+            <div class="rc-desc">Accès complet au dashboard et à la caisse</div>
+            <div class="rc-access">
+              <span class="rc-tag">Dashboard</span>
+              <span class="rc-tag green">Caisse</span>
+              <span class="rc-tag">Rapports</span>
+              <span class="rc-tag">Config</span>
+            </div>
+          </div>
+          <div class="rc-arrow">→</div>
+        </div>
+
+        <div class="role-card">
+          <div class="rc-icon">👔</div>
+          <div>
+            <div class="rc-name">Manager</div>
+            <div class="rc-desc">Dashboard partiel + caisse complète</div>
+            <div class="rc-access">
+              <span class="rc-tag">Dashboard partiel</span>
+              <span class="rc-tag green">Caisse</span>
+              <span class="rc-tag">Rapports</span>
+            </div>
+          </div>
+          <div class="rc-arrow">→</div>
+        </div>
+
+        <div class="role-card">
+          <div class="rc-icon">🧾</div>
+          <div>
+            <div class="rc-name">Caissier / Serveur</div>
+            <div class="rc-desc">Caisse uniquement — pas d'accès admin</div>
+            <div class="rc-access">
+              <span class="rc-tag green">Caisse</span>
+            </div>
+          </div>
+          <div class="rc-arrow">→</div>
+        </div>
+
+      </div>
+      <div style="margin-top:20px;font-size:11px;color:var(--text4);text-align:center">
+        La redirection est automatique selon votre rôle.<br>Pas de choix manuel à faire.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ S7 — STRUCTURE URL ══════ -->
+<div id="s7" class="screen">
+  <div class="url-screen">
+    <div style="text-align:center">
+      <div class="url-title">Structure des URLs</div>
+      <div class="url-sub" style="margin-top:6px">Même domaine · Même auth · Deux espaces distincts</div>
+    </div>
+
+    <div class="url-map">
+
+      <!-- Dashboard -->
+      <div class="url-section">
+        <div class="url-section-title">
+          🖥️ Espace Dashboard (Admin)
+          <div class="role-tags">
+            <span class="badge badge-blue">Admin</span>
+            <span class="badge badge-blue">Manager</span>
+          </div>
+        </div>
+        <div class="url-rows">
+          <div class="url-row">
+            <div class="url-path">/dashboard</div>
+            <div class="url-desc">Redirection automatique →</div>
+            <div class="url-redirect">/dashboard/overview</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/overview</div>
+            <div class="url-desc">Vue d'ensemble (KPIs, chiffres du jour)</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/products</div>
+            <div class="url-desc">Gestion du catalogue produits</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/orders</div>
+            <div class="url-desc">Historique et suivi des commandes</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/analytics</div>
+            <div class="url-desc">Rapports et statistiques</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/stock</div>
+            <div class="url-desc">Gestion des stocks</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/crm</div>
+            <div class="url-desc">Clients et fidélité</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/settings</div>
+            <div class="url-desc">Configuration (Admin uniquement)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Caisse -->
+      <div class="url-section">
+        <div class="url-section-title">
+          🧾 Espace Caisse
+          <div class="role-tags">
+            <span class="badge badge-green">Admin</span>
+            <span class="badge badge-green">Manager</span>
+            <span class="badge badge-green">Caissier</span>
+          </div>
+        </div>
+        <div class="url-rows">
+          <div class="url-row">
+            <div class="url-path">/caisse</div>
+            <div class="url-desc">Redirection automatique →</div>
+            <div class="url-redirect">/caisse/commande</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/caisse/commande</div>
+            <div class="url-desc">Interface principale — prise de commande</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/caisse/tables</div>
+            <div class="url-desc">Plan de salle et gestion des tables</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/caisse/paiement</div>
+            <div class="url-desc">Tunnel de paiement (CB, espèces, split)</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/caisse/historique</div>
+            <div class="url-desc">Commandes encaissées du service en cours</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/caisse/cloture</div>
+            <div class="url-desc">Clôture de caisse — rapport Z</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth -->
+      <div class="url-section">
+        <div class="url-section-title">🔐 Auth & Redirections</div>
+        <div class="url-rows">
+          <div class="url-row">
+            <div class="url-path">/login</div>
+            <div class="url-desc">Page de connexion unique</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/login → Admin</div>
+            <div class="url-desc">Redirige vers →</div>
+            <div class="url-redirect">/dashboard/overview</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/login → Caissier</div>
+            <div class="url-desc">Redirige vers →</div>
+            <div class="url-redirect">/caisse/commande</div>
+          </div>
+          <div class="url-row">
+            <div class="url-path">/dashboard/* → Caissier</div>
+            <div class="url-desc">Bloqué — redirige vers →</div>
+            <div class="url-redirect">/caisse/commande</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+</script>
+</body>
+</html>

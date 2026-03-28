@@ -94,12 +94,12 @@ export function CategoriesModal({ categories, onClose, onCreate, onRename, onDel
               )}
               <button
                 onClick={() => { setEditingId(cat.id); setEditingName(cat.name) }}
-                className="w-6 h-6 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--text1)] transition-colors text-xs"
+                className="w-6 h-6 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--text1)] hover:bg-[var(--surface2)] transition-colors text-xs"
                 title="Renommer"
-              >🎨</button>
+              >✏️</button>
               <button
                 onClick={() => onDelete(cat.id)}
-                className="w-6 h-6 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--red)] transition-colors text-xs"
+                className="w-6 h-6 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--red)] hover:bg-[var(--red-bg)] transition-colors text-xs"
                 title="Supprimer"
               >🗑️</button>
             </div>

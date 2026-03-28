@@ -7,12 +7,15 @@ import { PurchaseOrderForm } from './purchase-order-form'
 import { ReceiveDeliveryModal } from './receive-delivery-modal'
 import type { StockItem, PurchaseOrder } from './types'
 
+interface Category { id: string; name: string; color_hex: string }
+
 interface Props {
   initialItems: StockItem[]
   initialOrders: PurchaseOrder[]
+  categories: Category[]
 }
 
-export function StocksPageClient({ initialItems, initialOrders }: Props) {
+export function StocksPageClient({ initialItems, initialOrders, categories }: Props) {
   const [items, setItems] = useState(initialItems)
   const [orders, setOrders] = useState(initialOrders)
   const [tab, setTab] = useState<'inventory' | 'orders'>('inventory')
@@ -177,6 +180,7 @@ export function StocksPageClient({ initialItems, initialOrders }: Props) {
       <StockItemForm
         open={showItemForm}
         item={editingItem}
+        categories={categories}
         onClose={() => setShowItemForm(false)}
         onSave={async () => { setShowItemForm(false); await reloadItems() }}
       />

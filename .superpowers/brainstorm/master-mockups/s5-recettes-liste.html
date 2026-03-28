@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alloflow — Recettes & Food Cost</title>
+<style>
+:root {
+  --bg: #0f172a; --surface: #1e293b; --surface-raised: #263348; --border: #334155;
+  --text-primary: #f8fafc; --text-secondary: #e2e8f0; --text-muted: #94a3b8; --text-disabled: #475569;
+  --blue: #1d4ed8; --blue-hover: #1e40af; --green: #10b981; --amber: #f59e0b; --red: #ef4444;
+  --sidebar-w: 220px;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { display:flex; min-height:100vh; background:var(--bg); color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:14px; }
+
+/* SIDEBAR */
+.sidebar { width:var(--sidebar-w); background:#111827; border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+.sidebar-logo { padding:20px 16px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.logo-icon { width:32px; height:32px; background:var(--blue); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:white; flex-shrink:0; }
+.logo-name { font-size:15px; font-weight:700; color:var(--text-primary); }
+.logo-sub { font-size:10px; color:var(--text-muted); }
+.nav-section { padding:8px 8px 4px; }
+.nav-label { font-size:10px; font-weight:600; color:var(--text-disabled); text-transform:uppercase; letter-spacing:.06em; padding:0 8px; margin-bottom:4px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; color:var(--text-muted); font-size:13px; cursor:pointer; margin-bottom:1px; }
+.nav-item:hover { background:var(--surface); color:var(--text-secondary); }
+.nav-item.active { background:var(--blue); color:white; }
+.sidebar-footer { margin-top:auto; border-top:1px solid var(--border); padding:12px; }
+.user-info { display:flex; align-items:center; gap:8px; padding:8px; border-radius:6px; cursor:pointer; }
+.user-info:hover { background:var(--surface); }
+.user-avatar { width:30px; height:30px; border-radius:50%; background:var(--blue); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:white; flex-shrink:0; }
+.user-name { font-size:12px; font-weight:500; color:var(--text-secondary); }
+.user-role { font-size:10px; color:var(--text-muted); }
+
+/* MAIN */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.topbar { height:56px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 24px; background:#111827; flex-shrink:0; }
+.topbar-title { font-size:15px; font-weight:600; }
+.content { padding:24px; flex:1; overflow-y:auto; }
+
+/* STATS */
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.stat-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+
+/* RECIPE GRID */
+.recipe-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.recipe-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
+.recipe-card:hover { border-color:rgba(29,78,216,.4); box-shadow:0 4px 20px rgba(0,0,0,.3); }
+.recipe-card.alert { border-color:rgba(239,68,68,.3); }
+.recipe-header { padding:16px 16px 12px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--border); }
+.recipe-emoji { width:48px; height:48px; border-radius:10px; background:rgba(255,255,255,.04); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.recipe-title { font-weight:700; font-size:14px; color:var(--text-primary); margin-bottom:2px; }
+.recipe-sub { font-size:11px; color:var(--text-muted); }
+.recipe-body { padding:14px 16px 16px; }
+
+/* FOOD COST DISPLAY */
+.fc-row { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
+.fc-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+.fc-value { font-size:22px; font-weight:800; }
+.cost-bar-bg { height:8px; background:rgba(255,255,255,.06); border-radius:4px; margin-bottom:6px; position:relative; }
+.cost-bar { height:8px; border-radius:4px; }
+.cost-threshold { position:absolute; top:-2px; width:2px; height:12px; background:rgba(255,255,255,.2); border-radius:1px; left:70%; }
+.cost-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--text-disabled); margin-bottom:12px; }
+.meta-row { display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); padding-top:10px; border-top:1px solid rgba(51,65,85,.5); }
+.meta-row strong { color:var(--text-primary); }
+
+/* BADGES */
+.badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge-green { background:rgba(16,185,129,.12); color:#10b981; border:1px solid rgba(16,185,129,.25); }
+.badge-amber { background:rgba(245,158,11,.12); color:#f59e0b; border:1px solid rgba(245,158,11,.25); }
+.badge-red   { background:rgba(239,68,68,.12);  color:#ef4444; border:1px solid rgba(239,68,68,.25); }
+
+/* PRODUCT LINK */
+.pos-link { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding:7px 10px; background:rgba(29,78,216,.08); border:1px solid rgba(29,78,216,.2); border-radius:7px; font-size:11px; }
+.pos-link-label { color:#93c5fd; }
+.pos-link-badge { font-size:10px; font-weight:700; color:#60a5fd; background:rgba(29,78,216,.15); padding:2px 7px; border-radius:4px; }
+
+.btn-sm { padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:none; }
+.filter-select { height:34px; padding:0 10px; background:var(--surface-raised); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); font-size:12px; outline:none; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">A</div>
+    <div><div class="logo-name">Alloflow</div><div class="logo-sub">Back-office</div></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Caisse</div>
+    <div class="nav-item"><span>🧾</span> POS</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Gestion</div>
+    <div class="nav-item"><span>📦</span> Produits</div>
+    <div class="nav-item"><span>🏪</span> Stocks</div>
+    <div class="nav-item active"><span>📖</span> Recettes</div>
+    <div class="nav-item"><span>📋</span> SOPs</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Analytics</div>
+    <div class="nav-item"><span>📊</span> Analytics</div>
+    <div class="nav-item"><span>👥</span> CRM Fidélité</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Admin</div>
+    <div class="nav-item"><span>⚙️</span> Paramètres</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar">MA</div>
+      <div><div class="user-name">Marc Antoine</div><div class="user-role">Admin</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Recettes & Food Cost</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select class="filter-select">
+        <option>Toutes catégories</option>
+        <option>Boissons chaudes</option>
+        <option>Pâtisseries</option>
+        <option>Boissons froides</option>
+      </select>
+      <select class="filter-select">
+        <option>Trier : Marge ↓</option>
+        <option>Trier : Nom</option>
+        <option>Trier : Food cost ↑</option>
+      </select>
+      <button class="btn-sm" style="background:var(--blue);color:white;">+ Nouvelle recette</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Food cost moyen</div>
+        <div style="font-size:28px;font-weight:800;color:var(--amber);margin-bottom:4px;">31,4%</div>
+        <div style="font-size:11px;color:var(--text-muted);">Cible : &lt; 30%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Marge brute moy.</div>
+        <div style="font-size:28px;font-weight:800;color:var(--green);margin-bottom:4px;">68,6%</div>
+        <div style="font-size:11px;color:var(--green);">+2,1% vs mois dernier</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Recettes fiches</div>
+        <div style="font-size:28px;font-weight:800;color:var(--text-primary);margin-bottom:4px;">14</div>
+        <div style="font-size:11px;color:var(--text-muted);">sur 20 produits POS</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Alertes food cost</div>
+        <div style="font-size:28px;font-weight:800;color:var(--red);margin-bottom:4px;">2</div>
+        <div style="font-size:11px;color:var(--red);">Food cost &gt; 35%</div>
+      </div>
+    </div>
+
+    <!-- Grille recettes -->
+    <div class="recipe-grid">
+
+      <div class="recipe-card">
+        <div class="recipe-header">
+          <div class="recipe-emoji">☕</div>
+          <div>
+            <div class="recipe-title">Latte Vanille</div>
+            <div class="recipe-sub">Boissons chaudes · 1 portion</div>
+          </div>
+        </div>
+        <div class="recipe-body">
+          <div class="fc-row">
+            <span class="fc-label">Food cost</span>
+            <span class="fc-value" style="color:var(--green);">28%</span>
+          </div>
+          <div class="cost-bar-bg">
+            <div class="cost-bar" style="width:56%;background:var(--green);"></div>
+            <div class="cost-threshold"></div>
+          </div>
+          <div class="cost-labels"><span>0%</span><span>35% seuil</span><span>50%</span></div>
+          <div class="meta-row">
+            <span>Prix vente : <strong>4,50 €</strong></span>
+            <span>Marge : <strong style="color:var(--green);">3,24 € (72%)</strong></span>
+          </div>
+          <div class="pos-link">
+            <span class="pos-link-label">📦 Lié au produit POS</span>
+            <span class="pos-link-badge">Vendu en caisse</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recipe-card">
+        <div class="recipe-header">
+          <div class="recipe-emoji">☕</div>
+          <div>
+            <div class="recipe-title">Cappuccino</div>
+            <div class="recipe-sub">Boissons chaudes · 1 portion</div>
+          </div>
+        </div>
+        <div class="recipe-body">
+          <div class="fc-row">
+            <span class="fc-label">Food cost</span>
+            <span class="fc-value" style="color:var(--green);">24%</span>
+          </div>
+          <div class="cost-bar-bg">
+            <div class="cost-bar" style="width:48%;background:var(--green);"></div>
+            <div class="cost-threshold"></div>
+          </div>
+          <div class="cost-labels"><span>0%</span><span>35% seuil</span><span>50%</span></div>
+          <div class="meta-row">
+            <span>Prix vente : <strong>4,00 €</strong></span>
+            <span>Marge : <strong style="color:var(--green);">3,04 € (76%)</strong></span>
+          </div>
+          <div class="pos-link">
+            <span class="pos-link-label">📦 Lié au produit POS</span>
+            <span class="pos-link-badge">Vendu en caisse</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recipe-card">
+        <div class="recipe-header">
+          <div class="recipe-emoji">🍪</div>
+          <div>
+            <div class="recipe-title">Cookie Chocolat</div>
+            <div class="recipe-sub">Pâtisseries · 1 pièce</div>
+          </div>
+        </div>
+        <div class="recipe-body">
+          <div class="fc-row">
+            <span class="fc-label">Food cost</span>
+            <span class="fc-value" style="color:var(--amber);">32%</span>
+          </div>
+          <div class="cost-bar-bg">
+            <div class="cost-bar" style="width:64%;background:var(--amber);"></div>
+            <div class="cost-threshold"></div>
+          </div>
+          <div class="cost-labels"><span>0%</span><span>35% seuil</span><span>50%</span></div>
+          <div class="meta-row">
+            <span>Prix vente : <strong>2,80 €</strong></span>
+            <span>Marge : <strong style="color:var(--amber);">1,90 € (68%)</strong></span>
+          </div>
+          <div class="pos-link">
+            <span class="pos-link-label">📦 Lié au produit POS</span>
+            <span class="pos-link-badge">Vendu en caisse</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recipe-card alert">
+        <div class="recipe-header">
+          <div class="recipe-emoji">🥐</div>
+          <div style="flex:1;">
+            <div class="recipe-title">Croissant Beurre</div>
+            <div class="recipe-sub">Pâtisseries · 1 pièce</div>
+          </div>
+          <span style="font-size:10px;font-weight:700;color:var(--red);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);padding:2px 8px;border-radius:4px;">⚠ Alerte</span>
+        </div>
+        <div class="recipe-body">
+          <div class="fc-row">
+            <span class="fc-label">Food cost</span>
+            <span class="fc-value" style="color:var(--red);">41%</span>
+          </div>
+          <div class="cost-bar-bg">
+            <div class="cost-bar" style="width:82%;background:var(--red);"></div>
+            <div class="cost-threshold"></div>
+          </div>
+          <div class="cost-labels"><span>0%</span><span>35% seuil</span><span>50%</span></div>
+          <div class="meta-row">
+            <span>Prix vente : <strong>2,20 €</strong></span>
+            <span>Marge : <strong style="color:var(--red);">1,30 € (59%)</strong></span>
+          </div>
+          <div class="pos-link">
+            <span class="pos-link-label">📦 Lié au produit POS</span>
+            <span class="pos-link-badge">Vendu en caisse</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recipe-card">
+        <div class="recipe-header">
+          <div class="recipe-emoji">🍵</div>
+          <div>
+            <div class="recipe-title">Matcha Latte</div>
+            <div class="recipe-sub">Boissons chaudes · 1 portion</div>
+          </div>
+        </div>
+        <div class="recipe-body">
+          <div class="fc-row">
+            <span class="fc-label">Food cost</span>
+            <span class="fc-value" style="color:var(--amber);">34%</span>
+          </div>
+          <div class="cost-bar-bg">
+            <div class="cost-bar" style="width:68%;background:var(--amber);"></div>
+            <div class="cost-threshold"></div>
+          </div>
+          <div class="cost-labels"><span>0%</span><span>35% seuil</span><span>50%</span></div>
+          <div class="meta-row">
+            <span>Prix vente : <strong>5,00 €</strong></span>
+            <span>Marge : <strong style="color:var(--amber);">3,30 € (66%)</strong></span>
+          </div>
+          <div class="pos-link">
+            <span class="pos-link-label">📦 Lié au produit POS</span>
+            <span class="pos-link-badge">Vendu en caisse</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card "Ajouter" -->
+      <div class="recipe-card" style="border-style:dashed;border-color:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;min-height:180px;">
+        <div style="text-align:center;color:var(--text-disabled);">
+          <div style="font-size:32px;margin-bottom:8px;line-height:1;">+</div>
+          <div style="font-size:13px;">Nouvelle recette</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

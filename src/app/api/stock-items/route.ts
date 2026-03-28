@@ -68,12 +68,46 @@ export async function POST(req: NextRequest) {
   const result = createStockItemSchema.safeParse(body)
   if (!result.success) return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
 
-  const { data, error } = await supabase
-    .from('stock_items')
-    .insert({ ...result.data, establishment_id: establishmentId })
+  const { is_pos, pos_price, pos_tva_rate, pos_category_id, ...stockFields } = result.data
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: stockItem, error } = await (supabase.from('stock_items') as any)
+    .insert({ ...stockFields, is_pos, pos_price, pos_tva_rate, pos_category_id, establishment_id: establishmentId })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+
+  // If sold at POS, create linked product
+  if (is_pos && pos_price && stockItem) {
+    const tva     = pos_tva_rate ?? 10
+    const priceHt = parseFloat((pos_price / (1 + tva / 100)).toFixed(4))
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .insert({
+        establishment_id: establishmentId,
+        name:             stockFields.name,
+        price:            priceHt,
+        tva_rate:         tva,
+        category_id:      pos_category_id ?? null,
+        is_active:        true,
+      })
+      .select('id')
+      .single()
+
+    if (productError) {
+      // Rollback: mark stock item as non-POS to avoid orphaned state
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('stock_items') as any).update({ is_pos: false }).eq('id', stockItem.id)
+      return NextResponse.json({ error: 'Erreur création produit caisse : ' + productError.message }, { status: 500 })
+    }
+
+    if (product) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('stock_items') as any).update({ product_id: product.id }).eq('id', stockItem.id)
+      return NextResponse.json({ ...stockItem, product_id: product.id }, { status: 201 })
+    }
+  }
+
+  return NextResponse.json(stockItem, { status: 201 })
 }

@@ -26,9 +26,9 @@ export default async function CrmPage() {
   const [{ data: customersData }, stats] = await Promise.all([
     (supabase as any)
       .from('customers')
-      .select('id, first_name, last_name, tier, points, phone, email, created_at, rfm_segment')
+      .select('id, first_name, last_name, tier, points, phone, email, rfm_segment, last_order_at')
       .eq('establishment_id', establishmentId)
-      .order('created_at', { ascending: false })
+      .order('last_order_at', { ascending: false, nullsFirst: false })
       .limit(200),
     fetchCrmStats(establishmentId),
   ])

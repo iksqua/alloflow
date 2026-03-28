@@ -17,7 +17,7 @@ export default async function StocksPage() {
 
   if (!profile?.establishment_id) redirect('/onboarding')
 
-  const [stockRes, ordersRes] = await Promise.all([
+  const [stockRes, ordersRes, categoriesRes] = await Promise.all([
     supabase
       .from('stock_items')
       .select('*')
@@ -30,6 +30,11 @@ export default async function StocksPage() {
       .eq('establishment_id', profile.establishment_id)
       .order('created_at', { ascending: false })
       .limit(20),
+    supabase
+      .from('categories')
+      .select('id, name, color_hex')
+      .eq('establishment_id', profile.establishment_id)
+      .order('sort_order'),
   ])
 
   const items: StockItem[] = (stockRes.data ?? []).map(i => ({
@@ -39,15 +44,21 @@ export default async function StocksPage() {
       : i.quantity < i.alert_threshold
       ? 'alert'
       : 'ok',
-    // New columns added in migration 20260327000006 — fallback until Supabase types regenerated
-    purchase_price: (i as unknown as Record<string, number>).purchase_price ?? 0,
-    purchase_qty:   (i as unknown as Record<string, number>).purchase_qty   ?? 0,
+    // New columns added in migrations — fallback until Supabase types regenerated
+    purchase_price:  (i as unknown as Record<string, number>).purchase_price  ?? 0,
+    purchase_qty:    (i as unknown as Record<string, number>).purchase_qty    ?? 0,
+    is_pos:          Boolean((i as unknown as Record<string, unknown>).is_pos),
+    pos_price:       (i as unknown as Record<string, number | null>).pos_price ?? null,
+    pos_tva_rate:    (i as unknown as Record<string, number>).pos_tva_rate    ?? 10,
+    pos_category_id: (i as unknown as Record<string, string | null>).pos_category_id ?? null,
+    product_id:      (i as unknown as Record<string, string | null>).product_id      ?? null,
   }))
 
   return (
     <StocksPageClient
       initialItems={items}
       initialOrders={(ordersRes.data ?? []) as PurchaseOrder[]}
+      categories={(categoriesRes.data ?? []) as { id: string; name: string; color_hex: string }[]}
     />
   )
 }

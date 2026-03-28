@@ -70,7 +70,14 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
                   : item.quantity > 0 ? 80 : 0
                 return (
                   <tr key={item.id} className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface2)]/30">
-                    <td className="px-4 py-2.5 font-semibold text-[var(--text1)]">{item.name}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[var(--text1)]">{item.name}</span>
+                        {item.is_pos && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400 shrink-0">CAISSE</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-2.5 text-[var(--text3)]">{item.category ?? '—'}</td>
                     <td className="px-4 py-2.5 font-bold text-[var(--text1)]">
                       {item.quantity} <span className="text-xs text-[var(--text4)] font-normal">{item.unit}</span>
@@ -95,8 +102,8 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
                     </td>
                     <td className="px-4 py-2.5">
                       <div className="flex gap-2">
-                        <button onClick={() => onEdit(item)} className="text-xs text-[var(--text4)] hover:text-[var(--text2)]">Modifier</button>
-                        <button onClick={() => onDelete(item.id)} className="text-xs text-red-500/60 hover:text-red-400">Suppr.</button>
+                        <button onClick={() => onEdit(item)} className="w-7 h-7 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--text1)] hover:bg-[var(--surface2)] transition-colors" title="Modifier">✏️</button>
+                        <button onClick={() => onDelete(item.id)} className="w-7 h-7 rounded flex items-center justify-center text-[var(--text3)] hover:text-[var(--red)] hover:bg-[var(--red-bg)] transition-colors" title="Supprimer">🗑️</button>
                       </div>
                     </td>
                   </tr>

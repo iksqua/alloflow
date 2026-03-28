@@ -8,7 +8,7 @@ export interface Customer {
   points: number
   phone: string | null
   email: string | null
-  created_at: string
+  last_order_at: string | null
   rfm_segment: string | null
 }
 

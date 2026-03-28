@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Alloflow — QR Fidélité + Portail Client</title>
+<style>
+:root {
+  --bg: #060e1a; --surface: #1e293b; --surface-raised: #263348; --border: #334155;
+  --text-primary: #f8fafc; --text-muted: #94a3b8; --text-disabled: #475569;
+  --blue: #1d4ed8; --green: #10b981; --amber: #f59e0b; --red: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+body { background: var(--bg); color: var(--text-primary); padding: 32px 40px; }
+h1 { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+.subtitle { font-size: 12px; color: var(--text-disabled); margin-bottom: 32px; }
+.section-title { font-size: 11px; font-weight: 700; color: var(--text-disabled); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 48px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+/* QR PLACEMENTS */
+.placement-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.placement-label { font-size: 10px; font-weight: 700; color: var(--text-disabled); text-transform: uppercase; letter-spacing: .08em; padding: 10px 14px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02); }
+
+/* QR CODE VISUAL */
+.qr-box {
+  width: 64px; height: 64px;
+  background: white;
+  border-radius: 6px;
+  padding: 6px;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1.5px;
+}
+.qr-box .q { background: #0f172a; border-radius: 1px; }
+.qr-box .w { background: white; }
+
+/* RECEIPT */
+.receipt {
+  background: #f8f6f0;
+  color: #1a1a1a;
+  border-radius: 8px;
+  padding: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.receipt-title { font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+.receipt-line { display: flex; justify-content: space-between; }
+.receipt-sep { border-top: 1px dashed #ccc; margin: 6px 0; }
+.receipt-qr-area { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px; text-align: center; margin-top: 8px; }
+
+/* POS CUSTOMER SCREEN */
+.customer-screen {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* COUNTER STAND */
+.stand {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* PHONE MOCKUP */
+.phone {
+  width: 200px;
+  background: #111827;
+  border-radius: 28px;
+  border: 3px solid #374151;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,.6);
+  flex-shrink: 0;
+}
+.phone-notch {
+  height: 24px;
+  background: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.phone-notch-inner { width: 60px; height: 14px; background: #1f2937; border-radius: 10px; }
+.phone-screen { background: #f8f9ff; color: #1a1a2e; min-height: 380px; }
+
+/* PORTAL SCREENS */
+.portal-header {
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  padding: 20px 16px 28px;
+  text-align: center;
+  color: white;
+}
+.portal-content { background: #f1f5f9; padding: 0 12px 20px; margin-top: -14px; border-radius: 16px 16px 0 0; }
+.portal-card { background: white; border-radius: 10px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.portal-tier-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(245,158,11,.15); color: #b45309;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; margin-bottom: 6px;
+}
+.pts-circle {
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; margin: 0 auto 8px;
+}
+.reward-item-mobile {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px;
+}
+.reward-item-mobile:last-child { border-bottom: none; }
+.btn-mobile-primary {
+  width: 100%; padding: 11px; background: #1d4ed8; color: white;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+  text-align: center; margin-top: 6px;
+}
+.btn-mobile-outline {
+  width: 100%; padding: 9px; background: transparent; color: #1d4ed8;
+  border: 1.5px solid #1d4ed8; border-radius: 8px; font-size: 12px; font-weight: 600;
+  text-align: center; margin-top: 6px;
+}
+.history-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 11px; color: #374151;
+}
+.badge-pts { background: #dcfce7; color: #166534; padding: 1px 7px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.badge-pts-used { background: #fef3c7; color: #92400e; padding: 1px 7px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1>QR Code Fidélité + Portail Client</h1>
+<p class="subtitle">3 points d'entrée QR · Portail mobile pour consulter points, récompenses et historique</p>
+
+<!-- SECTION 1: QR PLACEMENTS -->
+<div class="section-title">① Où le client trouve le QR code</div>
+<div class="grid-3" style="margin-bottom:48px;">
+
+  <!-- Ticket de caisse -->
+  <div class="placement-card">
+    <div class="placement-label">🖨️ Sur le ticket de caisse</div>
+    <div style="padding:14px;">
+      <div class="receipt">
+        <div class="receipt-title">Allocookie Paris 1er</div>
+        <div style="text-align:center;color:#666;font-size:9px;margin-bottom:6px;">27/03/2026 · 10:14</div>
+        <div class="receipt-sep"></div>
+        <div class="receipt-line"><span>☕ Latte Vanille</span><span>4,50€</span></div>
+        <div class="receipt-line"><span>🍪 Cookie ×2</span><span>5,60€</span></div>
+        <div class="receipt-sep"></div>
+        <div class="receipt-line" style="font-weight:700;"><span>TOTAL TTC</span><span>10,10€</span></div>
+        <div class="receipt-line" style="font-size:9px;color:#666;"><span>CB Visa</span><span>✓</span></div>
+        <div class="receipt-qr-area">
+          <div style="font-size:9px;color:#666;margin-bottom:6px;">🎁 Rejoignez notre programme fidélité</div>
+          <!-- QR visual simplifié -->
+          <div style="width:48px;height:48px;background:#1a1a1a;border-radius:4px;margin:0 auto 6px;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:4px;">
+            <div style="background:white;border-radius:1px;"></div><div style="background:#1a1a1a;"></div><div style="background:white;border-radius:1px;"></div><div style="background:#1a1a1a;"></div><div style="background:white;border-radius:1px;"></div>
+            <div style="background:#1a1a1a;"></div><div style="background:white;"></div><div style="background:#1a1a1a;"></div><div style="background:white;"></div><div style="background:#1a1a1a;"></div>
+            <div style="background:white;border-radius:1px;"></div><div style="background:#1a1a1a;"></div><div style="background:white;"></div><div style="background:#1a1a1a;"></div><div style="background:white;border-radius:1px;"></div>
+            <div style="background:#1a1a1a;"></div><div style="background:white;"></div><div style="background:#1a1a1a;"></div><div style="background:white;"></div><div style="background:#1a1a1a;"></div>
+            <div style="background:white;border-radius:1px;"></div><div style="background:#1a1a1a;"></div><div style="background:white;"></div><div style="background:#1a1a1a;"></div><div style="background:white;border-radius:1px;"></div>
+          </div>
+          <div style="font-size:8px;color:#666;">alloflow.app/join · 13 pts vous attendent</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Écran client POS -->
+  <div class="placement-card">
+    <div class="placement-label">🖥️ Écran client face POS</div>
+    <div style="padding:14px;">
+      <div class="customer-screen">
+        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Pendant la transaction</div>
+        <div style="font-size:18px;font-weight:800;color:white;">🎁 Programme Fidélité</div>
+        <div style="font-size:11px;color:#94a3b8;text-align:center;line-height:1.5;">Scannez pour rejoindre<br>et gagner des points à chaque visite</div>
+        <!-- QR visual -->
+        <div style="width:80px;height:80px;background:white;border-radius:8px;padding:8px;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;">
+          <div style="background:#0f172a;border-radius:1px;"></div><div style="background:white;"></div><div style="background:#0f172a;border-radius:1px;"></div><div style="background:white;"></div><div style="background:#0f172a;border-radius:1px;"></div>
+          <div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div>
+          <div style="background:#0f172a;border-radius:1px;"></div><div style="background:white;"></div><div style="background:#1d4ed8;"></div><div style="background:white;"></div><div style="background:#0f172a;border-radius:1px;"></div>
+          <div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div>
+          <div style="background:#0f172a;border-radius:1px;"></div><div style="background:white;"></div><div style="background:#0f172a;border-radius:1px;"></div><div style="background:white;"></div><div style="background:#0f172a;border-radius:1px;"></div>
+        </div>
+        <div style="background:rgba(29,78,216,.15);border:1px solid rgba(29,78,216,.3);border-radius:6px;padding:6px 12px;font-size:10px;color:#93c5fd;">+10 pts offerts à l'inscription</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stand comptoir -->
+  <div class="placement-card">
+    <div class="placement-label">🪧 Stand / carte sur le comptoir</div>
+    <div style="padding:14px;">
+      <div class="stand">
+        <div style="font-size:22px;">🎁</div>
+        <div style="font-size:15px;font-weight:800;color:white;text-align:center;">Carte Fidélité<br>Gratuite</div>
+        <div style="width:72px;height:72px;background:white;border-radius:8px;padding:7px;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;">
+          <div style="background:#0f172a;border-radius:1px;"></div><div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div><div style="background:#0f172a;border-radius:1px;"></div>
+          <div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div>
+          <div style="background:#0f172a;"></div><div style="background:white;"></div><div style="background:#1d4ed8;"></div><div style="background:white;"></div><div style="background:#0f172a;"></div>
+          <div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div>
+          <div style="background:#0f172a;border-radius:1px;"></div><div style="background:white;"></div><div style="background:#0f172a;"></div><div style="background:white;"></div><div style="background:#0f172a;border-radius:1px;"></div>
+        </div>
+        <div style="font-size:10px;color:#94a3b8;text-align:center;line-height:1.5;">1 pt par euro dépensé<br>Récompenses dès 100 pts</div>
+        <div style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:5px 12px;font-size:10px;color:#fbbf24;font-weight:700;">⭐ Café offert au statut Gold</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SECTION 2: PORTAIL CLIENT MOBILE -->
+<div class="section-title">② Portail client mobile — après scan du QR</div>
+<div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap;">
+
+  <!-- Phone 1: Inscription -->
+  <div>
+    <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;text-align:center;">Inscription (premier scan)</div>
+    <div class="phone">
+      <div class="phone-notch"><div class="phone-notch-inner"></div></div>
+      <div class="phone-screen">
+        <div class="portal-header">
+          <div style="font-size:22px;margin-bottom:6px;">🎁</div>
+          <div style="font-size:17px;font-weight:800;margin-bottom:4px;">Programme Fidélité</div>
+          <div style="font-size:11px;opacity:.8;">Allocookie · Paris 1er</div>
+        </div>
+        <div class="portal-content" style="padding-top:16px;">
+          <div class="portal-card">
+            <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:4px;">Rejoindre gratuitement</div>
+            <div style="font-size:11px;color:#64748b;margin-bottom:12px;">1 pt par euro · Récompenses dès 100 pts</div>
+            <input style="width:100%;border:1px solid #e2e8f0;border-radius:7px;padding:9px 11px;font-size:12px;color:#1a1a2e;margin-bottom:7px;" placeholder="Prénom" value="Thomas">
+            <input style="width:100%;border:1px solid #e2e8f0;border-radius:7px;padding:9px 11px;font-size:12px;color:#1a1a2e;margin-bottom:7px;" placeholder="📱 Téléphone" value="+33 6 12 34 56 78">
+            <input style="width:100%;border:1px solid #e2e8f0;border-radius:7px;padding:9px 11px;font-size:12px;color:#9ca3af;margin-bottom:10px;" placeholder="Email (optionnel)">
+            <div class="btn-mobile-primary">Créer mon compte →</div>
+          </div>
+          <div style="font-size:10px;color:#94a3b8;text-align:center;padding:8px;">En rejoignant, vous acceptez les CGU · Données protégées</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone 2: Dashboard points -->
+  <div>
+    <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;text-align:center;">Mon compte fidélité</div>
+    <div class="phone">
+      <div class="phone-notch"><div class="phone-notch-inner"></div></div>
+      <div class="phone-screen">
+        <div class="portal-header">
+          <div style="font-size:12px;opacity:.7;margin-bottom:4px;">Bonjour Marie 👋</div>
+          <div class="portal-tier-badge">⭐ Statut Gold</div>
+          <div class="pts-circle">
+            <div style="font-size:20px;font-weight:800;color:white;line-height:1;">342</div>
+            <div style="font-size:9px;color:rgba(255,255,255,.7);">points</div>
+          </div>
+          <div style="font-size:10px;opacity:.7;">+58 pts pour Platinum</div>
+        </div>
+        <div class="portal-content" style="padding-top:12px;">
+          <!-- Progress -->
+          <div class="portal-card" style="padding:10px 12px;">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:5px;"><span>Gold (200 pts)</span><span>Platinum (400 pts)</span></div>
+            <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+              <div style="width:86%;height:100%;background:linear-gradient(90deg,#1d4ed8,#7c3aed);border-radius:3px;"></div>
+            </div>
+            <div style="font-size:10px;color:#64748b;margin-top:4px;text-align:center;">342 / 400 pts</div>
+          </div>
+          <!-- Récompenses -->
+          <div class="portal-card">
+            <div style="font-size:12px;font-weight:700;color:#1a1a2e;margin-bottom:8px;">Mes récompenses</div>
+            <div class="reward-item-mobile">
+              <span>☕ Café offert</span>
+              <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;">Disponible</span>
+            </div>
+            <div class="reward-item-mobile" style="opacity:.5;">
+              <span>🎁 Réduction 5 €</span>
+              <span style="font-size:10px;color:#9ca3af;">50 pts requis</span>
+            </div>
+            <div class="reward-item-mobile" style="opacity:.5;">
+              <span>🍰 Dessert offert</span>
+              <span style="font-size:10px;color:#9ca3af;">150 pts requis</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone 3: Historique -->
+  <div>
+    <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;text-align:center;">Historique des transactions</div>
+    <div class="phone">
+      <div class="phone-notch"><div class="phone-notch-inner"></div></div>
+      <div class="phone-screen">
+        <div class="portal-header" style="padding-bottom:16px;">
+          <div style="font-size:15px;font-weight:800;">Mon historique</div>
+          <div style="font-size:11px;opacity:.7;margin-top:2px;">342 pts cumulés · 28 visites</div>
+        </div>
+        <div class="portal-content" style="padding-top:12px;">
+          <div class="portal-card">
+            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:8px;">Mars 2026</div>
+            <div class="history-item">
+              <div>
+                <div style="font-size:11px;font-weight:600;">Allocookie Paris 1er</div>
+                <div style="font-size:10px;color:#9ca3af;">27 mars · 10,10 €</div>
+              </div>
+              <span class="badge-pts">+10 pts</span>
+            </div>
+            <div class="history-item">
+              <div>
+                <div style="font-size:11px;font-weight:600;">Allocookie Lyon</div>
+                <div style="font-size:10px;color:#9ca3af;">24 mars · 7,30 €</div>
+              </div>
+              <span class="badge-pts">+7 pts</span>
+            </div>
+            <div class="history-item">
+              <div>
+                <div style="font-size:11px;font-weight:600;">Récompense utilisée</div>
+                <div style="font-size:10px;color:#9ca3af;">20 mars · Café offert</div>
+              </div>
+              <span class="badge-pts-used">−0 pts</span>
+            </div>
+            <div class="history-item">
+              <div>
+                <div style="font-size:11px;font-weight:600;">Allocookie Paris 1er</div>
+                <div style="font-size:10px;color:#9ca3af;">18 mars · 15,40 €</div>
+              </div>
+              <span class="badge-pts">+15 pts</span>
+            </div>
+          </div>
+          <div style="text-align:center;padding:8px;">
+            <div style="font-size:11px;color:#1d4ed8;font-weight:600;">Voir tout l'historique →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture note -->
+  <div style="flex:1;min-width:260px;">
+    <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Logique de liaison des points</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">1</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:2px;">Client identifié en caisse</div>
+          <div style="font-size:11px;color:var(--text-muted);">Points crédités <strong style="color:var(--green);">immédiatement</strong> après paiement</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--amber);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:2px;">Client scanne le QR après achat</div>
+          <div style="font-size:11px;color:var(--text-muted);">Retrouve sa transaction du jour (par numéro de ticket ou téléphone) → points crédités dans les <strong style="color:var(--amber);">24h</strong></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#7c3aed;color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">3</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:2px;">Multi-établissements</div>
+          <div style="font-size:11px;color:var(--text-muted);">Un seul compte fidélité valable dans <strong style="color:#c4b5fd;">tous les établissements</strong> Alloflow</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;">
+        <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Nouveau sous-système identifié</div>
+        <div style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:8px;padding:10px;font-size:11px;color:#c4b5fd;">
+          <strong>Portail Client</strong> — web app mobile (PWA) hébergée sur alloflow.app/fidelite — en dehors du back-office admin. Partage la même BDD Supabase mais surface séparée.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+<h2>Modèle de segmentation client</h2>
+<p class="subtitle">Comment classer tes clients automatiquement ? Ce modèle alimente les campagnes ciblées et les alertes.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="rfm-simple" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>🎯 Segmentation automatique RFM — Recommandé</h3>
+      <p>3 axes calculés automatiquement à partir de l'historique des commandes. Pas de saisie manuelle.</p>
+      <div style="margin-top:12px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.25)">
+            <span style="font-size:18px">👑</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#fbbf24">VIP / Champion</div>
+              <div style="font-size:11px;color:var(--text3)">Venu cette semaine · 4+ visites/mois · Panier élevé</div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25)">
+            <span style="font-size:18px">⭐</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#10b981">Fidèle</div>
+              <div style="font-size:11px;color:var(--text3)">Venu ce mois · 2-3 visites/mois · Panier moyen</div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25)">
+            <span style="font-size:18px">🆕</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#60a5fa">Nouveau</div>
+              <div style="font-size:11px;color:var(--text3)">1re commande · &lt; 30 jours · Convertir en fidèle</div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25)">
+            <span style="font-size:18px">⚠️</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#f59e0b">À risque</div>
+              <div style="font-size:11px;color:var(--text3)">Anciennement fidèle · Pas vu depuis 30-60 jours</div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25)">
+            <span style="font-size:18px">💤</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#ef4444">Perdu</div>
+              <div style="font-size:11px;color:var(--text3)">Pas vu depuis +60 jours · Campagne de réactivation</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:6px 10px;border-radius:8px;background:rgba(16,185,129,.1);font-size:12px;color:#10b981">
+        ✓ Mis à jour automatiquement à chaque commande. Zéro saisie manuelle.
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="tiers-custom" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>🏷️ Système de tags manuels + tiers points</h3>
+      <p>Le gérant ajoute des tags libres (VIP, influenceur, allergique gluten…) + les tiers Standard/Silver/Gold existants par points.</p>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+        <span style="padding:4px 10px;border-radius:20px;background:rgba(251,191,36,.2);color:#fbbf24;font-size:12px">🥇 Gold (500+ pts)</span>
+        <span style="padding:4px 10px;border-radius:20px;background:rgba(148,163,184,.2);color:#94a3b8;font-size:12px">🥈 Silver (200+ pts)</span>
+        <span style="padding:4px 10px;border-radius:20px;background:rgba(100,116,139,.2);color:#64748b;font-size:12px">Standard</span>
+        <span style="padding:4px 10px;border-radius:20px;background:rgba(139,92,246,.2);color:#a78bfa;font-size:12px">#VIP</span>
+        <span style="padding:4px 10px;border-radius:20px;background:rgba(239,68,68,.2);color:#ef4444;font-size:12px">#influenceur</span>
+        <span style="padding:4px 10px;border-radius:20px;background:rgba(16,185,129,.2);color:#10b981;font-size:12px">#allergique</span>
+      </div>
+      <div style="margin-top:10px;padding:6px 10px;border-radius:8px;background:rgba(245,158,11,.1);font-size:12px;color:#f59e0b">
+        ⚠ Nécessite une saisie manuelle par le gérant. Moins automatique.
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>🔀 Hybride — RFM automatique + Tags manuels</h3>
+      <p>Le système calcule le segment automatiquement ET le gérant peut ajouter des tags libres. Le meilleur des deux mondes.</p>
+      <div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(30,41,59,.6);border:1px solid rgba(255,255,255,.08)">
+        <div style="font-size:12px;color:var(--text3);line-height:1.6">
+          <strong style="color:var(--text2)">Segment auto :</strong> VIP · Fidèle · Nouveau · À risque · Perdu<br>
+          <strong style="color:var(--text2)">Tags libres :</strong> #influenceur · #allergie-gluten · #employé · #presse
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:6px 10px;border-radius:8px;background:rgba(139,92,246,.1);font-size:12px;color:#a78bfa">
+        ⭐ Plus flexible — campagnes sur segment OU sur tag OU combinaison
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px;padding:14px;border-radius:12px;background:rgba(30,41,59,.6);border:1px solid rgba(255,255,255,.08)">
+  <p style="margin:0 0 8px;font-size:13px;color:var(--text2);font-weight:600">📊 Données persona ajoutées à la fiche client :</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <span style="padding:4px 10px;border-radius:20px;background:rgba(59,130,246,.15);color:#60a5fa;font-size:12px">🎂 Date de naissance</span>
+    <span style="padding:4px 10px;border-radius:20px;background:rgba(59,130,246,.15);color:#60a5fa;font-size:12px">👤 Genre</span>
+    <span style="padding:4px 10px;border-radius:20px;background:rgba(59,130,246,.15);color:#60a5fa;font-size:12px">✅ Opt-in SMS</span>
+    <span style="padding:4px 10px;border-radius:20px;background:rgba(59,130,246,.15);color:#60a5fa;font-size:12px">✅ Opt-in Email</span>
+    <span style="padding:4px 10px;border-radius:20px;background:rgba(59,130,246,.15);color:#60a5fa;font-size:12px">📍 Fréquence de visite</span>
+    <span style="padding:4px 10px;border-radius:20px;background:rgba(59,130,246,.15);color:#60a5fa;font-size:12px">💰 Panier moyen</span>
+  </div>
+</div>
