@@ -10,10 +10,12 @@ export interface Database {
   public: {
     Tables: {
       organizations: {
-        Row: { id: string; name: string; type: 'siege' | 'franchise'; created_at: string }
-        Insert: { id?: string; name: string; type: 'siege' | 'franchise'; created_at?: string }
-        Update: { id?: string; name?: string; type?: 'siege' | 'franchise'; created_at?: string }
-        Relationships: []
+        Row: { id: string; name: string; type: 'siege' | 'franchise' | 'independent'; parent_org_id: string | null; created_at: string }
+        Insert: { id?: string; name: string; type?: 'siege' | 'franchise' | 'independent'; parent_org_id?: string | null; created_at?: string }
+        Update: { id?: string; name?: string; type?: 'siege' | 'franchise' | 'independent'; parent_org_id?: string | null; created_at?: string }
+        Relationships: [
+          { foreignKeyName: "organizations_parent_org_id_fkey"; columns: ["parent_org_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] }
+        ]
       }
       establishments: {
         Row: { id: string; name: string; address: string | null; org_id: string; created_at: string }
@@ -23,10 +25,46 @@ export interface Database {
           { foreignKeyName: "establishments_org_id_fkey"; columns: ["org_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] }
         ]
       }
+      franchise_contracts: {
+        Row: {
+          id: string
+          org_id: string
+          establishment_id: string
+          royalty_rate: number
+          marketing_rate: number
+          start_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          establishment_id: string
+          royalty_rate?: number
+          marketing_rate?: number
+          start_date: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          establishment_id?: string
+          royalty_rate?: number
+          marketing_rate?: number
+          start_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "franchise_contracts_org_id_fkey"; columns: ["org_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] },
+          { foreignKeyName: "franchise_contracts_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: false; referencedRelation: "establishments"; referencedColumns: ["id"] }
+        ]
+      }
       profiles: {
-        Row: { id: string; role: 'super_admin' | 'admin' | 'caissier'; establishment_id: string | null; org_id: string | null; created_at: string }
-        Insert: { id: string; role?: 'super_admin' | 'admin' | 'caissier'; establishment_id?: string | null; org_id?: string | null; created_at?: string }
-        Update: { id?: string; role?: 'super_admin' | 'admin' | 'caissier'; establishment_id?: string | null; org_id?: string | null; created_at?: string }
+        Row: { id: string; first_name: string; email: string | null; role: 'super_admin' | 'admin' | 'caissier' | 'franchise_admin'; establishment_id: string | null; org_id: string | null; created_at: string }
+        Insert: { id: string; first_name?: string; email?: string | null; role?: 'super_admin' | 'admin' | 'caissier' | 'franchise_admin'; establishment_id?: string | null; org_id?: string | null; created_at?: string }
+        Update: { id?: string; first_name?: string; email?: string | null; role?: 'super_admin' | 'admin' | 'caissier' | 'franchise_admin'; establishment_id?: string | null; org_id?: string | null; created_at?: string }
         Relationships: [
           { foreignKeyName: "profiles_establishment_id_fkey"; columns: ["establishment_id"]; isOneToOne: false; referencedRelation: "establishments"; referencedColumns: ["id"] }
         ]
@@ -218,7 +256,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      user_role: 'super_admin' | 'admin' | 'caissier'
+      user_role: 'super_admin' | 'admin' | 'caissier' | 'franchise_admin'
       product_category: 'entree' | 'plat' | 'dessert' | 'boisson' | 'autre'
     }
   }
