@@ -17,7 +17,7 @@ export function middleware(req: NextRequest) {
       ipCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
     } else {
       record.count++
-      if (record.count > RATE_LIMIT_MAX) {
+      if (record.count >= RATE_LIMIT_MAX) {
         return NextResponse.json(
           { error: 'Trop de tentatives. Réessayez dans une minute.' },
           { status: 429 }
