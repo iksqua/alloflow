@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: '👥',
     subItems: [
       { href: '/dashboard/crm', label: 'Clients', exact: true },
+      { href: '/dashboard/crm/campagnes/automations', label: 'Automations' },
       { href: '/dashboard/crm/programme', label: 'Programme' },
     ],
   },
