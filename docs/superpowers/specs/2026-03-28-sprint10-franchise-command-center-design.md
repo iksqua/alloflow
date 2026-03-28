@@ -48,6 +48,12 @@ organizations (franchiseur)
     └── establishments (boutiques en propre du franchiseur)
 ```
 
+La colonne `type` sur `organizations` doit avoir une contrainte CHECK :
+```sql
+alter table public.organizations
+  add column if not exists type text check (type in ('siege', 'franchise', 'independent')) default 'independent';
+```
+
 ---
 
 ## DB Schema
@@ -58,7 +64,7 @@ organizations (franchiseur)
 alter type public.user_role add value 'franchise_admin';
 ```
 
-### 2. `organizations` — ajouter `parent_org_id`
+### 2. `organizations` — ajouter `parent_org_id` et restreindre RLS
 
 ```sql
 alter table public.organizations
@@ -66,6 +72,23 @@ alter table public.organizations
 ```
 
 Les organisations franchisées ont `parent_org_id = <id_du_franchiseur>`. Les boutiques en propre du franchiseur sont directement rattachées à son org via `establishments.org_id`.
+
+**RLS sur `organizations` :** Par défaut, les utilisateurs authentifiés peuvent lire toutes les organisations (risque de fuite cross-tenant). Ajouter une policy restrictive. **Important :** éviter les sous-requêtes auto-référentielles sur `organizations` (récursion PostgreSQL RLS). On se limite à la hiérarchie à 2 niveaux :
+
+```sql
+-- Supprime toute policy SELECT permissive existante sur organizations, puis ajoute :
+create policy "orgs_visible_to_own_network"
+  on public.organizations for select
+  using (
+    -- L'utilisateur voit sa propre org
+    id = (select org_id from public.profiles where id = auth.uid() and org_id is not null)
+    or
+    -- Le franchiseur voit les orgs de ses franchisés (parent_org_id = son org)
+    parent_org_id = (select org_id from public.profiles where id = auth.uid() and org_id is not null)
+  );
+```
+
+Note : cette policy couvre la hiérarchie à 2 niveaux (siège → franchisé). Un franchisé ne peut voir que sa propre org (pas le siège), ce qui est suffisant pour Sprint 10.
 
 ### 3. Nouvelle table `franchise_contracts`
 
@@ -76,8 +99,8 @@ create table public.franchise_contracts (
   id               uuid primary key default gen_random_uuid(),
   org_id           uuid not null references public.organizations(id) on delete cascade, -- org du franchiseur
   establishment_id uuid not null references public.establishments(id) on delete cascade,
-  royalty_rate     numeric(5,2) not null default 0,   -- % du CA HT
-  marketing_rate   numeric(5,2) not null default 0,   -- % du CA HT
+  royalty_rate     numeric(5,2) not null default 0   check (royalty_rate >= 0 and royalty_rate <= 100),
+  marketing_rate   numeric(5,2) not null default 0   check (marketing_rate >= 0 and marketing_rate <= 100),
   start_date       date not null,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
@@ -86,13 +109,46 @@ create table public.franchise_contracts (
 
 alter table public.franchise_contracts enable row level security;
 
+-- franchise_admin peut tout faire sur ses contrats
 create policy "franchise_admin_manages_contracts"
   on public.franchise_contracts for all
   using (
     org_id in (
-      select org_id from public.profiles where id = auth.uid() and role = 'franchise_admin'
+      select org_id from public.profiles
+      where id = auth.uid()
+        and role = 'franchise_admin'
+        and org_id is not null
+    )
+  )
+  with check (
+    org_id in (
+      select org_id from public.profiles
+      where id = auth.uid()
+        and role = 'franchise_admin'
+        and org_id is not null
     )
   );
+
+-- L'admin franchisé peut lire son propre contrat (son establishment_id)
+-- Toutes les routes admin utilisent le service role — cette policy est une sécurité supplémentaire
+create policy "franchisee_admin_reads_own_contract"
+  on public.franchise_contracts for select
+  using (
+    establishment_id in (
+      select establishment_id from public.profiles
+      where id = auth.uid()
+        and role = 'admin'
+        and establishment_id is not null
+    )
+  );
+
+-- Trigger pour updated_at automatique
+-- Suppose que public.handle_updated_at() existe (introduit en Sprint 4/5).
+-- Si absent, créer : create or replace function public.handle_updated_at()
+--   returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end; $$;
+create trigger set_franchise_contracts_updated_at
+  before update on public.franchise_contracts
+  for each row execute function public.handle_updated_at();
 ```
 
 ---
@@ -106,7 +162,15 @@ Retourne les données consolidées pour le Command Center :
 - Royalties et marketing calculés par établissement (CA × taux)
 - Alertes actives (sessions non ouvertes, stocks bas)
 
-Accès : `franchise_admin` uniquement. Utilise service role key pour lire les données de tous les établissements de l'org.
+Accès : `franchise_admin` uniquement. Utilise service role key pour lire les données de tous les établissements du réseau.
+
+**Scoping obligatoire — séquence :**
+1. Récupère le profil appelant (via anon client + `auth.uid()`) → vérifie `profile.role === 'franchise_admin'`, sinon 403
+2. Récupère `org_id` du profil (non-null garanti par le role check)
+3. Charge les orgs du réseau via service role : `organizations` où `id = org_id` (siège) **OU** `parent_org_id = org_id` (franchisés)
+4. Charge les `establishments` où `org_id in (<ids des orgs du réseau>)` via service role
+5. Toutes les requêtes `orders` / `stock_items` / `caisse_sessions` sont filtrées par `establishment_id in (<ids des établissements du réseau>)` — jamais de requête sans ce filtre
+6. Joint avec `franchise_contracts` pour récupérer les taux (où `org_id = <org_id du siège>`) via service role
 
 **Réponse :**
 ```typescript
@@ -119,13 +183,14 @@ Accès : `franchise_admin` uniquement. Utilise service role key pour lire les do
   establishments: Array<{
     id: string
     name: string
-    type: 'own' | 'franchise'
+    type: 'own' | 'franchise'  // dérivé de organizations.type via establishments.org_id :
+                                // org.type === 'siege' → 'own', org.type === 'franchise' → 'franchise'
     ca_yesterday: number
     ca_month: number
-    royalty_amount: number    // ca_month × royalty_rate / 100
-    marketing_amount: number  // ca_month × marketing_rate / 100
-    royalty_rate: number
-    marketing_rate: number
+    royalty_amount: number    // ca_month × royalty_rate / 100 (0 si type = 'own')
+    marketing_amount: number  // ca_month × marketing_rate / 100 (0 si type = 'own')
+    royalty_rate: number      // 0 si type = 'own'
+    marketing_rate: number    // 0 si type = 'own'
     alerts: string[]          // ['stock_bas', 'session_fermee']
   }>
 }
@@ -133,9 +198,9 @@ Accès : `franchise_admin` uniquement. Utilise service role key pour lire les do
 
 ### `/api/franchise/establishments` — GET + POST
 
-**GET** : liste tous les établissements du réseau (propres + franchisés)
+**GET** : liste tous les établissements du réseau (propres + franchisés). Accès : `franchise_admin` uniquement. Même séquence de scoping que `network-stats` : vérifier `profile.role === 'franchise_admin'` → récupérer `org_id` → orgs du réseau → establishments filtrés. Utilise service role pour les lectures.
 
-**POST** : onboarding d'un nouveau franchisé
+**POST** : onboarding d'un nouveau franchisé. Accès : `franchise_admin` uniquement. Toutes les opérations DB utilisent `supabaseAdmin` (service role) car elles créent des données cross-tenant que le RLS anon ne peut pas écrire.
 ```typescript
 {
   company_name: string     // nom de la société franchisée
@@ -149,15 +214,36 @@ Accès : `franchise_admin` uniquement. Utilise service role key pour lire les do
 ```
 
 Actions :
-1. Crée une org franchisée avec `parent_org_id = franchiseur.org_id`
+1. Crée une org franchisée avec `parent_org_id = franchiseur.org_id` et `type = 'franchise'`
 2. Crée un établissement rattaché à cette org
 3. Crée un `franchise_contract`
-4. Invite le gérant via `supabase.auth.admin.inviteUserByEmail` avec `data: { role: 'admin', establishment_id, first_name }`
+4. Invite le gérant via `supabase.auth.admin.inviteUserByEmail` avec `data: { role: 'admin', establishment_id, org_id, first_name }`
+5. **Immédiatement après l'invite**, upsert le profil via service role (le trigger `handle_new_user` ne s'exécute qu'à la confirmation du mot de passe, pas à l'invite). Le franchisé admin démarre avec un seul établissement (Sprint 10 — un établissement par onboarding) :
+   ```typescript
+   await supabaseAdmin.from('profiles').upsert({
+     id: invitedUser.id,
+     email: manager_email,           // obligatoire si NOT NULL sur profiles.email
+     org_id: franchiseeOrg.id,
+     establishment_id: establishment.id,
+     role: 'admin',
+     first_name: manager_first_name,
+   }, { onConflict: 'id' })
+   ```
+   Note : `establishment_id` est nullable sur `profiles` (le `franchise_admin` du siège a `establishment_id = NULL`). L'admin franchisé a `establishment_id` renseigné pour son unique boutique.
+
+6. **Toutes les opérations 1-5 sont wrappées dans un try/catch avec rollback manuel** : si une étape échoue, supprimer les entrées créées dans l'ordre inverse (profile → auth user via `supabaseAdmin.auth.admin.deleteUser(invitedUser.id)` → contract → establishment → org) via service role avant de renvoyer l'erreur 500.
 
 ### `/api/franchise/contracts/[establishmentId]` — GET + PATCH
 
+Accès : `franchise_admin` uniquement. **Avant toute opération**, vérifier :
+1. `profile.role === 'franchise_admin'`
+2. `contract.org_id === profile.org_id` (le contrat appartient bien au réseau du franchiseur appelant)
+
+Si l'une ou l'autre vérification échoue → 403 ou 404.
+
 **GET** : récupère le contrat (royalty_rate, marketing_rate, start_date)
-**PATCH** : met à jour les taux (Zod : royalty_rate min 0 max 50, marketing_rate min 0 max 20)
+
+**PATCH** : met à jour les taux. Validation Zod : `royalty_rate` min 0 max 50, `marketing_rate` min 0 max 20 (règles métier Allocookie, plus restrictives que les CHECK DB). Le DB accepte jusqu'à 100 ; l'API plafonne à 50/20 par règle business.
 
 ---
 
@@ -169,7 +255,7 @@ Layout avec `FranchiseSidebar` :
 - **📊 Command Center**
 - **🏪 Franchisés** (liste + onboarding)
 
-Garde : redirige vers `/dashboard` si `profile.role !== 'franchise_admin'`.
+**Garde (server-side) :** Server component. Utilise `createServerClient` (cookies) pour lire l'utilisateur côté serveur, charge le profil via Supabase, redirige vers `/dashboard` si `profile.role !== 'franchise_admin'`. Ne jamais se fier à un état client pour cette vérification — même pattern que les autres layouts dashboard.
 
 ### `/dashboard/franchise/page.tsx`
 
@@ -248,15 +334,16 @@ Suit le design system existant (CSS variables, `var(--surface)`, `var(--blue)`, 
 ```
 franchise_admin remplit le formulaire
   → POST /api/franchise/establishments
-    → Crée org franchisée (parent_org_id = franchiseur)
+    → Crée org franchisée (parent_org_id = franchiseur, type = 'franchise')
     → Crée establishment (org_id = org franchisée)
     → Crée franchise_contract (royalty_rate, marketing_rate)
-    → inviteUserByEmail(manager_email, { role: 'admin', establishment_id, first_name })
+    → inviteUserByEmail(manager_email, { role: 'admin', establishment_id, org_id, first_name })
+    → upsert profil (id = invitedUser.id, org_id, establishment_id, role = 'admin')
+      [Note : handle_new_user ne s'exécute qu'à la confirmation du mot de passe,
+       l'upsert immédiat garantit que le profil existe pour l'affichage dans le Command Center]
       → Franchisé reçoit email "Bienvenue dans le réseau Allocookie"
         → Clique le lien → crée son mot de passe
           → Arrive dans son dashboard boutique /dashboard/
-          → Profil créé via trigger handle_new_user
-          → Lié à son établissement et son org
 franchise_admin voit immédiatement le franchisé dans son Command Center
 ```
 
