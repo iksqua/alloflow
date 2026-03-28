@@ -166,6 +166,53 @@ export async function GET() {
   const networkCaMonth = estResults.reduce((s: number, e: { ca_month: number })     => s + e.ca_month, 0)
   const networkCaPrev  = Array.from(caPrevMap.values()).reduce((s, v) => s + v, 0)
 
+  // 8. Loyalty network stats
+  const [
+    { data: networkCustomersData },
+    { data: networkCustIds },
+  ] = await Promise.all([
+    (supabaseAdmin as any)
+      .from('network_customers')
+      .select('tier')
+      .eq('org_id', orgId),
+    (supabaseAdmin as any)
+      .from('network_customers')
+      .select('id')
+      .eq('org_id', orgId),
+  ])
+
+  const nc = (networkCustomersData ?? []) as Array<{ tier: string }>
+  let pointsIssuedMonth = 0
+
+  if (networkCustIds && networkCustIds.length > 0) {
+    const ncIds = (networkCustIds as Array<{ id: string }>).map(n => n.id)
+    const { data: linkedCustomers } = await (supabaseAdmin as any)
+      .from('customers')
+      .select('id')
+      .in('network_customer_id', ncIds)
+
+    if (linkedCustomers && linkedCustomers.length > 0) {
+      const customerIds = (linkedCustomers as Array<{ id: string }>).map(c => c.id)
+      const { data: earnTx } = await (supabaseAdmin as any)
+        .from('loyalty_transactions')
+        .select('points')
+        .eq('type', 'earn')
+        .gte('created_at', `${monthStartStr}T00:00:00`)
+        .in('customer_id', customerIds)
+
+      pointsIssuedMonth = (earnTx ?? []).reduce(
+        (s: number, t: { points: number }) => s + (t.points ?? 0), 0
+      )
+    }
+  }
+
+  const loyalty = {
+    total_network_customers: nc.length,
+    gold_count:              nc.filter(c => c.tier === 'gold').length,
+    silver_count:            nc.filter(c => c.tier === 'silver').length,
+    points_issued_month:     pointsIssuedMonth,
+  }
+
   return NextResponse.json({
     network: {
       ca_yesterday:  networkCaYest,
@@ -173,5 +220,6 @@ export async function GET() {
       ca_month_prev: networkCaPrev,
     },
     establishments: estResults,
+    loyalty,
   })
 }

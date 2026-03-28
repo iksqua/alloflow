@@ -18,6 +18,12 @@ interface NetworkStats {
   ca_yesterday:  number
   ca_month:      number
   ca_month_prev: number
+  loyalty?: {
+    total_network_customers: number
+    gold_count: number
+    silver_count: number
+    points_issued_month: number
+  }
 }
 
 interface Props {
