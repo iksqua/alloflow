@@ -96,5 +96,6 @@ describe('POST /api/auth/register-franchise', () => {
     }))
 
     expect(res.status).toBe(409)
+    expect(mockEq).toHaveBeenCalledWith('id', 'org-123')
   })
 })

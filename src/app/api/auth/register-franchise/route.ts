@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (orgError) return NextResponse.json({ error: 'Erreur lors de la création du réseau' }, { status: 500 })
 
   // 2. Create user — trigger handle_new_user creates profile from user_metadata
-  const { data, error: userError } = await supabaseAdmin.auth.admin.createUser({
+  const { error: userError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
     if (isAlreadyRegistered) {
       return NextResponse.json({ error: 'Un compte existe déjà avec cet email' }, { status: 409 })
     }
-    return NextResponse.json({ error: userError.message }, { status: 500 })
+    console.error('[register-franchise] user creation error:', userError)
+    return NextResponse.json({ error: 'Erreur lors de la création du compte' }, { status: 500 })
   }
 
-  void data
   return NextResponse.json({ ok: true }, { status: 201 })
 }
