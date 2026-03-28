@@ -23,7 +23,7 @@ function LoginForm() {
     setError(null)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('Email ou mot de passe incorrect')
@@ -31,7 +31,18 @@ function LoginForm() {
       return
     }
 
-    router.push('/dashboard/products')
+    // Role-aware redirect
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (profile?.role === 'franchise_admin') {
+      router.push('/dashboard/franchise/command-center')
+    } else {
+      router.push('/dashboard/products')
+    }
     router.refresh()
   }
 
@@ -78,6 +89,13 @@ function LoginForm() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </Button>
+
+          <p className="text-center text-xs mt-2" style={{ color: 'var(--text4)' }}>
+            Vous êtes franchiseur ?{' '}
+            <a href="/register" style={{ color: 'var(--blue)' }}>
+              Créer votre réseau →
+            </a>
+          </p>
         </form>
       </div>
     </div>
