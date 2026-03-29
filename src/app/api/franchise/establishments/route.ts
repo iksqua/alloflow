@@ -164,7 +164,6 @@ export async function POST(req: NextRequest) {
       .upsert(
         {
           id:               invitedUserId,
-          email:            manager_email,
           first_name:       manager_first_name,
           role:             'admin',
           establishment_id: establishmentId,
