@@ -14,12 +14,16 @@ export default async function FranchisesPage() {
   const cookieHeader = (await import('next/headers')).cookies()
   const cookieStr = (await cookieHeader).toString()
 
-  const res = await fetch(`${baseUrl}/api/franchise/establishments`, {
-    headers: { Cookie: cookieStr },
-    cache: 'no-store',
-  })
-
-  const data = res.ok ? await res.json() : { establishments: [] }
+  let data = { establishments: [] }
+  try {
+    const res = await fetch(`${baseUrl}/api/franchise/establishments`, {
+      headers: { Cookie: cookieStr },
+      cache: 'no-store',
+    })
+    if (res.ok) data = await res.json()
+  } catch {
+    // use defaults
+  }
 
   return <FranchisesPageClient initialEstablishments={data.establishments} />
 }

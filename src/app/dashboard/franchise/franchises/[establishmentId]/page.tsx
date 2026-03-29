@@ -20,14 +20,17 @@ export default async function FicheFranchisePage({
   const cookieHeader = (await import('next/headers')).cookies()
   const cookieStr = (await cookieHeader).toString()
 
-  const res = await fetch(`${baseUrl}/api/franchise/contracts/${establishmentId}`, {
-    headers: { Cookie: cookieStr },
-    cache: 'no-store',
-  })
-
-  if (!res.ok) redirect('/dashboard/franchise/franchises')
-
-  const { contract } = await res.json()
+  let contract = null
+  try {
+    const res = await fetch(`${baseUrl}/api/franchise/contracts/${establishmentId}`, {
+      headers: { Cookie: cookieStr },
+      cache: 'no-store',
+    })
+    if (res.ok) ({ contract } = await res.json())
+    else redirect('/dashboard/franchise/franchises')
+  } catch {
+    redirect('/dashboard/franchise/franchises')
+  }
 
   return <FicheClient establishmentId={establishmentId} initialContract={contract} />
 }

@@ -12,12 +12,16 @@ export default async function CommandCenterPage() {
   const cookieHeader = (await import('next/headers')).cookies()
   const cookieStr = (await cookieHeader).toString()
 
-  const res = await fetch(`${baseUrl}/api/franchise/network-stats`, {
-    headers: { Cookie: cookieStr },
-    cache: 'no-store',
-  })
-
-  const data = res.ok ? await res.json() : { network: { ca_yesterday: 0, ca_month: 0, ca_month_prev: 0 }, establishments: [] }
+  let data = { network: { ca_yesterday: 0, ca_month: 0, ca_month_prev: 0 }, establishments: [] }
+  try {
+    const res = await fetch(`${baseUrl}/api/franchise/network-stats`, {
+      headers: { Cookie: cookieStr },
+      cache: 'no-store',
+    })
+    if (res.ok) data = await res.json()
+  } catch {
+    // use defaults
+  }
 
   return <CommandCenterClient initialData={data} />
 }
