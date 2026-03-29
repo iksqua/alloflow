@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (orgError) return NextResponse.json({ error: 'Erreur lors de la création du réseau' }, { status: 500 })
 
   // 2. Create user — trigger handle_new_user creates profile from user_metadata
-  const { error: userError } = await supabaseAdmin.auth.admin.createUser({
+  const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -53,6 +53,13 @@ export async function POST(req: NextRequest) {
     console.error('[register-franchise] user creation error:', userError)
     return NextResponse.json({ error: 'Erreur lors de la création du compte' }, { status: 500 })
   }
+
+  // 3. Ensure profile has correct role and org_id (fallback if trigger cast failed)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabaseAdmin as any)
+    .from('profiles')
+    .update({ role: 'franchise_admin', org_id: org.id })
+    .eq('id', userData.user.id)
 
   return NextResponse.json({ ok: true }, { status: 201 })
 }
