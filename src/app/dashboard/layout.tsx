@@ -27,7 +27,7 @@ export default async function DashboardLayout({
     .single()
 
   if (!profile) redirect('/login?error=profile_not_found')
-  if (profile.role === 'franchise_admin') redirect('/dashboard/franchise')
+  if (profile.role === 'franchise_admin') return <>{children}</>
   if (profile.role === 'caissier') redirect('/caisse/pos')
 
   const { data: establishment } = profile.establishment_id
