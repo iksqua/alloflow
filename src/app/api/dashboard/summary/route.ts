@@ -39,6 +39,28 @@ export type DashboardSummary = {
   }[]
 }
 
+function getParisBoundaries(): { todayStart: Date; todayEnd: Date; yesterdayStart: Date } {
+  // Get current Paris date in "YYYY-MM-DD" format ('sv-SE' locale produces that format)
+  const parisDateISO = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Paris',
+  }).format(new Date())
+
+  // Compute the Paris offset vs UTC right now
+  const utcStr = new Date().toISOString().slice(0, 19)
+  const parisStr = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Paris' }).slice(0, 19)
+  const offsetHours = Math.round(
+    (new Date(parisStr).getTime() - new Date(utcStr).getTime()) / 3600000
+  )
+
+  // Paris midnight in UTC = Paris date at 00:00 minus the Paris offset
+  const [year, month, day] = parisDateISO.split('-').map(Number)
+  const todayStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) - offsetHours * 3600000)
+  const todayEnd = new Date(todayStart.getTime() + 86400000)
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000)
+
+  return { todayStart, todayEnd, yesterdayStart }
+}
+
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -49,15 +71,7 @@ export async function GET() {
   const estId = profile?.establishment_id
   if (!estId) return NextResponse.json({ error: 'No establishment' }, { status: 400 })
 
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const todayEnd = new Date()
-  todayEnd.setHours(24, 0, 0, 0)
-  const yesterdayStart = new Date(todayStart)
-  yesterdayStart.setDate(yesterdayStart.getDate() - 1)
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
+  const { todayStart, todayEnd, yesterdayStart } = getParisBoundaries()
 
   const [
     { data: ordersToday },
@@ -70,72 +84,91 @@ export async function GET() {
     { data: loyaltyTx },
   ] = await Promise.all([
     // 1. Commandes aujourd'hui
-    sb
-      .from('orders')
-      .select('id, total_ttc')
-      .eq('establishment_id', estId)
-      .eq('status', 'paid')
-      .gte('created_at', todayStart.toISOString())
-      .lt('created_at', todayEnd.toISOString()),
+    Promise.resolve(
+      supabase
+        .from('orders')
+        .select('id, total_ttc')
+        .eq('establishment_id', estId)
+        .eq('status', 'paid')
+        .gte('created_at', todayStart.toISOString())
+        .lt('created_at', todayEnd.toISOString())
+    ).catch(() => ({ data: null })),
 
     // 2. Commandes hier
-    sb
-      .from('orders')
-      .select('id, total_ttc')
-      .eq('establishment_id', estId)
-      .eq('status', 'paid')
-      .gte('created_at', yesterdayStart.toISOString())
-      .lt('created_at', todayStart.toISOString()),
+    Promise.resolve(
+      supabase
+        .from('orders')
+        .select('id, total_ttc')
+        .eq('establishment_id', estId)
+        .eq('status', 'paid')
+        .gte('created_at', yesterdayStart.toISOString())
+        .lt('created_at', todayStart.toISOString())
+    ).catch(() => ({ data: null })),
 
     // 3. Activité horaire aujourd'hui
-    sb
-      .from('orders')
-      .select('created_at')
-      .eq('establishment_id', estId)
-      .eq('status', 'paid')
-      .gte('created_at', todayStart.toISOString())
-      .lt('created_at', todayEnd.toISOString()),
+    Promise.resolve(
+      supabase
+        .from('orders')
+        .select('created_at')
+        .eq('establishment_id', estId)
+        .eq('status', 'paid')
+        .gte('created_at', todayStart.toISOString())
+        .lt('created_at', todayEnd.toISOString())
+    ).catch(() => ({ data: null })),
 
     // 4. Alertes stock — filtre colonne-à-colonne impossible en Supabase JS
     //    on récupère tous avec alert_threshold > 0 et filtre côté JS
-    sb
-      .from('stock_items')
-      .select('id, name, quantity, alert_threshold')
-      .eq('establishment_id', estId)
-      .gt('alert_threshold', 0),
+    Promise.resolve(
+      supabase
+        .from('stock_items')
+        .select('id, name, quantity, alert_threshold')
+        .eq('establishment_id', estId)
+        .gt('alert_threshold', 0)
+    ).catch(() => ({ data: null })),
 
     // 5. Livraisons reçues non validées
-    sb
-      .from('purchase_orders')
-      .select('id, supplier_name, updated_at')
-      .eq('establishment_id', estId)
-      .eq('status', 'received'),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Promise.resolve(
+      (supabase as unknown as any)
+        .from('purchase_orders')
+        .select('id, supplier_name, updated_at')
+        .eq('establishment_id', estId)
+        .eq('status', 'received')
+    ).catch(() => ({ data: null })),
 
-    // 6. Top produits aujourd'hui via order_items + inner join orders
-    sb
-      .from('order_items')
-      .select('product_name, quantity, line_total, orders!inner(establishment_id, status, created_at)')
-      .eq('orders.establishment_id', estId)
-      .eq('orders.status', 'paid')
-      .gte('orders.created_at', todayStart.toISOString())
-      .lt('orders.created_at', todayEnd.toISOString()),
+    // 6. Top produits aujourd'hui via order_items + inner join orders (needs cast for join)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Promise.resolve(
+      (supabase as unknown as any)
+        .from('order_items')
+        .select('product_name, quantity, line_total, orders!inner(establishment_id, status, created_at)')
+        .eq('orders.establishment_id', estId)
+        .eq('orders.status', 'paid')
+        .gte('orders.created_at', todayStart.toISOString())
+        .lt('orders.created_at', todayEnd.toISOString())
+    ).catch(() => ({ data: null })),
 
     // 7. Commandes récentes (payées uniquement, 8 dernières)
-    sb
-      .from('orders')
-      .select('id, order_number, total_ttc, created_at, customer_id, customers(first_name, last_name, tier), order_items(product_name, quantity)')
-      .eq('establishment_id', estId)
-      .eq('status', 'paid')
-      .order('created_at', { ascending: false })
-      .limit(8),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Promise.resolve(
+      (supabase as unknown as any)
+        .from('orders')
+        .select('id, order_number, total_ttc, created_at, customer_id, customers(first_name, last_name, tier), order_items(product_name, quantity)')
+        .eq('establishment_id', estId)
+        .eq('status', 'paid')
+        .order('created_at', { ascending: false })
+        .limit(8)
+    ).catch(() => ({ data: null })),
 
     // 8. Clients fidèles aujourd'hui — COUNT DISTINCT sur loyalty_transactions
-    sb
-      .from('loyalty_transactions')
-      .select('customer_id')
-      .eq('establishment_id', estId)
-      .gte('created_at', todayStart.toISOString())
-      .lt('created_at', todayEnd.toISOString()),
+    Promise.resolve(
+      supabase
+        .from('loyalty_transactions')
+        .select('customer_id')
+        .eq('establishment_id', estId)
+        .gte('created_at', todayStart.toISOString())
+        .lt('created_at', todayEnd.toISOString())
+    ).catch(() => ({ data: null })),
   ])
 
   // KPIs
@@ -144,10 +177,13 @@ export async function GET() {
   const countToday = (ordersToday ?? []).length
   const countYesterday = (ordersYesterday ?? []).length
 
-  // Hourly buckets (8h–20h)
+  // Hourly buckets (8h–20h) — use Paris hour
   const hourBuckets: Record<number, number> = {}
   for (const o of hourlyRaw ?? []) {
-    const h = new Date(o.created_at).getHours()
+    const h = parseInt(
+      new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', hour12: false })
+        .format(new Date(o.created_at))
+    )
     hourBuckets[h] = (hourBuckets[h] ?? 0) + 1
   }
   const hourlyActivity = Array.from({ length: 13 }, (_, i) => ({
