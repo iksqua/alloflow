@@ -14,7 +14,7 @@ export default async function PosPage() {
   if (!profile?.establishment_id) redirect('/login')
   const establishmentId = profile.establishment_id
 
-  const [{ data: products }, { data: categories }, { data: session }, { data: tables }] = await Promise.all([
+  const [{ data: products }, { data: categories }, { data: session }, { data: tables }, { data: establishment }] = await Promise.all([
     supabase
       .from('products')
       .select('id, name, emoji, price, tva_rate, category_id, is_active')
@@ -40,6 +40,11 @@ export default async function PosPage() {
       .select('id, name, seats, status, current_order_id')
       .eq('establishment_id', establishmentId)
       .order('name'),
+    supabase
+      .from('establishments')
+      .select('name, siret, address, receipt_footer')
+      .eq('id', establishmentId)
+      .single(),
   ])
 
   return (
@@ -55,6 +60,15 @@ export default async function PosPage() {
       cashierName={user.email?.split('@')[0] ?? 'Caissier'}
       userRole={(profile?.role as string) ?? 'caissier'}
       establishmentId={establishmentId}
+      establishmentInfo={(() => {
+        const est = establishment as { name?: string; siret?: string | null; address?: string | null; receipt_footer?: string | null } | null
+        return {
+          name: est?.name ?? 'Alloflow',
+          siret: est?.siret ?? null,
+          address: est?.address ?? null,
+          receiptFooter: est?.receipt_footer ?? null,
+        }
+      })()}
     />
   )
 }
