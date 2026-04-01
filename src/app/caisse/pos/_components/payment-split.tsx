@@ -70,6 +70,7 @@ export function computeSplitAmounts(
 const PERSON_COLORS: Record<string, string> = {
   P1: '#1d4ed8', P2: '#7c3aed', P3: '#0891b2',
   P4: '#d97706', P5: '#dc2626', P6: '#059669',
+  P7: '#be185d', P8: '#6d28d9', P9: '#065f46', P10: '#92400e',
 }
 
 interface PaymentSplitProps {
@@ -114,6 +115,13 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="text-sm font-semibold" style={{ color: 'var(--text4)' }}>
+        Total à diviser :{' '}
+        <span className="text-base font-bold" style={{ color: 'var(--text1)' }}>
+          {totalFinal.toFixed(2).replace('.', ',')} €
+        </span>
+      </div>
+
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text4)' }}>
           Assigner les articles
