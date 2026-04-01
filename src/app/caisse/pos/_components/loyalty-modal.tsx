@@ -63,7 +63,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
       } finally {
         setSearching(false)
       }
-    }, 300)
+    }, 500)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query, state])
 
