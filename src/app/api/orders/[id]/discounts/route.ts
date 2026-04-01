@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status, establishment_id')
+    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status, establishment_id, reward_discount_amount')
     .eq('id', id)
     .single()
 
@@ -61,7 +61,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const newTax55 = order.tax_5_5 * ratio
   const newTax10 = order.tax_10 * ratio
   const newTax20 = order.tax_20 * ratio
-  const newTotal = discountedHt + newTax55 + newTax10 + newTax20
+  // Loyalty reward discount applies AFTER commercial discount (on the already-discounted total)
+  const rewardDiscount = order.reward_discount_amount ?? 0
+  const newTotal = Math.max(0, discountedHt + newTax55 + newTax10 + newTax20 - rewardDiscount)
 
   const { data, error } = await supabase
     .from('orders')

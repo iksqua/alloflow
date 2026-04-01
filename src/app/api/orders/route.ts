@@ -70,14 +70,14 @@ export async function POST(req: NextRequest) {
       session_id:       session_id ?? null,
       table_id:         table_id ?? null,
       cashier_id:       user.id,
-      customer_id:      parsed.data.customer_id ?? null,
-      reward_id:        parsed.data.reward_id ?? null,
-      discount_amount:  parsed.data.reward_discount_amount ?? 0,
-      subtotal_ht:      subtotalHt,
-      tax_5_5:          tax55,
-      tax_10:           tax10,
-      tax_20:           tax20,
-      total_ttc:        Math.max(0, totalTtc - (parsed.data.reward_discount_amount ?? 0)),
+      customer_id:              parsed.data.customer_id ?? null,
+      reward_id:                parsed.data.reward_id ?? null,
+      reward_discount_amount:   parsed.data.reward_discount_amount ?? 0,
+      subtotal_ht:              subtotalHt,
+      tax_5_5:                  tax55,
+      tax_10:                   tax10,
+      tax_20:                   tax20,
+      total_ttc:                Math.max(0, totalTtc - (parsed.data.reward_discount_amount ?? 0)),
     })
     .select()
     .single()
