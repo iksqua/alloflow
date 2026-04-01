@@ -85,7 +85,7 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/80" onClick={onDismiss} />
       <div
-        className="relative w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+        className="relative w-full max-w-sm mx-4 sm:mx-0 rounded-2xl p-6 shadow-2xl"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         {!hasOpenSession ? (

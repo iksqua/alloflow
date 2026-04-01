@@ -78,7 +78,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+        className="relative w-full max-w-md mx-4 sm:mx-0 rounded-2xl overflow-hidden shadow-2xl"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         {/* Reçu printable (caché à l'écran, visible à l'impression) */}

@@ -23,7 +23,7 @@ export function FloorPlanModal({ tables, onSelectTable, onClose }: FloorPlanModa
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
       <div
-        className="relative w-full max-w-2xl rounded-2xl p-6 shadow-2xl"
+        className="relative w-full max-w-2xl mx-4 sm:mx-0 rounded-2xl p-6 shadow-2xl"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
       >
         <div className="flex items-center justify-between mb-5">
@@ -49,7 +49,7 @@ export function FloorPlanModal({ tables, onSelectTable, onClose }: FloorPlanModa
               <p className="text-sm text-[var(--text4)]">Aucune table configurée</p>
             </div>
           ) : (
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
               {tables.map((table) => {
                 const status = (table.status as 'free' | 'occupied' | 'reserved') in STATUS_STYLES
                   ? (table.status as 'free' | 'occupied' | 'reserved')

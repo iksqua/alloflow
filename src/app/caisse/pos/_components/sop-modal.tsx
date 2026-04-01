@@ -67,7 +67,7 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
 
       {/* Panel */}
       <div
-        className="relative w-full max-w-2xl mt-16 rounded-2xl flex flex-col"
+        className="relative w-full max-w-2xl mx-4 sm:mx-0 mt-16 rounded-2xl flex flex-col"
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',
