@@ -97,7 +97,6 @@ export function SopModal({ establishmentId: _establishmentId, onClose }: SopModa
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="🔍 Rechercher une procédure…"
-            autoFocus
             className="w-full px-3 py-2 rounded-lg text-sm"
             style={{
               background: 'var(--surface2)',
