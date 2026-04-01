@@ -114,16 +114,31 @@ export function CustomerTable({ customers }: Props) {
             className="w-full pl-9 pr-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.08] text-[var(--text1)] placeholder:text-[var(--text3)] focus:outline-none focus:border-[#8b5cf6] transition-colors"
           />
         </div>
-        <select
-          value={tierFilter}
-          onChange={(e) => setTierFilter(e.target.value as '' | 'gold' | 'silver' | 'standard')}
-          className="px-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.08] text-[var(--text1)] focus:outline-none focus:border-[#8b5cf6] transition-colors cursor-pointer"
-        >
-          <option value="">Tous les niveaux</option>
-          <option value="gold">Gold</option>
-          <option value="silver">Silver</option>
-          <option value="standard">Standard</option>
-        </select>
+        <div className="relative">
+          <select
+            value={tierFilter}
+            onChange={(e) => setTierFilter(e.target.value as '' | 'gold' | 'silver' | 'standard')}
+            className="px-3 py-2 rounded-lg text-sm bg-white/[0.05] border transition-colors cursor-pointer focus:outline-none text-[var(--text1)]"
+            style={{
+              borderColor: tierFilter ? '#8b5cf6' : 'rgba(255,255,255,0.08)',
+              background: tierFilter ? 'rgba(139,92,246,0.1)' : undefined,
+            }}
+          >
+            <option value="">Tous les niveaux</option>
+            <option value="gold">Gold</option>
+            <option value="silver">Silver</option>
+            <option value="standard">Standard</option>
+          </select>
+          {tierFilter && (
+            <button
+              onClick={() => setTierFilter('')}
+              className="absolute right-7 top-1/2 -translate-y-1/2 text-[#8b5cf6] hover:text-white text-xs leading-none"
+              title="Effacer le filtre"
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <span className="text-xs text-[var(--text3)] ml-auto">
           {filtered.length} client{filtered.length !== 1 ? 's' : ''}
         </span>

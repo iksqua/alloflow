@@ -53,9 +53,9 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   useEffect(() => {
     if (state !== 'searching') return
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (query.length < 3) { setCustomers([]); return }
+    if (query.length < 3) { setCustomers([]); setSearching(false); return }
+    setSearching(true)
     debounceRef.current = setTimeout(async () => {
-      setSearching(true)
       try {
         const res = await fetch(`/api/customers/search?q=${encodeURIComponent(query)}`)
         const json = await res.json()

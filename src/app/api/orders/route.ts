@@ -18,7 +18,10 @@ const createOrderSchema = z.object({
     quantity:     z.number().int().positive(),
     note:         z.string().optional(),
   })).min(1, 'Au moins un article requis'),
-})
+}).refine(
+  data => !(data.reward_id && !data.customer_id),
+  { message: 'customer_id requis si reward_id est fourni', path: ['customer_id'] }
+)
 
 function computeOrderTotals(items: z.infer<typeof createOrderSchema>['items']) {
   let subtotalHt = 0

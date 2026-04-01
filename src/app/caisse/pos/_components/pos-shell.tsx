@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useOnlineStatus } from '@/lib/hooks/use-online-status'
 import { CategoriesPanel } from './categories-panel'
 import { ProductsPanel } from './products-panel'
@@ -13,6 +14,13 @@ import { LoyaltyModal } from './loyalty-modal'
 import { SopModal } from './sop-modal'
 import type { LocalTicket, LocalItem, CashSession, Order, LoyaltyCustomer, LoyaltyReward } from '../types'
 
+interface EstablishmentInfo {
+  name: string
+  siret: string | null
+  address: string | null
+  receiptFooter: string | null
+}
+
 interface PosShellProps {
   initialProducts: Array<{
     id: string; name: string; emoji: string | null
@@ -25,6 +33,7 @@ interface PosShellProps {
   cashierName: string
   userRole: string
   establishmentId: string
+  establishmentInfo: EstablishmentInfo
 }
 
 const EMPTY_TICKET: LocalTicket = { items: [], discount: null, tableId: null, note: '' }
@@ -38,6 +47,7 @@ export function PosShell({
   cashierName,
   userRole,
   establishmentId,
+  establishmentInfo,
 }: PosShellProps) {
   const [session, setSession] = useState<CashSession | null>(initialSession)
   const [ticket, setTicket] = useState<LocalTicket>(EMPTY_TICKET)
@@ -185,7 +195,17 @@ export function PosShell({
           onRemove={removeItem}
           onClear={clearTicket}
           onDiscount={() => setShowDiscount(true)}
-          onPay={() => session ? setShowPayment(true) : setShowSession(true)}
+          onPay={() => {
+            if (!session) {
+              if (userRole === 'caissier') {
+                toast.info('Session non ouverte — contactez un responsable pour démarrer la caisse')
+                return
+              }
+              setShowSession(true)
+              return
+            }
+            setShowPayment(true)
+          }}
           sessionOpen={!!session}
           linkedCustomer={linkedCustomer}
           linkedReward={linkedReward}
@@ -218,6 +238,7 @@ export function PosShell({
         <ReceiptModal
           order={completedOrder}
           linkedCustomer={linkedCustomer}
+          establishmentInfo={establishmentInfo}
           onClose={() => { setShowReceipt(false); setCompletedOrder(null) }}
           onNewOrder={() => { setShowReceipt(false); setCompletedOrder(null) }}
         />
@@ -258,7 +279,25 @@ export function PosShell({
       {showLoyalty && (
         <LoyaltyModal
           open={showLoyalty}
-          orderTotal={ticket.items.reduce((sum, i) => sum + i.unitPriceHt * i.quantity * (1 + i.tvaRate / 100), 0)}
+          orderTotal={(() => {
+            // Compute total after any commercial discount (before loyalty)
+            let subtotalHt = 0
+            let totalTax = 0
+            for (const item of ticket.items) {
+              const lineHt = item.unitPriceHt * item.quantity
+              subtotalHt += lineHt
+              totalTax += lineHt * (item.tvaRate / 100)
+            }
+            let discount = 0
+            if (ticket.discount) {
+              discount = ticket.discount.type === 'percent'
+                ? subtotalHt * (ticket.discount.value / 100)
+                : ticket.discount.value
+            }
+            const discountedHt = subtotalHt - discount
+            const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
+            return discountedHt + totalTax * ratio
+          })()}
           onClose={() => setShowLoyalty(false)}
           onConfirm={(customer, reward) => {
             setLinkedCustomer(customer)
