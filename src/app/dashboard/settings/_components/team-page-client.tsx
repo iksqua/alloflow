@@ -1,6 +1,7 @@
 // src/app/dashboard/settings/_components/team-page-client.tsx
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { InviteModal } from './invite-modal'
 
 interface Member {
@@ -19,10 +20,11 @@ function formatLastSeen(date: string | null) {
 }
 
 export function TeamPageClient({ initialMembers }: Props) {
-  const [members,     setMembers]     = useState<Member[]>(initialMembers)
-  const [showInvite,  setShowInvite]  = useState(false)
-  const [removing,    setRemoving]    = useState<string | null>(null)
-  const [resendings,  setResendings]  = useState<Set<string>>(new Set())
+  const [members,        setMembers]        = useState<Member[]>(initialMembers)
+  const [showInvite,     setShowInvite]     = useState(false)
+  const [removing,       setRemoving]       = useState<string | null>(null)
+  const [confirmRemove,  setConfirmRemove]  = useState<string | null>(null)
+  const [resendings,     setResendings]     = useState<Set<string>>(new Set())
 
   async function refreshMembers() {
     const res = await fetch('/api/settings/team')
@@ -33,17 +35,21 @@ export function TeamPageClient({ initialMembers }: Props) {
   }
 
   async function handleRemove(memberId: string) {
-    if (!confirm('Retirer ce membre de l\'établissement ?')) return
+    setConfirmRemove(null)
     setRemoving(memberId)
     try {
       const res = await fetch(`/api/settings/team/${memberId}`, { method: 'DELETE' })
       if (res.status === 409) {
         const d = await res.json()
-        alert(d.error)
+        toast.error(d.error)
         return
       }
-      if (res.ok) await refreshMembers()
-      else alert('Erreur lors de la suppression')
+      if (res.ok) {
+        toast.success('Membre retiré')
+        await refreshMembers()
+      } else {
+        toast.error('Erreur lors de la suppression')
+      }
     } finally {
       setRemoving(null)
     }
@@ -53,7 +59,8 @@ export function TeamPageClient({ initialMembers }: Props) {
     setResendings(prev => new Set([...prev, memberId]))
     try {
       const res = await fetch(`/api/settings/team/${memberId}/resend`, { method: 'POST' })
-      if (!res.ok) alert('Erreur lors du renvoi')
+      if (!res.ok) toast.error('Erreur lors du renvoi')
+      else toast.success('Invitation renvoyée')
     } finally {
       setResendings(prev => { const s = new Set(prev); s.delete(memberId); return s })
     }
@@ -131,33 +138,55 @@ export function TeamPageClient({ initialMembers }: Props) {
                     {formatLastSeen(m.last_sign_in_at)}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {isActive && (
-                      <button
-                        onClick={() => handleRemove(m.id)}
-                        disabled={removing === m.id}
-                        className="text-xs font-medium transition-opacity"
-                        style={{ color: 'var(--red)', opacity: removing === m.id ? 0.5 : 1 }}
-                      >
-                        {removing === m.id ? '…' : 'Retirer'}
-                      </button>
-                    )}
-                    {isPending && (
+                    {(isActive || isPending) && confirmRemove === m.id ? (
                       <div className="flex items-center gap-2 justify-end">
-                        <button
-                          onClick={() => handleResend(m.id)}
-                          disabled={resendings.has(m.id)}
-                          className="text-xs text-[var(--text4)] hover:text-[var(--text2)] transition-colors"
-                        >
-                          {resendings.has(m.id) ? 'Envoi…' : 'Renvoyer'}
-                        </button>
-                        <span style={{ color: 'var(--border)' }}>·</span>
+                        <span className="text-xs text-[var(--text3)]">Confirmer ?</span>
                         <button
                           onClick={() => handleRemove(m.id)}
-                          className="text-xs text-[var(--text4)] hover:text-[var(--red)] transition-colors"
+                          disabled={removing === m.id}
+                          className="text-xs font-semibold"
+                          style={{ color: 'var(--red)' }}
                         >
-                          Annuler
+                          {removing === m.id ? '…' : 'Oui'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmRemove(null)}
+                          className="text-xs text-[var(--text4)] hover:text-[var(--text2)] transition-colors"
+                        >
+                          Non
                         </button>
                       </div>
+                    ) : (
+                      <>
+                        {isActive && (
+                          <button
+                            onClick={() => setConfirmRemove(m.id)}
+                            disabled={removing === m.id}
+                            className="text-xs font-medium transition-opacity"
+                            style={{ color: 'var(--red)', opacity: removing === m.id ? 0.5 : 1 }}
+                          >
+                            {removing === m.id ? '…' : 'Retirer'}
+                          </button>
+                        )}
+                        {isPending && (
+                          <div className="flex items-center gap-2 justify-end">
+                            <button
+                              onClick={() => handleResend(m.id)}
+                              disabled={resendings.has(m.id)}
+                              className="text-xs text-[var(--text4)] hover:text-[var(--text2)] transition-colors"
+                            >
+                              {resendings.has(m.id) ? 'Envoi…' : 'Renvoyer'}
+                            </button>
+                            <span style={{ color: 'var(--border)' }}>·</span>
+                            <button
+                              onClick={() => setConfirmRemove(m.id)}
+                              className="text-xs text-[var(--text4)] hover:text-[var(--red)] transition-colors"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </td>
                 </tr>

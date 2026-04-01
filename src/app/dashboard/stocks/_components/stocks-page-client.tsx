@@ -23,6 +23,7 @@ export function StocksPageClient({ initialItems, initialOrders, categories }: Pr
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [editingItem, setEditingItem] = useState<StockItem | null>(null)
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const alerts    = items.filter(i => i.status === 'alert').length
   const outOfStock = items.filter(i => i.status === 'out_of_stock').length
@@ -119,14 +120,40 @@ export function StocksPageClient({ initialItems, initialOrders, categories }: Pr
         )}
 
         {tab === 'inventory' && items.length > 0 && (
+          <>
           <StockItemsTable
             items={items}
             onEdit={item => { setEditingItem(item); setShowItemForm(true) }}
-            onDelete={async id => {
-              await fetch(`/api/stock-items/${id}`, { method: 'DELETE' })
-              await reloadItems()
-            }}
+            onDelete={async id => { setConfirmDeleteId(id) }}
           />
+          {confirmDeleteId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+              <div className="rounded-2xl p-6 w-80 shadow-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-sm font-semibold text-[var(--text1)] mb-1">Supprimer cet article ?</p>
+                <p className="text-xs text-[var(--text4)] mb-5">Cette action est irréversible.</p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="px-4 py-2 rounded-lg text-sm text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await fetch(`/api/stock-items/${confirmDeleteId}`, { method: 'DELETE' })
+                      setConfirmDeleteId(null)
+                      await reloadItems()
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+                    style={{ background: 'var(--red)' }}
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          </>
         )}
 
         {tab === 'orders' && (

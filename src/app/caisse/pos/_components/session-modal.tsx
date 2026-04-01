@@ -55,7 +55,8 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: session.id }),
-      }).catch(() => null)
+      }).then(r => { if (!r.ok) toast.warning('Rapport Z non généré — réessayez depuis les paramètres') })
+        .catch(() => toast.warning('Rapport Z non généré — réessayez depuis les paramètres'))
     } catch {
       toast.error('Erreur clôture session')
     } finally {
@@ -76,6 +77,11 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
             <p className="text-sm text-[var(--text3)] mb-5">
               Démarrez une nouvelle session de caisse pour commencer à encaisser.
             </p>
+            {!isManager && (
+              <div className="mb-5 p-3 rounded-lg text-sm text-[var(--text3)] border border-[var(--border)]" style={{ background: 'var(--surface2)' }}>
+                Seul un administrateur peut ouvrir la session. Contactez votre responsable.
+              </div>
+            )}
             {isManager && (
               <div className="mb-5">
                 <label className="text-xs text-[var(--text3)] uppercase tracking-wider mb-2 block">
@@ -98,14 +104,16 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
               >
                 Annuler
               </button>
-              <button
-                onClick={handleOpen}
-                disabled={loading}
-                className="flex-1 h-10 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90"
-                style={{ background: 'var(--green)' }}
-              >
-                {loading ? 'Ouverture…' : 'Ouvrir la session'}
-              </button>
+              {isManager && (
+                <button
+                  onClick={handleOpen}
+                  disabled={loading}
+                  className="flex-1 h-10 rounded-lg text-sm font-semibold text-white disabled:opacity-50 hover:opacity-90"
+                  style={{ background: 'var(--green)' }}
+                >
+                  {loading ? 'Ouverture…' : 'Ouvrir la session'}
+                </button>
+              )}
             </div>
           </>
         ) : (
