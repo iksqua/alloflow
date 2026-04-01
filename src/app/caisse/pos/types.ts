@@ -102,3 +102,9 @@ export interface LoyaltyReward {
   value: number
   active?: boolean
 }
+
+export interface SplitPerson {
+  label: string              // "P1", "P2", ...
+  amount: number             // montant final après remises (arrondi centimes)
+  method: 'card' | 'cash'
+}
