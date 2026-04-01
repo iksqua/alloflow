@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
   const parsed = bulkSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 403 })
+
   const { action, ids, category_id, tva_rate } = parsed.data
 
   let update: Record<string, unknown> = {}
@@ -28,7 +35,12 @@ export async function POST(req: NextRequest) {
   else if (action === 'change_tva' && tva_rate) update = { tva_rate }
   else return NextResponse.json({ error: 'Missing required field for action' }, { status: 400 })
 
-  const { error } = await supabase.from('products').update(update).in('id', ids)
+  // Filter by establishment_id to prevent cross-tenant modification
+  const { error } = await supabase
+    .from('products')
+    .update(update)
+    .in('id', ids)
+    .eq('establishment_id', profile.establishment_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true, count: ids.length })
 }

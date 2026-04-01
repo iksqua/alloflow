@@ -1,6 +1,7 @@
 // src/app/dashboard/stocks/_components/stocks-page-client.tsx
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { StockItemsTable } from './stock-items-table'
 import { StockItemForm } from './stock-item-form'
 import { PurchaseOrderForm } from './purchase-order-form'
@@ -140,8 +141,13 @@ export function StocksPageClient({ initialItems, initialOrders, categories }: Pr
                   </button>
                   <button
                     onClick={async () => {
-                      await fetch(`/api/stock-items/${confirmDeleteId}`, { method: 'DELETE' })
+                      const res = await fetch(`/api/stock-items/${confirmDeleteId}`, { method: 'DELETE' })
                       setConfirmDeleteId(null)
+                      if (res.ok) {
+                        toast.success('Article supprime')
+                      } else {
+                        toast.error('Erreur lors de la suppression')
+                      }
                       await reloadItems()
                     }}
                     className="px-4 py-2 rounded-lg text-sm font-semibold text-white"

@@ -69,14 +69,19 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const { id } = await params
 
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from('products')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('establishment_id', profile.establishment_id)
+    .select('id')
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (!deleted || deleted.length === 0) {
+    return NextResponse.json({ error: 'Produit non trouvé ou accès refusé' }, { status: 404 })
   }
 
   return new NextResponse(null, { status: 204 })

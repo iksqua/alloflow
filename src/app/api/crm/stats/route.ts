@@ -20,6 +20,8 @@ export async function GET() {
   const now = new Date()
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
+  try {
+
   // Get customer IDs for this establishment (needed for loyalty_transactions join)
   const { data: customerRows } = await supabase
     .from('customers')
@@ -73,4 +75,9 @@ export async function GET() {
     ptsDistributedThisMonth,
     rewardsUsedThisMonth: (rewardsRes as { count?: number | null }).count ?? 0,
   })
+
+  } catch (err) {
+    console.error('[crm/stats] Unexpected error:', err)
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
+  }
 }

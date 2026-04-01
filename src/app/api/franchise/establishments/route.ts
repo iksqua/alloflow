@@ -37,6 +37,8 @@ export async function GET() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  try {
+
   // All orgs in network
   const { data: networkOrgs } = await supabaseAdmin
     .from('organizations')
@@ -105,6 +107,11 @@ export async function GET() {
   })
 
   return NextResponse.json({ establishments: result })
+
+  } catch (err) {
+    console.error('[franchise/establishments GET] Unexpected error:', err)
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
+  }
 }
 
 export async function POST(req: NextRequest) {

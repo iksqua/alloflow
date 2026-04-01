@@ -72,11 +72,14 @@ export async function fetchDailyCA(
   establishmentId?: string
 ): Promise<DailyCA[]> {
   const supabase = await createClient()
+  // Use YYYY-MM-DD format to correctly compare against DATE columns in the view
+  const fromDate = range.from.toISOString().slice(0, 10)
+  const toDate   = range.to.toISOString().slice(0, 10)
   let query = (supabase as any)
     .from('v_daily_ca')
     .select('day, ca_ttc, tx_count')
-    .gte('day', range.from.toISOString())
-    .lte('day', range.to.toISOString())
+    .gte('day', fromDate)
+    .lte('day', toDate)
     .order('day', { ascending: true })
 
   if (establishmentId) query = query.eq('establishment_id', establishmentId)
@@ -223,11 +226,14 @@ export async function fetchTvaBreakdown(
   establishmentId?: string
 ): Promise<TvaBreakdown[]> {
   const supabase = await createClient()
+  // Use YYYY-MM-DD format to correctly compare against DATE columns in the view
+  const fromDate = range.from.toISOString().slice(0, 10)
+  const toDate   = range.to.toISOString().slice(0, 10)
   let query = (supabase as any)
     .from('v_tva_breakdown')
     .select('tva_rate, base_ht, tva_amount')
-    .gte('day', range.from.toISOString())
-    .lte('day', range.to.toISOString())
+    .gte('day', fromDate)
+    .lte('day', toDate)
 
   if (establishmentId) query = query.eq('establishment_id', establishmentId)
 

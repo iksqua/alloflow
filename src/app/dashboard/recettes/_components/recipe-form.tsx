@@ -434,7 +434,7 @@ export function RecipeForm({ open, recipe, categories, onClose, onSave }: Props)
               <div className="mt-4 space-y-3 border-t border-[var(--border)] pt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Prix de vente TTC *</label>
+                    <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">Prix de vente HT *</label>
                     <div className="relative">
                       <input type="number" step="0.01" value={posPrice} onChange={e => setPosPrice(e.target.value)}
                         placeholder="4,50"

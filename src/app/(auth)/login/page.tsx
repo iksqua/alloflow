@@ -16,6 +16,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
 
   const unauthorized = searchParams.get('error') === 'unauthorized'
+  const noEstablishment = searchParams.get('error') === 'no_establishment'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -63,6 +64,12 @@ function LoginForm() {
         {unauthorized && (
           <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'var(--red-bg)', border: '1px solid var(--red)', color: 'var(--red)' }}>
             Accès non autorisé. Contactez votre administrateur.
+          </div>
+        )}
+
+        {noEstablishment && (
+          <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'var(--red-bg)', border: '1px solid var(--red)', color: 'var(--red)' }}>
+            Votre compte n&apos;est pas rattaché à un établissement. Contactez votre administrateur.
           </div>
         )}
 

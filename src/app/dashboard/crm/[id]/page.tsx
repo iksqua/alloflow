@@ -46,7 +46,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/login?error=no_establishment')
   const establishmentId = profile.establishment_id
 
   // Fetch in parallel: customer, orders, loyalty transactions, available rewards

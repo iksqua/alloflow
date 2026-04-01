@@ -18,14 +18,25 @@ export async function GET(req: NextRequest) {
   const q = new URL(req.url).searchParams.get('q') ?? ''
   if (q.length < 3) return NextResponse.json({ customers: [] })
 
-  // Detect search type: email contains @, otherwise treat as phone
+  // Search by email if query contains @, otherwise search phone AND name
   const isEmail = q.includes('@')
-  const { data, error } = await supabase
+
+  let query = supabase
     .from('customers')
     .select('id, first_name, last_name, phone, email, points, tier')
     .eq('establishment_id', establishmentId)
-    .ilike(isEmail ? 'email' : 'phone', `%${q}%`)
     .limit(5)
+
+  if (isEmail) {
+    query = query.ilike('email', `%${q}%`)
+  } else {
+    // Search by phone OR first_name OR last_name
+    query = query.or(
+      `phone.ilike.%${q}%,first_name.ilike.%${q}%,last_name.ilike.%${q}%`
+    )
+  }
+
+  const { data, error } = await query
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ customers: data ?? [] })

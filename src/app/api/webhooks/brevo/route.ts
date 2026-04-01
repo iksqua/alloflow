@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createClient()
 
+  try {
+
   for (const event of list) {
     const messageId = event['message-id']
     if (!messageId) continue
@@ -84,4 +86,9 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true })
+
+  } catch (err) {
+    console.error('[brevo/webhook] Unexpected error:', err)
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
+  }
 }

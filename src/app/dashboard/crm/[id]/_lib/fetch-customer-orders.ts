@@ -14,7 +14,7 @@ export async function fetchCustomerOrders(customerId: string, limit = 20): Promi
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, created_at, total_ttc, payment_method, order_items(quantity, products(name))')
+    .select('id, created_at, total_ttc, order_items(quantity, product_name), payments(method, amount)')
     .eq('customer_id', customerId)
     .eq('status', 'paid')
     .order('created_at', { ascending: false })
@@ -36,15 +36,23 @@ export async function fetchCustomerOrders(customerId: string, limit = 20): Promi
     earnMap = new Map((earnTx ?? []).map((t: any) => [t.order_id, t.points]))
   }
 
-  return orders.map((o: any) => ({
-    id: o.id,
-    createdAt: o.created_at,
-    totalTtc: o.total_ttc ?? 0,
-    paymentMethod: o.payment_method ?? 'card',
-    items: (o.order_items ?? []).map((i: any) => ({
-      name: i.products?.name ?? '?',
-      quantity: i.quantity ?? 1,
-    })),
-    pointsEarned: earnMap.get(o.id) ?? Math.floor(o.total_ttc ?? 0),
-  }))
+  return orders.map((o: any) => {
+    // Derive payment method from payments array (prefer card, fallback to cash)
+    const payments: any[] = o.payments ?? []
+    const hasCash = payments.some((p: any) => p.method === 'cash')
+    const hasCard = payments.some((p: any) => p.method === 'card')
+    const paymentMethod = hasCard && hasCash ? 'split' : hasCash ? 'cash' : 'card'
+
+    return {
+      id: o.id,
+      createdAt: o.created_at,
+      totalTtc: o.total_ttc ?? 0,
+      paymentMethod,
+      items: (o.order_items ?? []).map((i: any) => ({
+        name: i.product_name ?? '?',
+        quantity: i.quantity ?? 1,
+      })),
+      pointsEarned: earnMap.get(o.id) ?? Math.floor(o.total_ttc ?? 0),
+    }
+  })
 }

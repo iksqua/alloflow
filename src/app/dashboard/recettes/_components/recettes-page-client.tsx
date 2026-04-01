@@ -45,6 +45,7 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
     switch (sort) {
       case 'food_cost_asc':  return [...list].sort((a, b) => (a.food_cost_pct ?? 0) - (b.food_cost_pct ?? 0))
       case 'food_cost_desc': return [...list].sort((a, b) => (b.food_cost_pct ?? 0) - (a.food_cost_pct ?? 0))
+      // Marge la plus haute = food cost le plus bas → sort ascending food cost
       case 'margin_desc':    return [...list].sort((a, b) => (a.food_cost_pct ?? 100) - (b.food_cost_pct ?? 100))
       case 'name':           return [...list].sort((a, b) => a.title.localeCompare(b.title))
     }

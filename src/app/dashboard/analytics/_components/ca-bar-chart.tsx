@@ -16,7 +16,16 @@ function isToday(iso: string): boolean {
 }
 
 export function CaBarChart({ data }: CaBarChartProps) {
-  if (!data || data.length === 0) return null
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px] flex flex-col">
+        <span className="text-sm font-semibold text-slate-200 mb-4">Chiffre d&apos;affaires</span>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-slate-500 text-center py-8 text-sm">Aucune vente sur la période</p>
+        </div>
+      </div>
+    )
+  }
 
   const maxValue = Math.max(...data.map((d) => d.caTtc), 1)
   const totalCA = data.reduce((s, d) => s + d.caTtc, 0)

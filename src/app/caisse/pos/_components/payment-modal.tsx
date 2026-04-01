@@ -16,7 +16,7 @@ interface PaymentModalProps {
   onSuccess: (order: Order) => void
 }
 
-function computeTotal(ticket: LocalTicket, loyaltyReward: LoyaltyReward | null): number {
+function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   let subtotalHt = 0
   let totalTax = 0
   for (const item of ticket.items) {
@@ -32,15 +32,20 @@ function computeTotal(ticket: LocalTicket, loyaltyReward: LoyaltyReward | null):
   }
   const discountedHt = subtotalHt - discount
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-  let total = discountedHt + totalTax * ratio
+  return discountedHt + totalTax * ratio
+}
+
+function computeTotal(ticket: LocalTicket, loyaltyReward: LoyaltyReward | null): number {
+  const totalBeforeLoyalty = computeTotalBeforeLoyalty(ticket)
 
   if (loyaltyReward) {
+    // Loyalty discount is computed on the pre-loyalty total (after other discounts)
     const loyaltyDiscount = (loyaltyReward.type === 'percent' || loyaltyReward.type === 'reduction_pct')
-      ? Math.round(total * (loyaltyReward.value / 100) * 100) / 100
+      ? Math.round(totalBeforeLoyalty * (loyaltyReward.value / 100) * 100) / 100
       : loyaltyReward.value
-    total = Math.max(0, total - loyaltyDiscount)
+    return Math.max(0, totalBeforeLoyalty - loyaltyDiscount)
   }
-  return total
+  return totalBeforeLoyalty
 }
 
 export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCustomer, linkedReward, onClose, onSuccess }: PaymentModalProps) {
@@ -69,9 +74,11 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   async function handlePay() {
     setIsPaying(true)
     try {
+      // Loyalty discount must be computed on the pre-loyalty total to avoid double-deduction
+      const totalBeforeLoyalty = computeTotalBeforeLoyalty(ticket)
       const loyaltyDiscountAmount = linkedReward
         ? (linkedReward.type === 'percent' || linkedReward.type === 'reduction_pct')
-          ? Math.round(total * (linkedReward.value / 100) * 100) / 100
+          ? Math.round(totalBeforeLoyalty * (linkedReward.value / 100) * 100) / 100
           : linkedReward.value
         : 0
 

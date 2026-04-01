@@ -27,6 +27,8 @@ export async function GET() {
   )
   const orgId = profile.org_id
 
+  try {
+
   // 2. All orgs in network (siege + franchisees)
   const { data: networkOrgs } = await supabaseAdmin
     .from('organizations')
@@ -213,4 +215,9 @@ export async function GET() {
     establishments: estResults,
     loyalty,
   })
+
+  } catch (err) {
+    console.error('[network-stats] Unexpected error:', err)
+    return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 })
+  }
 }

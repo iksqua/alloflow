@@ -43,10 +43,10 @@ export function InviteModal({ onClose, onSuccess }: Props) {
   } as React.CSSProperties
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: 'var(--overlay-bg)' }}>
       <div
-        className="relative w-full max-w-sm rounded-2xl p-6"
+        className="relative w-full max-w-sm rounded-xl p-6"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         <h2 className="text-base font-semibold text-[var(--text1)] mb-5">Inviter un membre</h2>
