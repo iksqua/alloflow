@@ -31,9 +31,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   if (!order) return NextResponse.json({ error: 'order_not_found' }, { status: 404 })
   if (order.status !== 'paid') return NextResponse.json({ error: 'order_not_paid' }, { status: 422 })
 
-  // TODO V2 : intégration Resend ou Postmark
-  // Pour V1, on simule le succès (front utilise window.print() + mailto: fallback)
-  console.log(`[Reçu email] Commande ${orderId} → ${parsed.data.email}`)
+  // Check if email sending is configured (Brevo / Resend / SMTP)
+  const brevoKey = process.env.BREVO_API_KEY
+  if (!brevoKey) {
+    return NextResponse.json({ success: false, unavailable: true, reason: 'email_not_configured' }, { status: 501 })
+  }
 
+  // TODO V2 : intégration Brevo transactional email
+  console.info(`[Reçu email] Commande ${orderId} → ${parsed.data.email}`)
   return NextResponse.json({ success: true, email: parsed.data.email })
 }

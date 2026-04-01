@@ -26,8 +26,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   if (!order) return NextResponse.json({ error: 'order_not_found' }, { status: 404 })
   if (order.status !== 'paid') return NextResponse.json({ error: 'order_not_paid' }, { status: 422 })
 
-  // TODO V2 : intégration Twilio ou OVH SMS
-  console.log(`[Reçu SMS] Commande ${orderId} → ${parsed.data.phone}`)
+  // Check if SMS sending is configured (Brevo / Twilio)
+  const brevoKey = process.env.BREVO_API_KEY
+  if (!brevoKey) {
+    return NextResponse.json({ success: false, unavailable: true, reason: 'sms_not_configured' }, { status: 501 })
+  }
 
+  // TODO V2 : intégration Brevo transactional SMS
+  console.info(`[Reçu SMS] Commande ${orderId} → ${parsed.data.phone}`)
   return NextResponse.json({ success: true, phone: parsed.data.phone })
 }

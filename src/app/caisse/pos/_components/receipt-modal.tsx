@@ -4,14 +4,22 @@ import { toast } from 'sonner'
 import './print-receipt.css'
 import type { Order, LoyaltyCustomer } from '../types'
 
+interface EstablishmentInfo {
+  name: string
+  siret: string | null
+  address: string | null
+  receiptFooter: string | null
+}
+
 interface ReceiptModalProps {
   order: Order
   linkedCustomer: LoyaltyCustomer | null
+  establishmentInfo: EstablishmentInfo
   onClose: () => void
   onNewOrder: () => void
 }
 
-export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: ReceiptModalProps) {
+export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose, onNewOrder }: ReceiptModalProps) {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState<'email' | 'sms' | null>(null)
@@ -27,6 +35,11 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
+      const data = await res.json()
+      if (data.unavailable) {
+        toast.error('Envoi par email non configuré — utilisez l\'impression')
+        return
+      }
       if (!res.ok) throw new Error()
       toast.success(`Reçu envoyé à ${email}`)
       setEmail('')
@@ -46,6 +59,11 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone }),
       })
+      const data = await res.json()
+      if (data.unavailable) {
+        toast.error('Envoi par SMS non configuré — utilisez l\'impression')
+        return
+      }
       if (!res.ok) throw new Error()
       toast.success(`Reçu envoyé par SMS`)
       setPhone('')
@@ -65,7 +83,13 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
       >
         {/* Reçu printable (caché à l'écran, visible à l'impression) */}
         <div className="receipt-printable hidden print:block">
-          <div className="receipt-center receipt-bold" style={{ fontSize: '14px' }}>ALLOFLOW</div>
+          <div className="receipt-center receipt-bold" style={{ fontSize: '14px' }}>{establishmentInfo.name.toUpperCase()}</div>
+          {establishmentInfo.address && (
+            <div className="receipt-center" style={{ fontSize: '10px', marginBottom: '2px' }}>{establishmentInfo.address}</div>
+          )}
+          {establishmentInfo.siret && (
+            <div className="receipt-center" style={{ fontSize: '10px', marginBottom: '4px' }}>SIRET : {establishmentInfo.siret}</div>
+          )}
           <div className="receipt-center" style={{ marginBottom: '8px' }}>
             {new Date(order.created_at).toLocaleDateString('fr-FR', {
               day: '2-digit', month: '2-digit', year: 'numeric',
@@ -115,7 +139,7 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
           </div>
           <div className="receipt-divider" />
           <div className="receipt-center" style={{ marginTop: '8px', fontSize: '10px' }}>
-            Merci de votre visite !
+            {establishmentInfo.receiptFooter || 'Merci de votre visite !'}
           </div>
         </div>
 
@@ -139,10 +163,10 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
               </div>
               <div>
                 <div className="text-sm font-bold text-[var(--green)]">
-                  +{Math.round(order.total_ttc)} pts crédités !
+                  Points fidélité crédités
                 </div>
                 <div className="text-xs text-[var(--text4)]">
-                  {linkedCustomer.first_name} · {linkedCustomer.points + Math.round(order.total_ttc)} pts au total
+                  {linkedCustomer.first_name} · {linkedCustomer.points} pts actuels
                 </div>
               </div>
             </div>
