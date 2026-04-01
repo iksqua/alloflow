@@ -10,7 +10,7 @@ export async function GET() {
   const { data: profile } = await supabase
     .from('profiles').select('role, establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
-  if (!['admin', 'super_admin'].includes(profile.role as string))
+  if (profile.role === null || profile.role === undefined || !['admin', 'super_admin'].includes(profile.role as string))
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

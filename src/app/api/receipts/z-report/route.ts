@@ -8,16 +8,18 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
+    .from('profiles').select('role, establishment_id').eq('id', user.id).single()
 
   if (profile?.role === 'caissier') {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { session_id } = await req.json()
 
   const { data: session } = await supabase
-    .from('cash_sessions').select('*').eq('id', session_id).single()
+    .from('cash_sessions').select('*').eq('id', session_id).eq('establishment_id', profile.establishment_id).single()
 
   if (!session) return NextResponse.json({ error: 'session_not_found' }, { status: 404 })
 

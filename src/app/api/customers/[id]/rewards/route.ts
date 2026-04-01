@@ -8,17 +8,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
+
   // Fetch customer to get points and tier
   const { data: customer, error: cErr } = await supabase
     .from('customers')
     .select('points, tier')
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .single()
   if (cErr || !customer) return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 })
-
-  const { data: profile } = await supabase
-    .from('profiles').select('establishment_id').eq('id', user.id).single()
-  if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
 
   // Return rewards the customer can afford
   const { data, error } = await supabase

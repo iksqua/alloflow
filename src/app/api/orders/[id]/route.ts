@@ -7,11 +7,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { id } = await params
   const { data, error } = await supabase
     .from('orders')
     .select('*, items:order_items(*), payments(*)')
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
