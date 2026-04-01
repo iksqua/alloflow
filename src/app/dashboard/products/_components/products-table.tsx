@@ -43,6 +43,7 @@ export function ProductsTable({
   }
 
   return (
+    <div className="overflow-x-auto">
     <table className="w-full">
       <thead>
         <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -144,5 +145,6 @@ export function ProductsTable({
         })}
       </tbody>
     </table>
+    </div>
   )
 }

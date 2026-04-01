@@ -82,7 +82,7 @@ export function TeamPageClient({ initialMembers }: Props) {
       </div>
 
       <div
-        className="rounded-[14px] overflow-hidden"
+        className="rounded-[14px] overflow-x-auto"
         style={{ border: '1px solid var(--border)' }}
       >
         <table className="w-full border-collapse text-sm">

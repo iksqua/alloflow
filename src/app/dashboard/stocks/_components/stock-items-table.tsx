@@ -54,7 +54,7 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-[var(--text4)]">Aucun article trouvé</div>
       ) : (
-        <div className="rounded-xl border border-[var(--border)] overflow-hidden" style={{ background: 'var(--surface)' }}>
+        <div className="rounded-xl border border-[var(--border)] overflow-x-auto" style={{ background: 'var(--surface)' }}>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--border)]">
