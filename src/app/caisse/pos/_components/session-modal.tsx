@@ -1,7 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import type { CashSession } from '../types'
+
+function formatDuration(openedAt: string): string {
+  const ms = Date.now() - new Date(openedAt).getTime()
+  const totalMinutes = Math.floor(ms / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours > 0) return `${hours}h ${minutes.toString().padStart(2, '0')}min`
+  return `${minutes} min`
+}
 
 interface SessionModalProps {
   session: CashSession | null
@@ -15,8 +24,16 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
   const [openingFloat, setOpeningFloat] = useState('')
   const [closingFloat, setClosingFloat] = useState('')
   const [loading, setLoading] = useState(false)
+  const [duration, setDuration] = useState(() => session ? formatDuration(session.opened_at) : '')
   const isManager = userRole !== 'caissier'
   const hasOpenSession = !!session
+
+  useEffect(() => {
+    if (!session) return
+    setDuration(formatDuration(session.opened_at))
+    const interval = setInterval(() => setDuration(formatDuration(session.opened_at)), 30000)
+    return () => clearInterval(interval)
+  }, [session])
 
   const handleOpen = async () => {
     setLoading(true)
@@ -119,10 +136,13 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
         ) : (
           <>
             <h3 className="text-base font-semibold text-[var(--text1)] mb-1">Session en cours</h3>
-            <p className="text-sm text-[var(--text3)] mb-5">
+            <p className="text-sm text-[var(--text3)] mb-1">
               Ouverte le {new Date(session.opened_at).toLocaleDateString('fr-FR', {
                 day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit',
               })}
+            </p>
+            <p className="text-xs text-[var(--text4)] mb-5">
+              Ouverte depuis {duration}
             </p>
             {isManager && (
               <>
