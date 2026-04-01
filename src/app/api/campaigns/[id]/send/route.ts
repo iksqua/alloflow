@@ -71,6 +71,22 @@ export async function POST(
   // Send to each customer
   let sent = 0, failed = 0
   for (const customer of customers as Array<Record<string, unknown>>) {
+    // Idempotency check — skip customers already sent to (prevents duplicates on retry)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingSend } = await (supabase as any)
+      .from('campaign_sends')
+      .select('id')
+      .eq('campaign_id', id)
+      .eq('customer_id', customer.id)
+      .eq('status', 'sent')
+      .limit(1)
+      .maybeSingle()
+
+    if (existingSend) {
+      sent++ // Already sent in a previous attempt
+      continue
+    }
+
     const message = renderTemplate(campaign.template_body, {
       prenom:        customer.first_name as string,
       points:        customer.points as number,
@@ -79,7 +95,16 @@ export async function POST(
       etablissement: estab.name as string,
     })
 
-    // Direct Brevo call (server-side, bypass HTTP round-trip)
+    // Step 1: Deduct credit BEFORE sending — prevents double-send on retry
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: deductError } = await (supabase as any).rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
+    if (deductError) {
+      // Credits exhausted mid-campaign — stop sending
+      failed++
+      break
+    }
+
+    // Step 2: Send the SMS
     try {
       const { sendBrevoSms: brevoSend } = await import('@/lib/brevo')
       const result = await brevoSend({
@@ -87,15 +112,6 @@ export async function POST(
         recipient: customer.phone as string,
         content:   message,
       })
-
-      // Deduct credit atomically — throws if credits exhausted
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: deductError } = await (supabase as any).rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
-      if (deductError) {
-        // Credits exhausted mid-campaign — stop sending
-        failed++
-        break
-      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any).from('campaign_sends').insert({
@@ -107,6 +123,13 @@ export async function POST(
       })
       sent++
     } catch {
+      // Send failed — refund the credit we deducted
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).rpc('refund_sms_credit', { p_establishment_id: profile.establishment_id }).catch(() => {
+        // If refund fails, credit is lost — but no duplicate SMS sent (safer)
+        console.error('[campaign-send] Failed to refund SMS credit after send failure')
+      })
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any).from('campaign_sends').insert({
         campaign_id: id,
