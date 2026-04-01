@@ -318,7 +318,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-6">
           {(['card', 'cash', 'split'] as PaymentMode[]).map((m) => {
             const disabled = isOffline && m !== 'cash'
             return (
@@ -335,7 +335,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                 ].join(' ')}
               >
                 <span className="text-2xl">{m === 'card' ? '💳' : m === 'cash' ? '💶' : '⚡'}</span>
-                <span>{m === 'card' ? 'CB' : m === 'cash' ? 'Espèces' : 'Split'}</span>
+                <span className="text-xs sm:text-sm">{m === 'card' ? 'CB' : m === 'cash' ? 'Espèces' : 'Split'}</span>
               </button>
             )
           })}
