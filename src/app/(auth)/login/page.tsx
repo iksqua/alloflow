@@ -58,7 +58,7 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-      <div className="w-full max-w-md p-8 rounded-xl border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+      <div className="w-full max-w-md mx-4 p-4 sm:p-8 rounded-xl border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
         <h1 className="text-2xl font-bold mb-6 text-center text-[var(--text1)]">Alloflow</h1>
 
         {unauthorized && (
