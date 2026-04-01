@@ -74,7 +74,7 @@ export function StocksPageClient({ initialItems, initialOrders, categories }: Pr
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {[
             { label: 'Articles', value: items.length, color: 'text-[var(--text1)]' },
             { label: 'Alertes', value: alerts, color: 'text-amber-400' },
