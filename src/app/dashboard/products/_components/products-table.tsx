@@ -108,7 +108,7 @@ export function ProductsTable({
                 )}
               </td>
               <td className="px-3 py-2.5 text-sm text-[var(--text1)] tabular-nums">
-                {product.price.toFixed(2)} €
+                {(product.price * (1 + product.tva_rate / 100)).toFixed(2)} €
               </td>
               <td className="px-3 py-2.5">
                 <TvaBadge rate={product.tva_rate} />
