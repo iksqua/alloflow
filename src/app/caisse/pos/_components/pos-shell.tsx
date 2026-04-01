@@ -53,6 +53,7 @@ export function PosShell({
   const [ticket, setTicket] = useState<LocalTicket>(EMPTY_TICKET)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null)
+  const [mobileView, setMobileView] = useState<'menu' | 'ticket'>('menu')
 
   const isOnline = useOnlineStatus()
   const isOffline = !isOnline
@@ -174,45 +175,71 @@ export function PosShell({
 
       {/* 3 colonnes POS (offset topbar 48px) */}
       <div className="flex flex-1 overflow-hidden" style={{ marginTop: '48px' }}>
-        {/* Colonne gauche — Catégories 200px */}
-        <CategoriesPanel
-          categories={initialCategories}
-          selectedId={selectedCategoryId}
-          onSelect={setSelectedCategoryId}
-          allCount={initialProducts.length}
-        />
+        {/* Colonne gauche — Catégories 200px — desktop uniquement */}
+        <div className="hidden lg:flex flex-col flex-shrink-0 overflow-y-auto">
+          <CategoriesPanel
+            categories={initialCategories}
+            selectedId={selectedCategoryId}
+            onSelect={setSelectedCategoryId}
+            allCount={initialProducts.length}
+          />
+        </div>
 
-        {/* Colonne centre — Produits flex */}
-        <ProductsPanel
-          products={filteredProducts}
-          onAdd={addItem}
-        />
+        {/* Colonne centre — Produits flex — masquée sur mobile si vue ticket */}
+        <div className={`flex-1 min-w-0 overflow-y-auto flex flex-col ${mobileView === 'ticket' ? 'hidden lg:flex' : 'flex'}`}>
+          <ProductsPanel
+            products={filteredProducts}
+            onAdd={(product) => { addItem(product); setMobileView('ticket') }}
+          />
+        </div>
 
-        {/* Colonne droite — Ticket 360px */}
-        <TicketPanel
-          ticket={ticket}
-          onUpdateQuantity={updateQuantity}
-          onRemove={removeItem}
-          onClear={clearTicket}
-          onDiscount={() => setShowDiscount(true)}
-          onPay={() => {
-            if (!session) {
-              if (userRole === 'caissier') {
-                toast.info('Session non ouverte — contactez un responsable pour démarrer la caisse')
+        {/* Colonne droite — Ticket — plein écran mobile si vue ticket, sidebar desktop */}
+        <div className={`${mobileView === 'menu' ? 'hidden lg:flex' : 'flex'} lg:flex flex-col lg:w-[360px] w-full`}>
+          <TicketPanel
+            ticket={ticket}
+            onUpdateQuantity={updateQuantity}
+            onRemove={removeItem}
+            onClear={clearTicket}
+            onDiscount={() => setShowDiscount(true)}
+            onPay={() => {
+              if (!session) {
+                if (userRole === 'caissier') {
+                  toast.info('Session non ouverte — contactez un responsable pour démarrer la caisse')
+                  return
+                }
+                setShowSession(true)
                 return
               }
-              setShowSession(true)
-              return
-            }
-            setShowPayment(true)
-          }}
-          sessionOpen={!!session}
-          linkedCustomer={linkedCustomer}
-          linkedReward={linkedReward}
-          loyaltyDone={loyaltyDone}
-          onLoyaltyTrigger={() => setShowLoyalty(true)}
-          onLoyaltySkip={() => setLoyaltyDone(true)}
-        />
+              setShowPayment(true)
+            }}
+            sessionOpen={!!session}
+            linkedCustomer={linkedCustomer}
+            linkedReward={linkedReward}
+            loyaltyDone={loyaltyDone}
+            onLoyaltyTrigger={() => setShowLoyalty(true)}
+            onLoyaltySkip={() => setLoyaltyDone(true)}
+          />
+        </div>
+      </div>
+
+      {/* Barre de navigation mobile (masquée sur desktop) */}
+      <div className="lg:hidden flex border-t border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+        <button
+          onClick={() => setMobileView('menu')}
+          className={`flex-1 py-3 text-sm font-medium ${mobileView === 'menu' ? 'text-[var(--blue)]' : 'text-[var(--text3)]'}`}
+        >
+          Menu
+        </button>
+        <button
+          onClick={() => setMobileView('ticket')}
+          className={`flex-1 py-3 text-sm font-medium relative ${mobileView === 'ticket' ? 'text-[var(--blue)]' : 'text-[var(--text3)]'}`}
+        >
+          Ticket {ticket.items.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-xs bg-[var(--blue)] text-white">
+              {ticket.items.reduce((s, i) => s + i.quantity, 0)}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Modales */}
