@@ -19,11 +19,19 @@ describe('computeSplitAmounts', () => {
   })
 
   it('absorbe l\'arrondi sur la dernière personne', () => {
-    const items = [item('a', 1, 20), item('b', 1, 20), item('c', 1, 20)]
-    const assignments = new Map([['a', 'P1'], ['b', 'P1'], ['c', 'P2']])
+    // 1€ HT + 3% TVA = 1.03 TTC. Split equally: 0.515 each → not exact cents.
+    // P1 and P2 have equal shares. P1 gets 0.51, P2 (last) absorbs remainder = 0.52.
+    // Total must still be exactly 1.03.
+    const items = [item('a', 1, 3)]
+    const assignments = new Map<string, string | null>([['a', null]])  // unassigned → distributed equally
     const methods = new Map<string, 'card' | 'cash'>([['P1', 'card'], ['P2', 'card']])
     const result = computeSplitAmounts(items, null, 0, assignments, ['P1', 'P2'], methods)
-    expect(result[0].amount + result[1].amount).toBeCloseTo(3.60, 2)
+    // Sum must equal total exactly (not just approximately)
+    expect(result[0].amount + result[1].amount).toBeCloseTo(1.03, 2)
+    // One person gets 0.51, the other 0.52 (last absorbs rounding)
+    const amounts = result.map(p => p.amount).sort((a, b) => a - b)
+    expect(amounts[0]).toBeCloseTo(0.51, 2)
+    expect(amounts[1]).toBeCloseTo(0.52, 2)
   })
 
   it('distribue les articles non assignés équitablement', () => {

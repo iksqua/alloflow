@@ -1,0 +1,87 @@
+<h2>Structure de navigation — Page Paramètres</h2>
+<p class="subtitle">Comment organiser les 4 sections de settings ? L'option choisie définit l'UX globale de la page.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0f172a; border-radius: 8px;">
+      <div style="display:flex; gap:8px; border-bottom: 1px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 12px;">
+        <div style="padding: 5px 12px; background:#1d4ed8; border-radius:6px; color:white; font-size:11px; font-weight:600;">🏢 Établissement</div>
+        <div style="padding: 5px 12px; background:#1e293b; border-radius:6px; color:#94a3b8; font-size:11px;">👥 Équipe</div>
+        <div style="padding: 5px 12px; background:#1e293b; border-radius:6px; color:#94a3b8; font-size:11px;">🖥 Caisse</div>
+        <div style="padding: 5px 12px; background:#1e293b; border-radius:6px; color:#94a3b8; font-size:11px;">📱 CRM</div>
+      </div>
+      <div style="background:#1e293b; border-radius:8px; padding:12px;">
+        <div style="height:8px; background:#263348; border-radius:4px; width:60%; margin-bottom:8px;"></div>
+        <div style="height:8px; background:#263348; border-radius:4px; width:80%; margin-bottom:8px;"></div>
+        <div style="height:8px; background:#263348; border-radius:4px; width:45%;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Tabs horizontaux</h3>
+      <p>4 onglets en haut de page. Navigation classique, contenu unique par onglet. Pattern déjà utilisé dans l'app (CRM analytics).</p>
+      <div class="pros-cons" style="margin-top:10px;">
+        <div class="pros"><h4>Pour</h4><ul><li>Familier, rapide</li><li>Cohérent avec l'existant</li><li>Tout visible d'un coup d'œil</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Peu de place sur mobile</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0f172a; border-radius: 8px;">
+      <div style="display:flex; gap:12px;">
+        <div style="width:130px; flex-shrink:0;">
+          <div style="padding: 8px 10px; background:#1d4ed8; border-radius:6px; color:white; font-size:11px; font-weight:600; margin-bottom:4px;">🏢 Établissement</div>
+          <div style="padding: 8px 10px; color:#94a3b8; font-size:11px; margin-bottom:4px;">👥 Équipe</div>
+          <div style="padding: 8px 10px; color:#94a3b8; font-size:11px; margin-bottom:4px;">🖥 Caisse</div>
+          <div style="padding: 8px 10px; color:#94a3b8; font-size:11px;">📱 CRM</div>
+        </div>
+        <div style="flex:1; background:#1e293b; border-radius:8px; padding:12px;">
+          <div style="height:8px; background:#263348; border-radius:4px; width:70%; margin-bottom:8px;"></div>
+          <div style="height:8px; background:#263348; border-radius:4px; width:90%; margin-bottom:8px;"></div>
+          <div style="height:8px; background:#263348; border-radius:4px; width:55%;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Menu latéral gauche</h3>
+      <p>Sidebar de navigation dédiée à droite du sidebar principal. Pattern type "Settings" d'apps SaaS modernes (Linear, Vercel, Notion).</p>
+      <div class="pros-cons" style="margin-top:10px;">
+        <div class="pros"><h4>Pour</h4><ul><li>Scalable (ajout futur facile)</li><li>Look SaaS premium</li><li>URL par section (/settings/equipe)</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Plus de surface à coder</li><li>Nested layout</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="C" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #0f172a; border-radius: 8px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="background:#1e293b; border-radius:8px; padding:12px; border-left: 3px solid #1d4ed8;">
+          <div style="font-size:11px; font-weight:600; color:#f8fafc; margin-bottom:6px;">🏢 Établissement</div>
+          <div style="height:6px; background:#263348; border-radius:3px; width:70%;"></div>
+        </div>
+        <div style="background:#1e293b; border-radius:8px; padding:12px; border-left: 3px solid #334155;">
+          <div style="font-size:11px; font-weight:600; color:#94a3b8; margin-bottom:6px;">👥 Équipe</div>
+          <div style="height:6px; background:#263348; border-radius:3px; width:50%;"></div>
+        </div>
+        <div style="background:#1e293b; border-radius:8px; padding:12px; border-left: 3px solid #334155;">
+          <div style="font-size:11px; font-weight:600; color:#94a3b8; margin-bottom:6px;">🖥 Caisse</div>
+          <div style="height:6px; background:#263348; border-radius:3px; width:60%;"></div>
+        </div>
+        <div style="background:#1e293b; border-radius:8px; padding:12px; border-left: 3px solid #334155;">
+          <div style="font-size:11px; font-weight:600; color:#94a3b8; margin-bottom:6px;">📱 CRM</div>
+          <div style="height:6px; background:#263348; border-radius:3px; width:40%;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Accordéons sur une page</h3>
+      <p>Toutes les sections sur une seule page longue, chacune expansible/réductible. Pas de navigation entre pages.</p>
+      <div class="pros-cons" style="margin-top:10px;">
+        <div class="pros"><h4>Pour</h4><ul><li>Tout sur une page, pas de navigation</li><li>Simple à implémenter</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Peu scalable</li><li>Difficile si sections longues</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>

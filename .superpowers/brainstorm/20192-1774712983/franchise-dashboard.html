@@ -1,0 +1,126 @@
+<h2>Sprint 10 — Dashboard Franchise Admin</h2>
+<p class="subtitle">Interface du siège franchiseur pour gérer le catalogue et les établissements</p>
+
+<div class="mockup" style="max-width: 900px; margin: 0 auto;">
+  <div class="mockup-header">Alloflow — Dashboard Franchise Admin</div>
+  <div class="mockup-body" style="display: flex; gap: 0; padding: 0; min-height: 520px;">
+
+    <!-- Sidebar -->
+    <div style="width: 180px; flex-shrink: 0; padding: 16px 12px; border-right: 1px solid #2a2a2a; background: #111; display: flex; flex-direction: column; gap: 4px;">
+      <p style="font-size: 10px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.1em; padding: 0 8px; margin-bottom: 8px;">🏢 Allocookie Siège</p>
+      <a style="display: flex; align-items: center; gap-8px; padding: 8px 10px; border-radius: 8px; font-size: 13px; background: #1a2a3a; color: #60a5fa; font-weight: 500; text-decoration: none;">📦 Produits</a>
+      <a style="display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #666; text-decoration: none;">📋 SOPs</a>
+      <a style="display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #666; text-decoration: none;">🍳 Recettes</a>
+      <div style="height: 1px; background: #222; margin: 8px 0;"></div>
+      <a style="display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #666; text-decoration: none;">🏪 Établissements</a>
+    </div>
+
+    <!-- Main content -->
+    <div style="flex: 1; padding: 20px;">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <div>
+          <h3 style="margin: 0; font-size: 16px; color: #f1f1f1;">Produits — Catalogue siège</h3>
+          <p style="margin: 4px 0 0; font-size: 12px; color: #666;">12 produits · visibles dans tous les établissements franchisés</p>
+        </div>
+        <button class="mock-button" style="font-size: 12px; padding: 6px 14px;">+ Nouveau produit</button>
+      </div>
+
+      <!-- Table -->
+      <div style="border: 1px solid #2a2a2a; border-radius: 10px; overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 100px; padding: 8px 14px; background: #1a1a1a; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">
+          <span>Produit</span><span>Prix HT</span><span>TVA</span><span></span>
+        </div>
+        <!-- Row 1 -->
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 100px; padding: 10px 14px; border-top: 1px solid #1f1f1f; align-items: center; background: #131313;">
+          <div>
+            <span style="font-size: 13px; color: #f1f1f1; font-weight: 500;">🍪 Cookie Chocolat</span>
+            <span style="margin-left: 8px; font-size: 10px; background: #1a2a1a; color: #4ade80; padding: 2px 6px; border-radius: 20px; font-weight: 600;">actif</span>
+          </div>
+          <span style="font-size: 13px; color: #ccc;">2,20 €</span>
+          <span style="font-size: 13px; color: #ccc;">10%</span>
+          <div style="display: flex; gap: 6px; justify-content: flex-end;">
+            <button style="font-size: 11px; padding: 3px 10px; background: #1a2a3a; color: #60a5fa; border: 1px solid #1e3a5f; border-radius: 6px; cursor: pointer;">Modifier</button>
+          </div>
+        </div>
+        <!-- Row 2 -->
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 100px; padding: 10px 14px; border-top: 1px solid #1f1f1f; align-items: center; background: #131313;">
+          <div>
+            <span style="font-size: 13px; color: #f1f1f1; font-weight: 500;">☕ Café Espresso</span>
+            <span style="margin-left: 8px; font-size: 10px; background: #1a2a1a; color: #4ade80; padding: 2px 6px; border-radius: 20px; font-weight: 600;">actif</span>
+          </div>
+          <span style="font-size: 13px; color: #ccc;">1,50 €</span>
+          <span style="font-size: 13px; color: #ccc;">10%</span>
+          <div style="display: flex; gap: 6px; justify-content: flex-end;">
+            <button style="font-size: 11px; padding: 3px 10px; background: #1a2a3a; color: #60a5fa; border: 1px solid #1e3a5f; border-radius: 6px; cursor: pointer;">Modifier</button>
+          </div>
+        </div>
+        <!-- Row 3 -->
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 100px; padding: 10px 14px; border-top: 1px solid #1f1f1f; align-items: center; background: #131313;">
+          <div>
+            <span style="font-size: 13px; color: #f1f1f1; font-weight: 500;">🥤 Lait de soja</span>
+            <span style="margin-left: 8px; font-size: 10px; background: #1a1a2a; color: #94a3b8; padding: 2px 6px; border-radius: 20px; font-weight: 600;">brouillon</span>
+          </div>
+          <span style="font-size: 13px; color: #ccc;">0,50 €</span>
+          <span style="font-size: 13px; color: #ccc;">5,5%</span>
+          <div style="display: flex; gap: 6px; justify-content: flex-end;">
+            <button style="font-size: 11px; padding: 3px 10px; background: #1a2a3a; color: #60a5fa; border: 1px solid #1e3a5f; border-radius: 6px; cursor: pointer;">Modifier</button>
+          </div>
+        </div>
+        <div style="padding: 8px 14px; background: #0f0f0f; font-size: 11px; color: #444; text-align: center;">
+          + 9 autres produits
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="max-width: 900px; margin: 24px auto 0;">
+  <div class="mockup">
+    <div class="mockup-header">Vue franchisé — /dashboard/products (Allocookie Paris 11e)</div>
+    <div class="mockup-body" style="padding: 16px;">
+      <p style="font-size: 12px; color: #666; margin: 0 0 12px;">Le franchisé voit ses produits locaux ET les templates du siège dans la même liste</p>
+      <div style="border: 1px solid #2a2a2a; border-radius: 10px; overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 110px; padding: 8px 14px; background: #1a1a1a; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">
+          <span>Produit</span><span>Prix HT</span><span>TVA</span><span></span>
+        </div>
+        <!-- Template row -->
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 110px; padding: 10px 14px; border-top: 1px solid #1f1f1f; align-items: center; background: #131313;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; color: #f1f1f1; font-weight: 500;">🍪 Cookie Chocolat</span>
+            <span style="font-size: 10px; background: #1a2a3a; color: #60a5fa; padding: 2px 7px; border-radius: 20px; font-weight: 600;">🏢 Siège</span>
+          </div>
+          <span style="font-size: 13px; color: #ccc;">2,20 €</span>
+          <span style="font-size: 13px; color: #ccc;">10%</span>
+          <div style="display: flex; justify-content: flex-end;">
+            <button style="font-size: 11px; padding: 3px 10px; background: #2a1a1a; color: #f87171; border: 1px solid #3a1a1a; border-radius: 6px; cursor: pointer;">Masquer</button>
+          </div>
+        </div>
+        <!-- Template row 2 -->
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 110px; padding: 10px 14px; border-top: 1px solid #1f1f1f; align-items: center; background: #131313;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; color: #f1f1f1; font-weight: 500;">☕ Café Espresso</span>
+            <span style="font-size: 10px; background: #1a2a3a; color: #60a5fa; padding: 2px 7px; border-radius: 20px; font-weight: 600;">🏢 Siège</span>
+          </div>
+          <span style="font-size: 13px; color: #ccc;">1,50 €</span>
+          <span style="font-size: 13px; color: #ccc;">10%</span>
+          <div style="display: flex; justify-content: flex-end;">
+            <button style="font-size: 11px; padding: 3px 10px; background: #2a1a1a; color: #f87171; border: 1px solid #3a1a1a; border-radius: 6px; cursor: pointer;">Masquer</button>
+          </div>
+        </div>
+        <!-- Local row -->
+        <div style="display: grid; grid-template-columns: 1fr 80px 80px 110px; padding: 10px 14px; border-top: 1px solid #1f1f1f; align-items: center; background: #131313;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; color: #f1f1f1; font-weight: 500;">🥐 Croissant beurre</span>
+            <span style="font-size: 10px; background: #1a2a1a; color: #4ade80; padding: 2px 6px; border-radius: 20px; font-weight: 600;">Local</span>
+          </div>
+          <span style="font-size: 13px; color: #ccc;">1,80 €</span>
+          <span style="font-size: 13px; color: #ccc;">5,5%</span>
+          <div style="display: flex; gap: 6px; justify-content: flex-end;">
+            <button style="font-size: 11px; padding: 3px 10px; background: #1a2a3a; color: #60a5fa; border: 1px solid #1e3a5f; border-radius: 6px; cursor: pointer;">Modifier</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

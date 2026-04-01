@@ -1,0 +1,133 @@
+<h2>Command Center — Dashboard Franchiseur</h2>
+<p class="subtitle">Ce que tu vois en ouvrant Alloflow le matin. Clique sur le design qui te parle le plus.</p>
+
+<div class="cards">
+
+  <!-- Option A — Vue réseau en blocs -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0; overflow: hidden;">
+      <div style="background: #0d0d0d; padding: 14px; font-size: 11px;">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div>
+            <span style="font-size: 13px; font-weight: 700; color: #f1f1f1;">🍪 Allocookie</span>
+            <span style="font-size: 10px; color: #555; margin-left: 8px;">Réseau · 3 boutiques</span>
+          </div>
+          <span style="font-size: 10px; color: #555;">Lun. 28 mars 2026</span>
+        </div>
+        <!-- KPI row -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;">
+          <div style="background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 9px; color: #555; margin-bottom: 4px; text-transform: uppercase;">CA Hier</div>
+            <div style="font-size: 16px; font-weight: 700; color: #f1f1f1;">2 847 €</div>
+            <div style="font-size: 9px; color: #4ade80;">↑ +12% vs lun. dernier</div>
+          </div>
+          <div style="background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 9px; color: #555; margin-bottom: 4px; text-transform: uppercase;">CA Semaine</div>
+            <div style="font-size: 16px; font-weight: 700; color: #f1f1f1;">18 420 €</div>
+            <div style="font-size: 9px; color: #4ade80;">↑ +8%</div>
+          </div>
+          <div style="background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 9px; color: #555; margin-bottom: 4px; text-transform: uppercase;">Clients réseau</div>
+            <div style="font-size: 16px; font-weight: 700; color: #f1f1f1;">1 284</div>
+            <div style="font-size: 9px; color: #60a5fa;">+23 cette semaine</div>
+          </div>
+          <div style="background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 9px; color: #555; margin-bottom: 4px; text-transform: uppercase;">Alertes</div>
+            <div style="font-size: 16px; font-weight: 700; color: #f87171;">2</div>
+            <div style="font-size: 9px; color: #f87171;">Stock bas · Lyon</div>
+          </div>
+        </div>
+        <!-- Per boutique -->
+        <div style="font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.08em;">Performance par boutique — hier</div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: #141414; border-radius: 6px; padding: 7px 10px;">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: #4ade80; flex-shrink: 0;"></div>
+            <span style="flex: 1; color: #ccc;">Paris 11e</span>
+            <div style="width: 80px; background: #1a1a1a; border-radius: 3px; height: 4px; overflow: hidden;">
+              <div style="width: 75%; height: 100%; background: #60a5fa; border-radius: 3px;"></div>
+            </div>
+            <span style="color: #f1f1f1; font-weight: 600; width: 55px; text-align: right;">1 240 €</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #141414; border-radius: 6px; padding: 7px 10px;">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: #4ade80; flex-shrink: 0;"></div>
+            <span style="flex: 1; color: #ccc;">Lyon Confluence</span>
+            <div style="width: 80px; background: #1a1a1a; border-radius: 3px; height: 4px; overflow: hidden;">
+              <div style="width: 55%; height: 100%; background: #60a5fa; border-radius: 3px;"></div>
+            </div>
+            <span style="color: #f1f1f1; font-weight: 600; width: 55px; text-align: right;">907 €</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #141414; border-radius: 6px; padding: 7px 10px;">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: #4ade80; flex-shrink: 0;"></div>
+            <span style="flex: 1; color: #ccc;">Labo Central</span>
+            <div style="width: 80px; background: #1a1a1a; border-radius: 3px; height: 4px; overflow: hidden;">
+              <div style="width: 35%; height: 100%; background: #a78bfa; border-radius: 3px;"></div>
+            </div>
+            <span style="color: #f1f1f1; font-weight: 600; width: 55px; text-align: right;">700 €</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Vue réseau synthétique</h3>
+      <p>KPIs consolidés en haut, performance comparée par boutique en bas. Dense, tout visible d'un coup.</p>
+    </div>
+  </div>
+
+  <!-- Option B — Cartes boutiques -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0; overflow: hidden;">
+      <div style="background: #0d0d0d; padding: 14px; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 13px; font-weight: 700; color: #f1f1f1;">🍪 Allocookie — Réseau</span>
+          <span style="font-size: 10px; background: #1a2a1a; color: #4ade80; padding: 2px 8px; border-radius: 20px;">3 boutiques actives</span>
+        </div>
+        <!-- Total bar -->
+        <div style="background: #141414; border: 1px solid #1a2a3a; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 9px; color: #555; text-transform: uppercase;">CA total réseau aujourd'hui</div>
+            <div style="font-size: 20px; font-weight: 800; color: #60a5fa;">2 847 €</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 9px; color: #555; text-transform: uppercase;">Cette semaine</div>
+            <div style="font-size: 14px; font-weight: 700; color: #f1f1f1;">18 420 €</div>
+          </div>
+        </div>
+        <!-- Boutique cards -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+          <div style="background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 600; color: #f1f1f1;">Paris 11e</span>
+              <span style="font-size: 9px; background: #1a2a1a; color: #4ade80; padding: 1px 6px; border-radius: 10px;">● Ouvert</span>
+            </div>
+            <div style="font-size: 18px; font-weight: 700; color: #f1f1f1; margin-bottom: 2px;">1 240 €</div>
+            <div style="font-size: 9px; color: #4ade80;">↑ +15% vs hier</div>
+          </div>
+          <div style="background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 600; color: #f1f1f1;">Lyon Confluence</span>
+              <span style="font-size: 9px; background: #2a1a1a; color: #f87171; padding: 1px 6px; border-radius: 10px;">⚠ Stock bas</span>
+            </div>
+            <div style="font-size: 18px; font-weight: 700; color: #f1f1f1; margin-bottom: 2px;">907 €</div>
+            <div style="font-size: 9px; color: #f87171;">↓ -3% vs hier</div>
+          </div>
+        </div>
+        <div style="background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 11px; font-weight: 600; color: #f1f1f1;">Labo Central</span>
+            <span style="font-size: 9px; color: #a78bfa; margin-left: 6px;">Production</span>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 14px; font-weight: 700; color: #f1f1f1;">700 €</div>
+            <div style="font-size: 9px; color: #4ade80;">↑ +5%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Cartes par boutique</h3>
+      <p>Chaque boutique a sa propre carte avec son statut. Le CA réseau total est mis en avant. Alertes visibles directement sur la carte.</p>
+    </div>
+  </div>
+
+</div>
