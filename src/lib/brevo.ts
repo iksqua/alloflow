@@ -31,7 +31,7 @@ export async function sendBrevoSms(params: {
       sender:    params.sender,
       recipient: params.recipient,
       content:   params.content,
-      type:      'marketing',
+      type:      'transactional',
     }),
   })
 

@@ -33,6 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
   if (!order) return NextResponse.json({ error: 'order_not_found' }, { status: 404 })
   if (order.status !== 'paid') return NextResponse.json({ error: 'order_not_paid' }, { status: 422 })
+  if (order.total_ttc == null) return NextResponse.json({ error: 'order_total_missing' }, { status: 422 })
 
   const { data: estab } = await supabase
     .from('establishments')
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
   if (!estab) return NextResponse.json({ error: 'establishment_not_found' }, { status: 500 })
 
-  const content = `${estab.name} — Votre reçu : https://alloflow.fr/receipt/${orderId} — Total : ${order.total_ttc.toFixed(2)} €`
+  const content = `${estab.name} — Votre reçu : https://alloflow.fr/receipt/${orderId} — Total : ${order.total_ttc.toFixed(2).replace('.', ',')} €`
   const sender = estab.brevo_sender_name ?? 'Alloflow'
 
   try {
