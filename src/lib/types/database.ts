@@ -18,9 +18,9 @@ export interface Database {
         ]
       }
       establishments: {
-        Row: { id: string; name: string; address: string | null; org_id: string; created_at: string; siret: string | null; receipt_footer: string }
-        Insert: { id?: string; name: string; address?: string | null; org_id: string; created_at?: string; siret?: string | null; receipt_footer?: string }
-        Update: { id?: string; name?: string; address?: string | null; org_id?: string; created_at?: string; siret?: string | null; receipt_footer?: string }
+        Row: { id: string; name: string; address: string | null; org_id: string; created_at: string; siret: string | null; receipt_footer: string | null }
+        Insert: { id?: string; name: string; address?: string | null; org_id: string; created_at?: string; siret?: string | null; receipt_footer?: string | null }
+        Update: { id?: string; name?: string; address?: string | null; org_id?: string; created_at?: string; siret?: string | null; receipt_footer?: string | null }
         Relationships: [
           { foreignKeyName: "establishments_org_id_fkey"; columns: ["org_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] }
         ]

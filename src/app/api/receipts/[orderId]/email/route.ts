@@ -6,10 +6,14 @@ import { z } from 'zod'
 
 const emailSchema = z.object({ email: z.string().email() })
 
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function buildReceiptHtml(order: {
   created_at: string
   total_ttc: number
-  items: Array<{ product_name: string; emoji: string | null; quantity: number; unit_price: number; tva_rate: number }>
+  items: Array<{ product_name: string; emoji: string | null; quantity: number; unit_price: number; tva_rate: number; line_total: number }>
 }, establishment: { name: string; address: string | null; siret: string | null; receipt_footer: string | null }): string {
   const dateStr = new Intl.DateTimeFormat('fr-FR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -17,9 +21,9 @@ function buildReceiptHtml(order: {
   }).format(new Date(order.created_at))
 
   const itemRows = order.items.map(i => {
-    const ttcLine = i.unit_price * (1 + i.tva_rate / 100) * i.quantity
+    const ttcLine = i.line_total  // Use stored authoritative value
     return `<tr>
-      <td style="padding:4px 8px">${i.emoji ?? ''} ${i.product_name}</td>
+      <td style="padding:4px 8px">${i.emoji ?? ''} ${esc(i.product_name)}</td>
       <td style="padding:4px 8px;text-align:right">×${i.quantity}</td>
       <td style="padding:4px 8px;text-align:right">${ttcLine.toFixed(2)} €</td>
     </tr>`
@@ -27,9 +31,9 @@ function buildReceiptHtml(order: {
 
   return `<!DOCTYPE html><html lang="fr"><body style="font-family:sans-serif;background:#f8fafc;padding:24px;color:#1e293b">
   <div style="max-width:480px;margin:0 auto;background:white;border-radius:12px;padding:24px;border:1px solid #e2e8f0">
-    <h1 style="font-size:20px;font-weight:700;margin-bottom:4px">${establishment.name}</h1>
-    ${establishment.address ? `<p style="font-size:12px;color:#64748b;margin:0">${establishment.address}</p>` : ''}
-    ${establishment.siret ? `<p style="font-size:12px;color:#64748b;margin:0">SIRET : ${establishment.siret}</p>` : ''}
+    <h1 style="font-size:20px;font-weight:700;margin-bottom:4px">${esc(establishment.name)}</h1>
+    ${establishment.address ? `<p style="font-size:12px;color:#64748b;margin:0">${esc(establishment.address)}</p>` : ''}
+    ${establishment.siret ? `<p style="font-size:12px;color:#64748b;margin:0">SIRET : ${esc(establishment.siret)}</p>` : ''}
     <p style="font-size:12px;color:#64748b;margin:8px 0 16px">Le ${dateStr}</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <thead><tr style="border-bottom:1px solid #e2e8f0">
@@ -43,7 +47,7 @@ function buildReceiptHtml(order: {
       <span style="font-size:18px;font-weight:700">Total TTC : ${order.total_ttc.toFixed(2)} €</span>
     </div>
     <p style="font-size:11px;color:#94a3b8;text-align:center;margin-top:20px">
-      ${establishment.receipt_footer ?? 'Merci de votre visite !'}
+      ${esc(establishment.receipt_footer ?? 'Merci de votre visite !')}
     </p>
   </div>
   </body></html>`
@@ -64,7 +68,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
   const { data: order } = await supabase
     .from('orders')
-    .select('created_at, total_ttc, status, order_items(product_name, emoji, quantity, unit_price, tva_rate)')
+    .select('created_at, total_ttc, status, order_items(product_name, emoji, quantity, unit_price, tva_rate, line_total)')
     .eq('id', orderId)
     .eq('establishment_id', profile.establishment_id)
     .single()
@@ -81,10 +85,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   if (!estab) return NextResponse.json({ error: 'establishment_not_found' }, { status: 500 })
 
   try {
-    const items = (order.order_items ?? []) as Array<{ product_name: string; emoji: string | null; quantity: number; unit_price: number; tva_rate: number }>
+    const items = (order.order_items ?? []) as Array<{ product_name: string; emoji: string | null; quantity: number; unit_price: number; tva_rate: number; line_total: number }>
     const htmlContent = buildReceiptHtml(
       { created_at: order.created_at, total_ttc: order.total_ttc, items },
-      estab as { name: string; address: string | null; siret: string | null; receipt_footer: string | null }
+      estab
     )
     await sendBrevoEmail({
       to:      { email: parsed.data.email },
