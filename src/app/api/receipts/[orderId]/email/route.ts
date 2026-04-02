@@ -1,11 +1,53 @@
 // src/app/api/receipts/[orderId]/email/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendBrevoEmail } from '@/lib/brevo'
 import { z } from 'zod'
 
-const emailSchema = z.object({
-  email: z.string().email(),
-})
+const emailSchema = z.object({ email: z.string().email() })
+
+function buildReceiptHtml(order: {
+  created_at: string
+  total_ttc: number
+  items: Array<{ product_name: string; emoji: string | null; quantity: number; unit_price: number; tva_rate: number }>
+}, establishment: { name: string; address: string | null; siret: string | null; receipt_footer: string | null }): string {
+  const dateStr = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }).format(new Date(order.created_at))
+
+  const itemRows = order.items.map(i => {
+    const ttcLine = i.unit_price * (1 + i.tva_rate / 100) * i.quantity
+    return `<tr>
+      <td style="padding:4px 8px">${i.emoji ?? ''} ${i.product_name}</td>
+      <td style="padding:4px 8px;text-align:right">×${i.quantity}</td>
+      <td style="padding:4px 8px;text-align:right">${ttcLine.toFixed(2)} €</td>
+    </tr>`
+  }).join('')
+
+  return `<!DOCTYPE html><html lang="fr"><body style="font-family:sans-serif;background:#f8fafc;padding:24px;color:#1e293b">
+  <div style="max-width:480px;margin:0 auto;background:white;border-radius:12px;padding:24px;border:1px solid #e2e8f0">
+    <h1 style="font-size:20px;font-weight:700;margin-bottom:4px">${establishment.name}</h1>
+    ${establishment.address ? `<p style="font-size:12px;color:#64748b;margin:0">${establishment.address}</p>` : ''}
+    ${establishment.siret ? `<p style="font-size:12px;color:#64748b;margin:0">SIRET : ${establishment.siret}</p>` : ''}
+    <p style="font-size:12px;color:#64748b;margin:8px 0 16px">Le ${dateStr}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead><tr style="border-bottom:1px solid #e2e8f0">
+        <th style="padding:4px 8px;text-align:left">Article</th>
+        <th style="padding:4px 8px;text-align:right">Qté</th>
+        <th style="padding:4px 8px;text-align:right">Prix TTC</th>
+      </tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <div style="border-top:2px solid #e2e8f0;margin-top:12px;padding-top:12px;text-align:right">
+      <span style="font-size:18px;font-weight:700">Total TTC : ${order.total_ttc.toFixed(2)} €</span>
+    </div>
+    <p style="font-size:11px;color:#94a3b8;text-align:center;margin-top:20px">
+      ${establishment.receipt_footer ?? 'Merci de votre visite !'}
+    </p>
+  </div>
+  </body></html>`
+}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
   const supabase = await createClient()
@@ -20,10 +62,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Establishment not found' }, { status: 400 })
 
-  // Vérifier que la commande appartient à l'établissement et est payée
   const { data: order } = await supabase
     .from('orders')
-    .select('status')
+    .select('created_at, total_ttc, status, order_items(product_name, emoji, quantity, unit_price, tva_rate)')
     .eq('id', orderId)
     .eq('establishment_id', profile.establishment_id)
     .single()
@@ -31,13 +72,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   if (!order) return NextResponse.json({ error: 'order_not_found' }, { status: 404 })
   if (order.status !== 'paid') return NextResponse.json({ error: 'order_not_paid' }, { status: 422 })
 
-  // Check if email sending is configured (Brevo / Resend / SMTP)
-  const brevoKey = process.env.BREVO_API_KEY
-  if (!brevoKey) {
-    return NextResponse.json({ success: false, unavailable: true, reason: 'email_not_configured' }, { status: 501 })
-  }
+  const { data: estab } = await supabase
+    .from('establishments')
+    .select('name, address, siret, receipt_footer')
+    .eq('id', profile.establishment_id)
+    .single()
 
-  // TODO V2 : intégration Brevo transactional email
-  console.info(`[Reçu email] Commande ${orderId} → ${parsed.data.email}`)
-  return NextResponse.json({ success: true, email: parsed.data.email })
+  if (!estab) return NextResponse.json({ error: 'establishment_not_found' }, { status: 500 })
+
+  try {
+    const items = (order.order_items ?? []) as Array<{ product_name: string; emoji: string | null; quantity: number; unit_price: number; tva_rate: number }>
+    const htmlContent = buildReceiptHtml(
+      { created_at: order.created_at, total_ttc: order.total_ttc, items },
+      estab as { name: string; address: string | null; siret: string | null; receipt_footer: string | null }
+    )
+    await sendBrevoEmail({
+      to:      { email: parsed.data.email },
+      subject: `Votre reçu — ${estab.name}`,
+      htmlContent,
+    })
+    return NextResponse.json({ sent: true })
+  } catch (err) {
+    console.error('[receipt/email]', err)
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'send_failed' }, { status: 500 })
+  }
 }
