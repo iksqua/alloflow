@@ -10,6 +10,7 @@ type ModalStep = 'method' | 'card' | 'cash' | 'split-assign' | 'split-person' | 
 interface PaymentModalProps {
   ticket: LocalTicket
   session: CashSession | null
+  // cashierId available but derived server-side from auth session
   cashierId: string
   isOffline: boolean
   linkedCustomer: LoyaltyCustomer | null
@@ -118,6 +119,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   const [splitCash, setSplitCash]               = useState('')
   const [splitCashAmounts, setSplitCashAmounts] = useState<number[]>([])  // cash_given per person
   const [splitOrderId, setSplitOrderId]         = useState<string | null>(null)
+  const [splitOrderTotal, setSplitOrderTotal]   = useState(0)
 
   // Confirm state
   const [completedOrder, setCompletedOrder]   = useState<Order | null>(null)
@@ -186,6 +188,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     try {
       const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
       setSplitOrderId(order.id)
+      setSplitOrderTotal(order.total_ttc)
       setCompletedOrder({ ...order, items: [] } as unknown as Order)
       setStep('split-person')
     } catch (err) {
@@ -215,7 +218,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method: 'split',
-            amount: total,
+            amount: splitOrderTotal || total,
             split_payments: splitPersons.map((p, i) => ({
               method: p.method,
               amount: p.amount,
@@ -231,7 +234,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         setIsSubmitting(false)
       }
     }
-  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, total])
+  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitOrderTotal, total])
 
   async function handleTerminate() {
     if (!completedOrder) { onClose(); return }
@@ -285,8 +288,11 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           <h2 className="text-lg font-bold" style={{ color: 'var(--text1)' }}>
             {step === 'confirm' ? 'Paiement enregistré' : 'Encaissement'}
           </h2>
-          {(step === 'method' || step === 'confirm') && (
+          {step === 'method' && (
             <button onClick={onClose} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
+          )}
+          {step === 'confirm' && (
+            <button onClick={handleTerminate} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
           )}
           {step !== 'method' && step !== 'confirm' && (
             <button
@@ -381,14 +387,27 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                   </div>
                 )}
               </div>
+              {/* Keypad shortcuts */}
+              <div className="grid grid-cols-4 gap-2">
+                {[5, 10, 20, 50].map(n => (
+                  <button
+                    key={`+${n}`}
+                    onClick={() => setCashGiven(prev => String((parseFloat(prev || '0') + n).toFixed(2)))}
+                    className="py-2 rounded-xl text-sm font-bold transition-colors"
+                    style={{ background: 'var(--surface2)', color: 'var(--text2)' }}
+                  >
+                    +{n}
+                  </button>
+                ))}
+              </div>
               {/* Keypad */}
               <div className="grid grid-cols-3 gap-2">
-                {['1','2','3','4','5','6','7','8','9','+5','0','⌫'].map(k => (
+                {['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k => (
                   <button
                     key={k}
                     onClick={() => {
                       if (k === '⌫') { setCashGiven(prev => prev.slice(0, -1)); return }
-                      if (k === '+5') { setCashGiven(prev => String((parseFloat(prev || '0') + 5).toFixed(2))); return }
+                      if (k === '.') { setCashGiven(prev => prev.includes('.') ? prev : prev + '.'); return }
                       setCashGiven(prev => (prev === '0' ? k : prev + k))
                     }}
                     className="py-4 rounded-xl text-base font-bold transition-colors"
@@ -468,13 +487,26 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                       </div>
                     )}
                   </div>
+                  {/* Split keypad shortcuts */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {[5, 10, 20, 50].map(n => (
+                      <button
+                        key={`+${n}`}
+                        onClick={() => setSplitCash(prev => String((parseFloat(prev || '0') + n).toFixed(2)))}
+                        className="py-2 rounded-xl text-sm font-bold"
+                        style={{ background: 'var(--surface2)', color: 'var(--text2)' }}
+                      >
+                        +{n}
+                      </button>
+                    ))}
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
-                    {['1','2','3','4','5','6','7','8','9','+5','0','⌫'].map(k => (
+                    {['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k => (
                       <button
                         key={k}
                         onClick={() => {
                           if (k === '⌫') { setSplitCash(prev => prev.slice(0, -1)); return }
-                          if (k === '+5') { setSplitCash(prev => String((parseFloat(prev || '0') + 5).toFixed(2))); return }
+                          if (k === '.') { setSplitCash(prev => prev.includes('.') ? prev : prev + '.'); return }
                           setSplitCash(prev => (prev === '0' ? k : prev + k))
                         }}
                         className="py-4 rounded-xl text-base font-bold"
