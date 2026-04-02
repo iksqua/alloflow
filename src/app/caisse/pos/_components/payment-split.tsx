@@ -13,7 +13,7 @@ export function computeSplitAmounts(
   loyaltyDiscount: number,
   assignments: Map<string, string | null>,
   personLabels: string[],
-  personMethods: Map<string, 'card' | 'cash'>
+  personMethods: Map<string, 'card' | 'cash' | 'mixed'>
 ): SplitPerson[] {
   if (personLabels.length === 0) return []
 
@@ -87,7 +87,7 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
   const [assignments, setAssignments] = useState<Map<string, string | null>>(
     () => new Map(items.map(i => [i.productId, null]))
   )
-  const [methods, setMethods] = useState<Map<string, 'card' | 'cash'>>(
+  const [methods, setMethods] = useState<Map<string, 'card' | 'cash' | 'mixed'>>(
     () => new Map(persons.map(p => [p, 'card' as const]))
   )
 
@@ -95,7 +95,7 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
     if (persons.length >= 10) return
     const label = `P${persons.length + 1}`
     setPersons(prev => [...prev, label])
-    setMethods(prev => new Map([...prev, [label, 'card']]))
+    setMethods(prev => new Map([...prev, [label, 'card' as const]]))
   }
 
   function cycleAssignment(productId: string) {
@@ -107,8 +107,12 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
     })
   }
 
-  function toggleMethod(label: string) {
-    setMethods(prev => new Map([...prev, [label, prev.get(label) === 'card' ? 'cash' : 'card']]))
+  function cycleMethod(label: string) {
+    setMethods(prev => {
+      const cur = prev.get(label) ?? 'card'
+      const next = cur === 'card' ? 'cash' : cur === 'cash' ? 'mixed' : 'card'
+      return new Map([...prev, [label, next]])
+    })
   }
 
   const splitPersons = computeSplitAmounts(items, discount, loyaltyDiscount, assignments, persons, methods)
@@ -181,26 +185,19 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
             <span className="flex-1 text-base font-bold" style={{ color: 'var(--text1)' }}>
               {p.amount.toFixed(2).replace('.', ',')} €
             </span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => p.method === 'cash' && toggleMethod(p.label)}
-                className="text-xs font-semibold px-2.5 py-1 rounded-lg transition-all"
-                style={p.method === 'card'
+            <button
+              onClick={() => cycleMethod(p.label)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
+              style={
+                p.method === 'card'
                   ? { background: '#1d4ed8', color: 'white' }
-                  : { background: 'var(--surface)', color: 'var(--text4)', border: '1px solid var(--border)' }}
-              >
-                💳 CB
-              </button>
-              <button
-                onClick={() => p.method === 'card' && toggleMethod(p.label)}
-                className="text-xs font-semibold px-2.5 py-1 rounded-lg transition-all"
-                style={p.method === 'cash'
-                  ? { background: '#166534', color: '#4ade80' }
-                  : { background: 'var(--surface)', color: 'var(--text4)', border: '1px solid var(--border)' }}
-              >
-                💵 Espèces
-              </button>
-            </div>
+                  : p.method === 'cash'
+                    ? { background: '#166534', color: '#4ade80' }
+                    : { background: '#78350f', color: '#fbbf24' }
+              }
+            >
+              {p.method === 'card' ? '💳 CB' : p.method === 'cash' ? '💵 Espèces' : '💳+💵 Mixte'}
+            </button>
           </div>
         ))}
       </div>

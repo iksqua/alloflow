@@ -18,23 +18,18 @@ export default async function OrdersPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: orders } = await (supabase as unknown as any)
     .from('orders')
-    .select('id, order_number, total_ttc, status, created_at, customer_id, note')
+    .select(`
+      id, order_number, total_ttc, status, created_at, customer_id, note,
+      payments (method, amount)
+    `)
     .eq('establishment_id', profile.establishment_id)
     .in('status', ['paid', 'refunded', 'cancelled'])
     .order('created_at', { ascending: false })
-    .limit(200)
+    .limit(500)
 
   return (
     <OrdersPageClient
-      initialOrders={(orders ?? []) as {
-        id: string
-        order_number: number | null
-        total_ttc: number
-        status: string
-        created_at: string
-        customer_id: string | null
-        note: string | null
-      }[]}
+      initialOrders={(orders ?? []) as Parameters<typeof OrdersPageClient>[0]['initialOrders']}
       userRole={profile.role}
     />
   )

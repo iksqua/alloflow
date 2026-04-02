@@ -2,15 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { uuidStr } from '@/lib/validations/uuid'
 
 const createOrderSchema = z.object({
-  session_id:  z.string().uuid().optional(),
-  table_id:    z.string().uuid().optional(),
-  customer_id: z.string().uuid().optional(),
-  reward_id:   z.string().uuid().optional(),
+  session_id:  uuidStr.optional(),
+  table_id:    uuidStr.optional(),
+  customer_id: uuidStr.optional(),
+  reward_id:   uuidStr.optional(),
   reward_discount_amount: z.number().min(0).optional(),
   items: z.array(z.object({
-    product_id:   z.string().uuid(),
+    product_id:   uuidStr,
     product_name: z.string(),
     emoji:        z.string().nullable().optional(),
     unit_price:   z.number().positive(),   // HT
@@ -23,6 +24,8 @@ const createOrderSchema = z.object({
   { message: 'customer_id requis si reward_id est fourni', path: ['customer_id'] }
 )
 
+function r2(x: number) { return Math.round(x * 100) / 100 }
+
 function computeOrderTotals(items: z.infer<typeof createOrderSchema>['items']) {
   let subtotalHt = 0
   let tax55 = 0
@@ -30,9 +33,9 @@ function computeOrderTotals(items: z.infer<typeof createOrderSchema>['items']) {
   let tax20 = 0
 
   const processedItems = items.map((item) => {
-    const lineHt = item.unit_price * item.quantity
-    const lineTax = lineHt * (item.tva_rate / 100)
-    const lineTtc = lineHt + lineTax
+    const lineHt  = r2(item.unit_price * item.quantity)
+    const lineTax = r2(lineHt * (item.tva_rate / 100))
+    const lineTtc = r2(lineHt + lineTax)
 
     subtotalHt += lineHt
     if (item.tva_rate === 5.5) tax55 += lineTax
@@ -42,8 +45,8 @@ function computeOrderTotals(items: z.infer<typeof createOrderSchema>['items']) {
     return { ...item, line_total: lineTtc }
   })
 
-  const totalTtc = subtotalHt + tax55 + tax10 + tax20
-  return { processedItems, subtotalHt, tax55, tax10, tax20, totalTtc }
+  const totalTtc = r2(subtotalHt + tax55 + tax10 + tax20)
+  return { processedItems, subtotalHt: r2(subtotalHt), tax55: r2(tax55), tax10: r2(tax10), tax20: r2(tax20), totalTtc }
 }
 
 export async function POST(req: NextRequest) {

@@ -49,6 +49,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const { method, cash_given, split_payments } = parsed.data
+
+  // Validate split has payments before proceeding
+  if (method === 'split' && (!split_payments || split_payments.length === 0)) {
+    return NextResponse.json({ error: 'split_payments required when method is split' }, { status: 400 })
+  }
+
   // Use the server-stored total_ttc as the authoritative amount (avoids client/server float mismatch)
   const authorizedTotal = order.total_ttc
 

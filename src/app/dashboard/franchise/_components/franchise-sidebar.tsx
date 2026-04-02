@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 const links = [
   { href: '/dashboard/franchise/command-center', label: '📊 Command Center' },
   { href: '/dashboard/franchise/franchises',     label: '🏪 Franchisés' },
+  { href: '/dashboard/franchise/pilotage',       label: '🎛 Pilotage' },
   { href: '/dashboard/franchise/loyalty',        label: '🎁 Fidélité' },
 ]
 

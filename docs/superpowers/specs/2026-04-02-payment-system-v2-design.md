@@ -1,4 +1,4 @@
-# Système de caisse v2 — Design Spec
+ok # Système de caisse v2 — Design Spec
 
 ## Contexte
 

@@ -2,9 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { uuidStr } from '@/lib/validations/uuid'
 
 const addItemSchema = z.object({
-  product_id: z.string().uuid(),
+  product_id: uuidStr,
   product_name: z.string(),
   emoji: z.string().nullable().optional(),
   unit_price: z.number().positive(),

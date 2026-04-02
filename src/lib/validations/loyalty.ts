@@ -1,5 +1,6 @@
 // src/lib/validations/loyalty.ts
 import { z } from 'zod'
+import { uuidStr } from './uuid'
 
 export const createCustomerSchema = z.object({
   first_name:      z.string().min(1).max(100),
@@ -14,9 +15,9 @@ export const createCustomerSchema = z.object({
 })
 
 export const applyRewardSchema = z.object({
-  order_id:    z.string().uuid(),
-  reward_id:   z.string().uuid(),
-  customer_id: z.string().uuid(),
+  order_id:    uuidStr,
+  reward_id:   uuidStr,
+  customer_id: uuidStr,
 })
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>

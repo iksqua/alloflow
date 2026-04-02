@@ -17,28 +17,33 @@ interface TicketPanelProps {
   onLoyaltySkip:    () => void
 }
 
+function r2(x: number) { return Math.round(x * 100) / 100 }
+
 function computeTicketTotals(ticket: LocalTicket) {
   let subtotalHt = 0
   let totalTax = 0
 
   for (const item of ticket.items) {
-    const lineHt = item.unitPriceHt * item.quantity
-    const lineTax = lineHt * (item.tvaRate / 100)
+    const lineHt = r2(item.unitPriceHt * item.quantity)
+    const lineTax = r2(lineHt * (item.tvaRate / 100))
     subtotalHt += lineHt
     totalTax += lineTax
   }
 
+  subtotalHt = r2(subtotalHt)
+  totalTax = r2(totalTax)
+
   let discountAmount = 0
   if (ticket.discount) {
     discountAmount = ticket.discount.type === 'percent'
-      ? subtotalHt * (ticket.discount.value / 100)
+      ? r2(subtotalHt * (ticket.discount.value / 100))
       : ticket.discount.value
   }
 
-  const discountedHt = subtotalHt - discountAmount
+  const discountedHt = r2(subtotalHt - discountAmount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-  const adjustedTax = totalTax * ratio
-  const total = discountedHt + adjustedTax
+  const adjustedTax = r2(totalTax * ratio)
+  const total = r2(discountedHt + adjustedTax)
 
   return { subtotalHt, discountAmount, total }
 }
@@ -99,7 +104,7 @@ export function TicketPanel({
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {ticket.items.map((item) => {
-              const lineTtc = item.unitPriceHt * item.quantity * (1 + item.tvaRate / 100)
+              const lineTtc = r2(item.unitPriceHt * item.quantity * (1 + item.tvaRate / 100))
               return (
                 <div key={item.productId} className="flex items-center gap-3 px-4 py-3">
                   {item.emoji && <span className="text-lg flex-shrink-0">{item.emoji}</span>}

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { uuidStr } from './uuid'
 
 const stockItemFields = z.object({
   name:            z.string().min(1, 'Le nom est requis').max(100),
@@ -34,7 +35,7 @@ export const createPurchaseOrderSchema = z.object({
   requested_delivery_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   notes:                   z.string().max(500).nullable().optional(),
   items: z.array(z.object({
-    stock_item_id:    z.string().uuid(),
+    stock_item_id:    uuidStr,
     quantity_ordered: z.number().min(0.001),
     unit_price:       z.number().min(0),
   })).min(1, 'Au moins un article requis'),
@@ -42,7 +43,7 @@ export const createPurchaseOrderSchema = z.object({
 
 export const receiveDeliverySchema = z.object({
   items: z.array(z.object({
-    purchase_order_item_id: z.string().uuid(),
+    purchase_order_item_id: uuidStr,
     quantity_received:      z.number().min(0),
   })),
 })

@@ -21,7 +21,8 @@ export function InviteModal({ onClose, onSuccess }: Props) {
       })
       if (!res.ok) {
         const d = await res.json()
-        throw new Error(d.error ?? 'Erreur')
+        const msg = typeof d.error === 'string' ? d.error : 'Données invalides'
+        throw new Error(msg)
       }
       onSuccess()
     } catch (e: unknown) {

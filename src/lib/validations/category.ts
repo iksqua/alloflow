@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { uuidStr } from './uuid'
 
 export const createCategorySchema = z.object({
   name: z.string().min(1).max(50),
@@ -10,5 +11,5 @@ export const createCategorySchema = z.object({
 export const updateCategorySchema = createCategorySchema.partial()
 
 export const reorderCategoriesSchema = z.object({
-  order: z.array(z.string().uuid()).min(1),
+  order: z.array(uuidStr).min(1),
 })

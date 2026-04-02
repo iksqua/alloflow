@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { uuidStr } from '@/lib/validations/uuid'
 
 const bulkSchema = z.object({
   action: z.enum(['activate', 'deactivate', 'delete', 'change_category', 'change_tva']),
   ids: z.array(z.string().min(1)).min(1),
-  category_id: z.string().uuid().optional(),
+  category_id: uuidStr.optional(),
   tva_rate: z.union([z.literal(5.5), z.literal(10), z.literal(20)]).optional(),
 })
 

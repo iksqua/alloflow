@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase
-    .from('profiles').select('role, establishment_id').eq('id', user.id).single()
+    .from('profiles').select('role, establishment_id, org_id').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
   if (!['admin', 'super_admin'].includes(profile.role as string))
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       first_name:       body.data.first_name,
       role:             body.data.role,
       establishment_id: profile.establishment_id,
+      org_id:           profile.org_id ?? null,
     },
   })
 
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
         id:               invitedUser!.id,
         role:             body.data.role,
         establishment_id: profile.establishment_id,
+        org_id:           profile.org_id ?? null,
         first_name:       body.data.first_name,
       },
       { onConflict: 'id' }

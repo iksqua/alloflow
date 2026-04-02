@@ -1,8 +1,9 @@
 // src/lib/validations/recipe.ts
 import { z } from 'zod'
+import { uuidStr } from './uuid'
 
 export const ingredientSchema = z.object({
-  id:         z.string().uuid().optional(),   // optional — omit for new ingredients
+  id:         uuidStr.optional(),   // optional — omit for new ingredients
   name:       z.string().min(1).max(100),
   quantity:   z.number().min(0.001, 'La quantité doit être supérieure à 0'),
   unit:       z.string().min(1).max(20),

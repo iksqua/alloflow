@@ -1,14 +1,15 @@
 // src/app/api/communications/send/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { uuidStr } from '@/lib/validations/uuid'
 import { createClient } from '@/lib/supabase/server'
 import { sendBrevoSms } from '@/lib/brevo'
 
 const sendSchema = z.object({
-  customerId:   z.string().uuid(),
+  customerId:   uuidStr,
   channel:      z.enum(['sms', 'whatsapp', 'email']),
   message:      z.string().min(1).max(160),
-  campaignId:   z.string().uuid().optional(),
+  campaignId:   uuidStr.optional(),
 })
 
 export async function POST(req: NextRequest) {

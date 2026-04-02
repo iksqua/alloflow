@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { PaymentSplit } from './payment-split'
 import type { LocalTicket, CashSession, Order, LoyaltyCustomer, LoyaltyReward, SplitPerson } from '../types'
 
-type ModalStep = 'method' | 'card' | 'cash' | 'split-assign' | 'split-person' | 'confirm'
+type ModalStep = 'method' | 'card' | 'cash' | 'mixed' | 'split-assign' | 'split-person' | 'confirm'
 
 interface PaymentModalProps {
   ticket: LocalTicket
@@ -21,32 +21,36 @@ interface PaymentModalProps {
 
 // ─── Pure helpers ────────────────────────────────────────────────────────────
 
+function r2(x: number) { return Math.round(x * 100) / 100 }
+
 export function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   let subtotalHt = 0
   let totalTax = 0
   for (const item of ticket.items) {
-    const lineHt = item.unitPriceHt * item.quantity
+    const lineHt = r2(item.unitPriceHt * item.quantity)
     subtotalHt += lineHt
-    totalTax += lineHt * (item.tvaRate / 100)
+    totalTax += r2(lineHt * (item.tvaRate / 100))
   }
+  subtotalHt = r2(subtotalHt)
+  totalTax = r2(totalTax)
   let discount = 0
   if (ticket.discount) {
     discount = ticket.discount.type === 'percent'
-      ? subtotalHt * (ticket.discount.value / 100)
+      ? r2(subtotalHt * (ticket.discount.value / 100))
       : ticket.discount.value
   }
-  const discountedHt = subtotalHt - discount
+  const discountedHt = r2(subtotalHt - discount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-  return discountedHt + totalTax * ratio
+  return r2(discountedHt + totalTax * ratio)
 }
 
 export function computeTotal(ticket: LocalTicket, reward: LoyaltyReward | null): number {
   const base = computeTotalBeforeLoyalty(ticket)
   if (!reward) return base
   const loyaltyDiscount = (reward.type === 'percent' || reward.type === 'reduction_pct')
-    ? Math.round(base * (reward.value / 100) * 100) / 100
+    ? r2(base * (reward.value / 100))
     : reward.value
-  return Math.max(0, base - loyaltyDiscount)
+  return r2(Math.max(0, base - loyaltyDiscount))
 }
 
 function loyaltyDiscountEur(ticket: LocalTicket, reward: LoyaltyReward | null): number {
@@ -113,11 +117,15 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   // Cash state
   const [cashGiven, setCashGiven] = useState('')
 
+  // Mixed state (espèces + CB)
+  const [mixedCash, setMixedCash] = useState('')
+
   // Split state
   const [splitPersons, setSplitPersons]         = useState<SplitPerson[]>([])
   const [splitIndex, setSplitIndex]             = useState(0)
-  const [splitCash, setSplitCash]               = useState('')
-  const [splitCashAmounts, setSplitCashAmounts] = useState<number[]>([])  // cash_given per person
+  const [splitCash, setSplitCash]                   = useState('')
+  const [splitCashAmounts, setSplitCashAmounts]     = useState<number[]>([])  // cash_given per cash person
+  const [splitMixedParts, setSplitMixedParts]       = useState<number[]>([])  // cash portion per mixed person
   const [splitOrderId, setSplitOrderId]         = useState<string | null>(null)
   const [splitOrderTotal, setSplitOrderTotal]   = useState(0)
 
@@ -178,11 +186,44 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     }
   }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt, cashGiven, total])
 
+  const handleMixedConfirm = useCallback(async () => {
+    const cashPart = parseFloat(mixedCash.replace(',', '.'))
+    if (isNaN(cashPart) || cashPart <= 0 || cashPart >= total - 0.009) {
+      toast.error('La part espèces doit être inférieure au total')
+      return
+    }
+    const cardPart = Math.round((total - cashPart) * 100) / 100
+    setIsSubmitting(true)
+    try {
+      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const payRes = await fetch(`/api/orders/${order.id}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: 'split',
+          amount: order.total_ttc,
+          split_payments: [
+            { method: 'cash', amount: cashPart, cash_given: cashPart },
+            { method: 'card', amount: cardPart },
+          ],
+        }),
+      })
+      if (!payRes.ok) throw new Error(`Erreur paiement mixte (${payRes.status})`)
+      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setStep('confirm')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [mixedCash, total, ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
+
   const handleSplitAssignConfirm = useCallback(async (persons: SplitPerson[]) => {
     setSplitPersons(persons)
     setSplitIndex(0)
     setSplitCash('')
     setSplitCashAmounts(new Array(persons.length).fill(0))
+    setSplitMixedParts(new Array(persons.length).fill(0))
     // Create order before sequencing through persons
     setIsSubmitting(true)
     try {
@@ -198,32 +239,45 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     }
   }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
 
-  const handleSplitPersonNext = useCallback(async (cashAmount?: number) => {
-    // Record cash_given for current person
+  const handleSplitPersonNext = useCallback(async (cashAmount?: number, mixedCashPart?: number) => {
     const updatedCashAmounts = [...splitCashAmounts]
     if (cashAmount !== undefined) updatedCashAmounts[splitIndex] = cashAmount
     setSplitCashAmounts(updatedCashAmounts)
+
+    const updatedMixedParts = [...splitMixedParts]
+    if (mixedCashPart !== undefined) updatedMixedParts[splitIndex] = mixedCashPart
+    setSplitMixedParts(updatedMixedParts)
 
     const next = splitIndex + 1
     if (next < splitPersons.length) {
       setSplitIndex(next)
       setSplitCash('')
     } else {
-      // All persons confirmed — call pay API with per-person cash amounts
       if (!splitOrderId) { toast.error('Erreur interne — réessayez'); return }
       setIsSubmitting(true)
       try {
+        // Flatten all persons into individual payments (mixed = 2 entries)
+        const splitPayments: Array<{ method: 'card' | 'cash'; amount: number; cash_given?: number }> = []
+        for (let i = 0; i < splitPersons.length; i++) {
+          const p = splitPersons[i]
+          if (p.method === 'mixed') {
+            const cashPart = updatedMixedParts[i]
+            const cardPart = Math.round((p.amount - cashPart) * 100) / 100
+            splitPayments.push({ method: 'cash', amount: cashPart, cash_given: cashPart })
+            splitPayments.push({ method: 'card', amount: cardPart })
+          } else if (p.method === 'cash') {
+            splitPayments.push({ method: 'cash', amount: p.amount, cash_given: updatedCashAmounts[i] || p.amount })
+          } else {
+            splitPayments.push({ method: 'card', amount: p.amount })
+          }
+        }
         const payRes = await fetch(`/api/orders/${splitOrderId}/pay`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method: 'split',
             amount: splitOrderTotal || total,
-            split_payments: splitPersons.map((p, i) => ({
-              method: p.method,
-              amount: p.amount,
-              ...(p.method === 'cash' ? { cash_given: updatedCashAmounts[i] || p.amount } : {}),
-            })),
+            split_payments: splitPayments,
           }),
         })
         if (!payRes.ok) throw new Error(`Erreur enregistrement paiement (${payRes.status})`)
@@ -234,7 +288,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         setIsSubmitting(false)
       }
     }
-  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitOrderTotal, total])
+  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitMixedParts, splitOrderTotal, total])
 
   async function handleTerminate() {
     if (!completedOrder) { onClose(); return }
@@ -317,24 +371,28 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                 </div>
                 <p className="text-sm mt-1" style={{ color: 'var(--text4)' }}>Total TTC à encaisser</p>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {(['card', 'cash', 'split'] as const).map(m => {
+              <div className="grid grid-cols-2 gap-3">
+                {(['card', 'cash', 'mixed', 'split'] as const).map(m => {
                   const disabled = isOffline && m !== 'cash'
-                  const labels = { card: 'Carte', cash: 'Espèces', split: 'Split' }
-                  const icons  = { card: '💳', cash: '💵', split: '👥' }
+                  const labels = { card: 'Carte', cash: 'Espèces', mixed: 'Mixte', split: 'Multi-personnes' }
+                  const icons  = { card: '💳', cash: '💵', mixed: '💳+💵', split: '👥' }
+                  const descs  = { card: 'Paiement CB', cash: 'Paiement espèces', mixed: 'Espèces + CB', split: 'Diviser la note' }
+                  const nextStep: Record<typeof m, ModalStep> = { card: 'card', cash: 'cash', mixed: 'mixed', split: 'split-assign' }
                   return (
                     <button
                       key={m}
-                      onClick={() => !disabled && setStep(m === 'split' ? 'split-assign' : m)}
+                      onClick={() => { if (!disabled) { setMixedCash(''); setStep(nextStep[m]) } }}
                       disabled={disabled}
-                      className="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 font-semibold transition-all"
+                      className="flex flex-col items-center gap-1 py-4 rounded-2xl border-2 font-semibold transition-all"
                       style={disabled
                         ? { opacity: 0.35, cursor: 'not-allowed', borderColor: 'var(--border)', color: 'var(--text4)' }
                         : { borderColor: 'var(--border)', color: 'var(--text2)' }}
                     >
-                      <span className="text-3xl">{icons[m]}</span>
-                      <span className="text-sm">{labels[m]}</span>
-                      {disabled && <span className="text-[10px]" style={{ color: 'var(--text4)' }}>Hors ligne</span>}
+                      <span className="text-2xl">{icons[m]}</span>
+                      <span className="text-sm font-bold">{labels[m]}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--text4)' }}>
+                        {disabled ? 'Hors ligne' : descs[m]}
+                      </span>
                     </button>
                   )
                 })}
@@ -432,7 +490,79 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
             </>
           )}
 
-          {/* ── Step 2c: Split assign ── */}
+          {/* ── Step 2c: Mixed (espèces + CB) ── */}
+          {step === 'mixed' && (() => {
+            const cashVal  = parseFloat(mixedCash.replace(',', '.'))
+            const cashOk   = !isNaN(cashVal) && cashVal > 0 && cashVal < total - 0.009
+            const cardPart = cashOk ? Math.round((total - cashVal) * 100) / 100 : null
+            return (
+              <>
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                    <span className="text-sm" style={{ color: 'var(--text4)' }}>Total à encaisser</span>
+                    <span className="text-xl font-bold" style={{ color: 'var(--text1)' }}>{total.toFixed(2).replace('.', ',')} €</span>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                    <span className="text-sm" style={{ color: 'var(--text4)' }}>💵 Part espèces</span>
+                    <span className="text-xl font-bold" style={{ color: 'var(--text1)' }}>
+                      {mixedCash ? `${cashVal.toFixed(2).replace('.', ',')} €` : '—'}
+                    </span>
+                  </div>
+                  {cardPart !== null && (
+                    <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--text2)' }}>💳 Reste CB</span>
+                      <span className="text-2xl font-black" style={{ color: '#60a5fa' }}>{cardPart.toFixed(2).replace('.', ',')} €</span>
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[5, 10, 20, 50].map(n => (
+                    <button
+                      key={`+${n}`}
+                      onClick={() => setMixedCash(prev => {
+                        const next = parseFloat(prev || '0') + n
+                        return next >= total ? prev : String(next.toFixed(2))
+                      })}
+                      className="py-2 rounded-xl text-sm font-bold transition-colors"
+                      style={{ background: 'var(--surface2)', color: 'var(--text2)' }}
+                    >
+                      +{n}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k => (
+                    <button
+                      key={k}
+                      onClick={() => {
+                        if (k === '⌫') { setMixedCash(prev => prev.slice(0, -1)); return }
+                        if (k === '.') { setMixedCash(prev => prev.includes('.') ? prev : prev + '.'); return }
+                        setMixedCash(prev => (prev === '0' ? k : prev + k))
+                      }}
+                      className="py-4 rounded-xl text-base font-bold transition-colors"
+                      style={{ background: 'var(--surface2)', color: k === '⌫' ? '#f87171' : 'var(--text1)' }}
+                    >
+                      {k}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={handleMixedConfirm}
+                  disabled={isSubmitting || !cashOk}
+                  className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
+                  style={{ background: 'var(--green)' }}
+                >
+                  {isSubmitting
+                    ? 'Enregistrement…'
+                    : cashOk
+                      ? `Confirmer — ${cashVal.toFixed(2).replace('.', ',')} € espèces + ${cardPart?.toFixed(2).replace('.', ',')} € CB`
+                      : 'Entrez la part espèces'}
+                </button>
+              </>
+            )
+          })()}
+
+          {/* ── Step 2e: Split assign (multi-personnes) ── */}
           {step === 'split-assign' && (
             <PaymentSplit
               items={ticket.items}
@@ -487,7 +617,6 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                       </div>
                     )}
                   </div>
-                  {/* Split keypad shortcuts */}
                   <div className="grid grid-cols-4 gap-2">
                     {[5, 10, 20, 50].map(n => (
                       <button
@@ -526,6 +655,79 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                   </button>
                 </>
               )}
+
+              {currentPerson.method === 'mixed' && (() => {
+                const cashVal  = parseFloat(splitCash.replace(',', '.'))
+                const cashOk   = !isNaN(cashVal) && cashVal > 0 && cashVal < currentPerson.amount - 0.009
+                const cardPart = cashOk ? Math.round((currentPerson.amount - cashVal) * 100) / 100 : null
+                return (
+                  <>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                        <span className="text-sm" style={{ color: 'var(--text4)' }}>{currentPerson.label} — Part totale</span>
+                        <span className="text-xl font-bold" style={{ color: 'var(--text1)' }}>{currentPerson.amount.toFixed(2).replace('.', ',')} €</span>
+                      </div>
+                      <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                        <span className="text-sm" style={{ color: 'var(--text4)' }}>💵 Part espèces</span>
+                        <span className="text-xl font-bold" style={{ color: 'var(--text1)' }}>
+                          {splitCash ? `${cashVal.toFixed(2).replace('.', ',')} €` : '—'}
+                        </span>
+                      </div>
+                      {cardPart !== null && (
+                        <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                          <span className="text-sm font-semibold" style={{ color: 'var(--text2)' }}>💳 Reste CB</span>
+                          <span className="text-2xl font-black" style={{ color: '#60a5fa' }}>{cardPart.toFixed(2).replace('.', ',')} €</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[5, 10, 20, 50].map(n => (
+                        <button
+                          key={`+${n}`}
+                          onClick={() => setSplitCash(prev => {
+                            const next = parseFloat(prev || '0') + n
+                            return next >= currentPerson.amount ? prev : String(next.toFixed(2))
+                          })}
+                          className="py-2 rounded-xl text-sm font-bold"
+                          style={{ background: 'var(--surface2)', color: 'var(--text2)' }}
+                        >
+                          +{n}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k => (
+                        <button
+                          key={k}
+                          onClick={() => {
+                            if (k === '⌫') { setSplitCash(prev => prev.slice(0, -1)); return }
+                            if (k === '.') { setSplitCash(prev => prev.includes('.') ? prev : prev + '.'); return }
+                            setSplitCash(prev => (prev === '0' ? k : prev + k))
+                          }}
+                          className="py-4 rounded-xl text-base font-bold"
+                          style={{ background: 'var(--surface2)', color: k === '⌫' ? '#f87171' : 'var(--text1)' }}
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => handleSplitPersonNext(undefined, cashVal)}
+                      disabled={isSubmitting || !cashOk}
+                      className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
+                      style={{ background: 'var(--green)' }}
+                    >
+                      {isSubmitting
+                        ? 'Enregistrement…'
+                        : cashOk
+                          ? splitIndex < splitPersons.length - 1
+                            ? `${cashVal.toFixed(2).replace('.', ',')} € espèces + ${cardPart?.toFixed(2).replace('.', ',')} € CB — suivant →`
+                            : `${cashVal.toFixed(2).replace('.', ',')} € espèces + ${cardPart?.toFixed(2).replace('.', ',')} € CB — terminer`
+                          : 'Entrez la part espèces'}
+                    </button>
+                  </>
+                )
+              })()}
             </>
           )}
 
