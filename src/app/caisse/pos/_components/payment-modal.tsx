@@ -1,9 +1,11 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+// src/app/caisse/pos/_components/payment-modal.tsx
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import type { LocalTicket, CashSession, Order, PaymentMode, LoyaltyCustomer, LoyaltyReward } from '../types'
+import { PaymentSplit } from './payment-split'
+import type { LocalTicket, CashSession, Order, LoyaltyCustomer, LoyaltyReward, SplitPerson } from '../types'
 
-type TpeStep = 'idle' | 'waiting' | 'pin' | 'approved' | 'refused'
+type ModalStep = 'method' | 'card' | 'cash' | 'split-assign' | 'split-person' | 'confirm'
 
 interface PaymentModalProps {
   ticket: LocalTicket
@@ -16,7 +18,9 @@ interface PaymentModalProps {
   onSuccess: (order: Order) => void
 }
 
-function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
+// ─── Pure helpers ────────────────────────────────────────────────────────────
+
+export function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   let subtotalHt = 0
   let totalTax = 0
   for (const item of ticket.items) {
@@ -35,368 +39,544 @@ function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   return discountedHt + totalTax * ratio
 }
 
-function computeTotal(ticket: LocalTicket, loyaltyReward: LoyaltyReward | null): number {
-  const totalBeforeLoyalty = computeTotalBeforeLoyalty(ticket)
-
-  if (loyaltyReward) {
-    // Loyalty discount is computed on the pre-loyalty total (after other discounts)
-    const loyaltyDiscount = (loyaltyReward.type === 'percent' || loyaltyReward.type === 'reduction_pct')
-      ? Math.round(totalBeforeLoyalty * (loyaltyReward.value / 100) * 100) / 100
-      : loyaltyReward.value
-    return Math.max(0, totalBeforeLoyalty - loyaltyDiscount)
-  }
-  return totalBeforeLoyalty
+export function computeTotal(ticket: LocalTicket, reward: LoyaltyReward | null): number {
+  const base = computeTotalBeforeLoyalty(ticket)
+  if (!reward) return base
+  const loyaltyDiscount = (reward.type === 'percent' || reward.type === 'reduction_pct')
+    ? Math.round(base * (reward.value / 100) * 100) / 100
+    : reward.value
+  return Math.max(0, base - loyaltyDiscount)
 }
+
+function loyaltyDiscountEur(ticket: LocalTicket, reward: LoyaltyReward | null): number {
+  if (!reward) return 0
+  const base = computeTotalBeforeLoyalty(ticket)
+  return (reward.type === 'percent' || reward.type === 'reduction_pct')
+    ? Math.round(base * (reward.value / 100) * 100) / 100
+    : reward.value
+}
+
+// ─── Order creation helper ────────────────────────────────────────────────────
+
+async function createOrder(
+  ticket: LocalTicket,
+  session: CashSession | null,
+  linkedCustomer: LoyaltyCustomer | null,
+  linkedReward: LoyaltyReward | null,
+  loyaltyAmt: number,
+): Promise<{ id: string; total_ttc: number }> {
+  const orderRes = await fetch('/api/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id:             session?.id ?? undefined,
+      table_id:               ticket.tableId ?? undefined,
+      customer_id:            linkedCustomer?.id ?? undefined,
+      reward_id:              linkedReward?.id ?? undefined,
+      reward_discount_amount: loyaltyAmt > 0 ? loyaltyAmt : undefined,
+      items: ticket.items.map(i => ({
+        product_id:   i.productId,
+        product_name: i.productName,
+        emoji:        i.emoji,
+        unit_price:   i.unitPriceHt,
+        tva_rate:     i.tvaRate,
+        quantity:     i.quantity,
+      })),
+    }),
+  })
+  if (!orderRes.ok) {
+    const err = await orderRes.json().catch(() => ({}))
+    throw new Error(`Erreur création commande (${orderRes.status}): ${JSON.stringify(err)}`)
+  }
+  const { order } = await orderRes.json()
+
+  if (ticket.discount) {
+    await fetch(`/api/orders/${order.id}/discounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ticket.discount),
+    })
+  }
+  return order
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCustomer, linkedReward, onClose, onSuccess }: PaymentModalProps) {
   const total = computeTotal(ticket, linkedReward)
-  const [mode, setMode] = useState<PaymentMode>(isOffline ? 'cash' : 'card')
+  const loyaltyAmt = loyaltyDiscountEur(ticket, linkedReward)
+
+  // Always start at 'method' — offline mode disables Carte/Split visually in that step
+  const [step, setStep] = useState<ModalStep>('method')
+
+  // Cash state
   const [cashGiven, setCashGiven] = useState('')
-  const [splitCard, setSplitCard] = useState('')
-  const [isPaying, setIsPaying] = useState(false)
-  const [tpeStep, setTpeStep] = useState<TpeStep>('idle')
-  const waitingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // If we go offline mid-payment, switch to cash
-  useEffect(() => {
-    if (isOffline && mode !== 'cash') setMode('cash')
-  }, [isOffline, mode])
+  // Split state
+  const [splitPersons, setSplitPersons]         = useState<SplitPerson[]>([])
+  const [splitIndex, setSplitIndex]             = useState(0)
+  const [splitCash, setSplitCash]               = useState('')
+  const [splitCashAmounts, setSplitCashAmounts] = useState<number[]>([])  // cash_given per person
+  const [splitOrderId, setSplitOrderId]         = useState<string | null>(null)
 
-  // Cleanup timer on unmount
-  useEffect(() => () => {
-    if (waitingTimerRef.current) clearTimeout(waitingTimerRef.current)
-  }, [])
+  // Confirm state
+  const [completedOrder, setCompletedOrder]   = useState<Order | null>(null)
+  const [receiptChoice, setReceiptChoice]     = useState<'none' | 'email' | 'sms' | 'invoice'>('none')
+  const [receiptContact, setReceiptContact]   = useState(linkedCustomer?.email ?? '')
+  const [companyName, setCompanyName]         = useState('')
+  const [companySiret, setCompanySiret]       = useState('')
 
-  const cashChange = mode === 'cash' && cashGiven
-    ? parseFloat(cashGiven.replace(',', '.')) - total
-    : 0
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function handlePay() {
-    setIsPaying(true)
+  const cashChange = cashGiven ? parseFloat(cashGiven.replace(',', '.')) - total : 0
+  const currentPerson = splitPersons[splitIndex]
+
+  // ── Payment handlers ──────────────────────────────────────────────────────
+
+  const handleCardConfirm = useCallback(async () => {
+    setIsSubmitting(true)
     try {
-      // Loyalty discount must be computed on the pre-loyalty total to avoid double-deduction
-      const totalBeforeLoyalty = computeTotalBeforeLoyalty(ticket)
-      const loyaltyDiscountAmount = linkedReward
-        ? (linkedReward.type === 'percent' || linkedReward.type === 'reduction_pct')
-          ? Math.round(totalBeforeLoyalty * (linkedReward.value / 100) * 100) / 100
-          : linkedReward.value
-        : 0
-
-      const orderRes = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: session?.id ?? undefined,
-          table_id: ticket.tableId ?? undefined,
-          customer_id:            linkedCustomer?.id ?? undefined,
-          reward_id:              linkedReward?.id   ?? undefined,
-          reward_discount_amount: loyaltyDiscountAmount > 0 ? loyaltyDiscountAmount : undefined,
-          items: ticket.items.map((i) => ({
-            product_id: i.productId,
-            product_name: i.productName,
-            emoji: i.emoji,
-            unit_price: i.unitPriceHt,
-            tva_rate: i.tvaRate,
-            quantity: i.quantity,
-          })),
-        }),
-      })
-      if (!orderRes.ok) {
-        const errBody = await orderRes.json().catch(() => ({}))
-        throw new Error(`Order creation failed (${orderRes.status}): ${JSON.stringify(errBody)}`)
-      }
-      const orderData = await orderRes.json()
-      const order = orderData.order
-
-      if (ticket.discount) {
-        await fetch(`/api/orders/${order.id}/discounts`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(ticket.discount),
-        })
-      }
-
-      let payBody: Record<string, unknown>
-      if (mode === 'card') {
-        payBody = { method: 'card', amount: total }
-      } else if (mode === 'cash') {
-        const cashGivenAmount = parseFloat(cashGiven.replace(',', '.'))
-        if (isNaN(cashGivenAmount) || cashGivenAmount < 0) {
-          toast.error('Montant invalide')
-          setIsPaying(false)
-          return
-        }
-        if (cashGivenAmount < total - 0.01) {
-          toast.error(`Montant insuffisant (minimum ${total.toFixed(2)} €)`)
-          setIsPaying(false)
-          return
-        }
-        payBody = { method: 'cash', amount: total, cash_given: cashGivenAmount }
-      } else {
-        const cardAmount = parseFloat(splitCard.replace(',', '.')) || 0
-        if (!cardAmount || isNaN(cardAmount)) {
-          toast.error('Montant invalide')
-          setIsPaying(false)
-          return
-        }
-        const cashAmount = total - cardAmount
-        payBody = {
-          method: 'split',
-          amount: total,
-          split_payments: [
-            { method: 'card', amount: cardAmount },
-            { method: 'cash', amount: cashAmount, cash_given: cashAmount },
-          ],
-        }
-      }
-
+      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payBody),
+        body: JSON.stringify({ method: 'card', amount: order.total_ttc }),
       })
-      if (!payRes.ok) {
-        const errBody = await payRes.json().catch(() => ({}))
-        throw new Error(`Payment failed (${payRes.status}): ${JSON.stringify(errBody)}`)
-      }
-      onSuccess({ ...order, total_ttc: total, items: order.items ?? [] })
+      if (!payRes.ok) throw new Error(`Erreur paiement CB (${payRes.status})`)
+      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setStep('confirm')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors du paiement')
-      setTpeStep('idle')
+      toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
     } finally {
-      setIsPaying(false)
+      setIsSubmitting(false)
     }
+  }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
+
+  const handleCashConfirm = useCallback(async () => {
+    const given = parseFloat(cashGiven.replace(',', '.'))
+    if (isNaN(given) || given < total - 0.01) {
+      toast.error(`Montant insuffisant (minimum ${total.toFixed(2)} €)`)
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const payRes = await fetch(`/api/orders/${order.id}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: 'cash', amount: order.total_ttc, cash_given: given }),
+      })
+      if (!payRes.ok) throw new Error(`Erreur paiement espèces (${payRes.status})`)
+      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setStep('confirm')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt, cashGiven, total])
+
+  const handleSplitAssignConfirm = useCallback(async (persons: SplitPerson[]) => {
+    setSplitPersons(persons)
+    setSplitIndex(0)
+    setSplitCash('')
+    setSplitCashAmounts(new Array(persons.length).fill(0))
+    // Create order before sequencing through persons
+    setIsSubmitting(true)
+    try {
+      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      setSplitOrderId(order.id)
+      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setStep('split-person')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur création commande')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
+
+  const handleSplitPersonNext = useCallback(async (cashAmount?: number) => {
+    // Record cash_given for current person
+    const updatedCashAmounts = [...splitCashAmounts]
+    if (cashAmount !== undefined) updatedCashAmounts[splitIndex] = cashAmount
+    setSplitCashAmounts(updatedCashAmounts)
+
+    const next = splitIndex + 1
+    if (next < splitPersons.length) {
+      setSplitIndex(next)
+      setSplitCash('')
+    } else {
+      // All persons confirmed — call pay API with per-person cash amounts
+      if (!splitOrderId) { toast.error('Erreur interne — réessayez'); return }
+      setIsSubmitting(true)
+      try {
+        const payRes = await fetch(`/api/orders/${splitOrderId}/pay`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            method: 'split',
+            amount: total,
+            split_payments: splitPersons.map((p, i) => ({
+              method: p.method,
+              amount: p.amount,
+              ...(p.method === 'cash' ? { cash_given: updatedCashAmounts[i] || p.amount } : {}),
+            })),
+          }),
+        })
+        if (!payRes.ok) throw new Error(`Erreur enregistrement paiement (${payRes.status})`)
+        setStep('confirm')
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erreur — réessayez')
+      } finally {
+        setIsSubmitting(false)
+      }
+    }
+  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, total])
+
+  async function handleTerminate() {
+    if (!completedOrder) { onClose(); return }
+
+    // Send receipt (non-blocking)
+    if (receiptChoice === 'email' && receiptContact) {
+      fetch(`/api/receipts/${completedOrder.id}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: receiptContact }),
+      }).then(r => r.ok ? toast.success('Reçu envoyé par email') : toast.error('Échec envoi email'))
+        .catch(() => toast.error('Échec envoi email'))
+    } else if (receiptChoice === 'sms' && receiptContact) {
+      fetch(`/api/receipts/${completedOrder.id}/sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: receiptContact }),
+      }).then(r => r.ok ? toast.success('Reçu envoyé par SMS') : toast.error('Échec envoi SMS'))
+        .catch(() => toast.error('Échec envoi SMS'))
+    } else if (receiptChoice === 'invoice' && companyName) {
+      fetch(`/api/receipts/${completedOrder.id}/invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_name: companyName, siret: companySiret || undefined }),
+      }).then(async r => {
+        if (r.ok) {
+          const { pdf_url, invoice_number } = await r.json()
+          window.open(pdf_url, '_blank')
+          toast.success(`Facture ${invoice_number} générée`)
+        } else {
+          toast.error('Erreur génération facture')
+        }
+      }).catch(() => toast.error('Erreur génération facture'))
+    }
+
+    onSuccess(completedOrder)
   }
 
-  function startTpe() {
-    setTpeStep('waiting')
-    waitingTimerRef.current = setTimeout(() => setTpeStep('pin'), 1800)
-  }
-
-  function confirmPin() {
-    setTpeStep('approved')
-    // Slight delay so user sees the approved state before modal closes
-    setTimeout(() => handlePay(), 800)
-  }
-
-  function simulateRefusal() {
-    setTpeStep('refused')
-  }
-
-  function retryTpe() {
-    setTpeStep('waiting')
-    waitingTimerRef.current = setTimeout(() => setTpeStep('pin'), 1800)
-  }
-
-  function switchToCash() {
-    setTpeStep('idle')
-    setMode('cash')
-  }
-
-  const canPay =
-    mode === 'card' ||
-    (mode === 'cash' && parseFloat(cashGiven.replace(',', '.') || '0') >= total) ||
-    (mode === 'split' && parseFloat(splitCard.replace(',', '.') || '0') > 0 && parseFloat(splitCard.replace(',', '.') || '0') < total)
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={tpeStep === 'idle' ? onClose : undefined} />
+      <div className="absolute inset-0 bg-black/70" onClick={step === 'method' ? onClose : undefined} />
       <div
         data-testid="payment-modal"
-        className="relative w-full max-w-md mx-4 sm:mx-0 rounded-2xl p-6 shadow-2xl"
+        className="relative w-full max-w-md mx-4 sm:mx-0 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
-        {/* TPE simulation overlay */}
-        {tpeStep !== 'idle' && (
-          <div className="absolute inset-0 z-10 rounded-2xl flex flex-col items-center justify-center p-6" style={{ background: 'var(--surface)' }}>
-            {/* TPE terminal visual */}
-            <div className={`w-28 h-40 rounded-2xl flex flex-col items-center justify-center gap-3 mb-5 border-2 ${
-              tpeStep === 'approved' ? 'border-green-500/40 shadow-[0_0_28px_rgba(16,185,129,.2)]' :
-              tpeStep === 'refused'  ? 'border-red-500/40 shadow-[0_0_28px_rgba(239,68,68,.2)]' :
-              'border-blue-600/40 shadow-[0_0_28px_rgba(29,78,216,.15)]'
-            }`} style={{ background: 'var(--surface2)' }}>
-              <div className="w-20 h-12 rounded-md flex items-center justify-center text-xs border border-[var(--border)]" style={{ background: 'var(--bg)', color: 'var(--muted)' }}>
-                {tpeStep === 'waiting'  && '...' }
-                {tpeStep === 'pin'      && '****'}
-                {tpeStep === 'approved' && '✓'  }
-                {tpeStep === 'refused'  && '✗'  }
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0">
+          <h2 className="text-lg font-bold" style={{ color: 'var(--text1)' }}>
+            {step === 'confirm' ? 'Paiement enregistré' : 'Encaissement'}
+          </h2>
+          {(step === 'method' || step === 'confirm') && (
+            <button onClick={onClose} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
+          )}
+          {step !== 'method' && step !== 'confirm' && (
+            <button
+              onClick={() => setStep('method')}
+              className="text-sm"
+              style={{ color: 'var(--text4)' }}
+            >
+              ← Retour
+            </button>
+          )}
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 flex flex-col gap-4">
+
+          {/* ── Step 1: Method ── */}
+          {step === 'method' && (
+            <>
+              <div className="text-center py-4">
+                <div className="text-5xl font-black tabular-nums" style={{ color: 'var(--text1)' }}>
+                  {total.toFixed(2).replace('.', ',')} €
+                </div>
+                <p className="text-sm mt-1" style={{ color: 'var(--text4)' }}>Total TTC à encaisser</p>
               </div>
-              <div className="flex gap-1">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="w-4 h-4 rounded" style={{ background: 'var(--border)' }} />
+              <div className="grid grid-cols-3 gap-3">
+                {(['card', 'cash', 'split'] as const).map(m => {
+                  const disabled = isOffline && m !== 'cash'
+                  const labels = { card: 'Carte', cash: 'Espèces', split: 'Split' }
+                  const icons  = { card: '💳', cash: '💵', split: '👥' }
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => !disabled && setStep(m === 'split' ? 'split-assign' : m)}
+                      disabled={disabled}
+                      className="flex flex-col items-center gap-2 py-5 rounded-2xl border-2 font-semibold transition-all"
+                      style={disabled
+                        ? { opacity: 0.35, cursor: 'not-allowed', borderColor: 'var(--border)', color: 'var(--text4)' }
+                        : { borderColor: 'var(--border)', color: 'var(--text2)' }}
+                    >
+                      <span className="text-3xl">{icons[m]}</span>
+                      <span className="text-sm">{labels[m]}</span>
+                      {disabled && <span className="text-[10px]" style={{ color: 'var(--text4)' }}>Hors ligne</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {/* ── Step 2a: Card ── */}
+          {step === 'card' && (
+            <>
+              <div className="flex flex-col items-center py-10 gap-3">
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text4)' }}>À encaisser</p>
+                <div className="text-6xl font-black tabular-nums" style={{ color: 'var(--text1)', letterSpacing: '-2px' }}>
+                  {total.toFixed(2).replace('.', ',')} €
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text4)' }}>💳 Entrez le montant sur le TPE physique</p>
+              </div>
+              <button
+                onClick={handleCardConfirm}
+                disabled={isSubmitting}
+                className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
+                style={{ background: 'var(--green)' }}
+              >
+                {isSubmitting ? 'Enregistrement…' : '✓ Paiement reçu'}
+              </button>
+              <button onClick={() => setStep('method')} className="w-full py-2 text-sm" style={{ color: 'var(--text4)' }}>
+                Annuler
+              </button>
+            </>
+          )}
+
+          {/* ── Step 2b: Cash ── */}
+          {step === 'cash' && (
+            <>
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                  <span className="text-sm" style={{ color: 'var(--text4)' }}>À encaisser</span>
+                  <span className="text-xl font-bold" style={{ color: 'var(--text1)' }}>{total.toFixed(2).replace('.', ',')} €</span>
+                </div>
+                <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                  <span className="text-sm" style={{ color: 'var(--text4)' }}>Remis par le client</span>
+                  <span className="text-xl font-bold" style={{ color: 'var(--text1)' }}>
+                    {cashGiven ? `${parseFloat(cashGiven.replace(',', '.')).toFixed(2).replace('.', ',')} €` : '—'}
+                  </span>
+                </div>
+                {cashChange > 0 && (
+                  <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text2)' }}>Rendu monnaie</span>
+                    <span className="text-2xl font-black" style={{ color: '#f59e0b' }}>{cashChange.toFixed(2).replace('.', ',')} €</span>
+                  </div>
+                )}
+              </div>
+              {/* Keypad */}
+              <div className="grid grid-cols-3 gap-2">
+                {['1','2','3','4','5','6','7','8','9','+5','0','⌫'].map(k => (
+                  <button
+                    key={k}
+                    onClick={() => {
+                      if (k === '⌫') { setCashGiven(prev => prev.slice(0, -1)); return }
+                      if (k === '+5') { setCashGiven(prev => String((parseFloat(prev || '0') + 5).toFixed(2))); return }
+                      setCashGiven(prev => (prev === '0' ? k : prev + k))
+                    }}
+                    className="py-4 rounded-xl text-base font-bold transition-colors"
+                    style={{ background: 'var(--surface2)', color: k === '⌫' ? '#f87171' : 'var(--text1)' }}
+                  >
+                    {k}
+                  </button>
                 ))}
               </div>
-            </div>
-
-            {tpeStep === 'waiting' && (
-              <>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-sm font-semibold text-[var(--text1)]">En attente du terminal</span>
-                </div>
-                <p className="text-xs text-[var(--text4)] text-center">Insérez ou approchez la carte</p>
-              </>
-            )}
-
-            {tpeStep === 'pin' && (
-              <>
-                <p className="text-sm font-semibold text-[var(--text1)] mb-1">Saisie du code PIN</p>
-                <div className="flex gap-2 my-3">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="w-3.5 h-3.5 rounded-full bg-blue-500" />
-                  ))}
-                </div>
-                <p className="text-xs text-[var(--text4)] mb-4">Le client saisit son PIN sur le terminal</p>
-                <button onClick={confirmPin}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold text-white mb-2"
-                  style={{ background: 'var(--green)' }}>
-                  ✓ PIN confirmé
-                </button>
-                {process.env.NODE_ENV === 'development' && (
-                  <button onClick={simulateRefusal}
-                    className="w-full py-2 rounded-xl text-xs font-medium border"
-                    style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'transparent' }}>
-                    [DEV] Simuler un refus
-                  </button>
-                )}
-              </>
-            )}
-
-            {tpeStep === 'approved' && (
-              <>
-                <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'rgba(16,185,129,.15)' }}>
-                  <span className="text-2xl">✓</span>
-                </div>
-                <p className="text-base font-bold text-green-400 mb-1">Approuvé</p>
-                <p className="text-xs text-[var(--text4)]">Finalisation en cours…</p>
-              </>
-            )}
-
-            {tpeStep === 'refused' && (
-              <>
-                <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'rgba(239,68,68,.12)' }}>
-                  <span className="text-2xl text-red-400">✗</span>
-                </div>
-                <p className="text-base font-bold text-red-400 mb-1">Paiement refusé</p>
-                <p className="text-xs text-[var(--text4)] mb-4 text-center">Carte refusée ou fonds insuffisants</p>
-                <button onClick={retryTpe}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold text-white mb-2"
-                  style={{ background: 'var(--blue)' }}>
-                  ↩ Réessayer par CB
-                </button>
-                <button onClick={switchToCash}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold border mb-2"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'transparent' }}>
-                  💶 Payer en espèces
-                </button>
-                <button onClick={onClose}
-                  className="w-full py-2 rounded-xl text-xs text-[var(--text4)]">
-                  Annuler la vente
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Normal payment form (hidden when TPE overlay active) */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-[var(--text1)]">Encaissement</h2>
-          <button onClick={onClose} className="text-[var(--text4)] hover:text-[var(--text2)] text-xl">✕</button>
-        </div>
-
-        <div className="text-center mb-6">
-          <div className="text-4xl font-bold text-[var(--text1)] tabular-nums">
-            {total.toFixed(2).replace('.', ',')} €
-          </div>
-          <p className="text-sm text-[var(--text3)] mt-1">Total TTC à encaisser</p>
-        </div>
-
-        {isOffline && (
-          <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg text-xs font-semibold" style={{ background: 'rgba(245,158,11,.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,.3)' }}>
-            <span>⚡</span>
-            <span>Mode hors ligne — paiement CB indisponible</span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          {(['card', 'cash', 'split'] as PaymentMode[]).map((m) => {
-            const disabled = isOffline && m !== 'cash'
-            return (
               <button
-                key={m}
-                onClick={() => !disabled && setMode(m)}
-                disabled={disabled}
-                className={[
-                  'flex flex-col items-center gap-2 py-4 rounded-xl border-2 text-sm font-semibold transition-all',
-                  disabled ? 'opacity-30 cursor-not-allowed border-[var(--border)] text-[var(--text4)]' :
-                  mode === m
-                    ? 'border-[var(--blue)] bg-[var(--blue-light)] text-[var(--text1)]'
-                    : 'border-[var(--border)] text-[var(--text3)] hover:border-[var(--border)]',
-                ].join(' ')}
+                onClick={handleCashConfirm}
+                disabled={isSubmitting || !cashGiven || parseFloat(cashGiven.replace(',', '.')) < total - 0.01}
+                className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
+                style={{ background: 'var(--green)' }}
               >
-                <span className="text-2xl">{m === 'card' ? '💳' : m === 'cash' ? '💶' : '⚡'}</span>
-                <span className="text-xs sm:text-sm">{m === 'card' ? 'CB' : m === 'cash' ? 'Espèces' : 'Split'}</span>
+                {isSubmitting
+                  ? 'Enregistrement…'
+                  : cashChange > 0
+                    ? `Confirmer — rendre ${cashChange.toFixed(2).replace('.', ',')} €`
+                    : 'Confirmer le paiement'}
               </button>
-            )
-          })}
-        </div>
+            </>
+          )}
 
-        {mode === 'cash' && (
-          <div className="mb-6">
-            <label className="text-xs text-[var(--text3)] uppercase tracking-wider mb-2 block">
-              Somme remise par le client
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={cashGiven}
-              onChange={(e) => setCashGiven(e.target.value)}
-              placeholder="Ex: 50,00"
-              className="w-full h-12 px-4 rounded-xl text-lg text-center bg-[var(--surface2)] border border-[var(--border)] text-[var(--text1)] focus:outline-none focus:border-[var(--blue)]"
-              autoFocus
+          {/* ── Step 2c: Split assign ── */}
+          {step === 'split-assign' && (
+            <PaymentSplit
+              items={ticket.items}
+              discount={ticket.discount}
+              loyaltyDiscount={loyaltyAmt}
+              totalFinal={total}
+              onConfirm={handleSplitAssignConfirm}
+              onBack={() => setStep('method')}
             />
-            {cashChange > 0 && (
-              <div className="mt-3 text-center">
-                <span className="text-2xl font-bold text-[var(--green)]">
-                  Rendu : {cashChange.toFixed(2).replace('.', ',')} €
-                </span>
+          )}
+
+          {/* ── Step 2d: Split — per-person payment ── */}
+          {step === 'split-person' && currentPerson && (
+            <>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium" style={{ background: 'rgba(29,78,216,0.1)', color: '#93c5fd' }}>
+                Personne {splitIndex + 1}/{splitPersons.length} — {currentPerson.label}
               </div>
-            )}
-          </div>
-        )}
 
-        {mode === 'split' && (
-          <div className="mb-6">
-            <label className="text-xs text-[var(--text3)] uppercase tracking-wider mb-2 block">Montant CB</label>
-            <input
-              type="number"
-              step="0.01"
-              value={splitCard}
-              onChange={(e) => setSplitCard(e.target.value)}
-              placeholder="0,00"
-              className="w-full h-12 px-4 rounded-xl text-lg text-center bg-[var(--surface2)] border border-[var(--border)] text-[var(--text1)] focus:outline-none focus:border-[var(--blue)]"
-              autoFocus
-            />
-            {splitCard && parseFloat(splitCard.replace(',', '.')) < total && (
-              <p className="mt-2 text-center text-sm text-[var(--text3)]">
-                Espèces : {(total - parseFloat(splitCard.replace(',', '.'))).toFixed(2).replace('.', ',')} €
-              </p>
-            )}
-          </div>
-        )}
+              {currentPerson.method === 'card' && (
+                <>
+                  <div className="flex flex-col items-center py-8 gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text4)' }}>{currentPerson.label} — À encaisser</p>
+                    <div className="text-5xl font-black tabular-nums" style={{ color: 'var(--text1)' }}>
+                      {currentPerson.amount.toFixed(2).replace('.', ',')} €
+                    </div>
+                    <p className="text-sm" style={{ color: 'var(--text4)' }}>💳 Entrez le montant sur le TPE physique</p>
+                  </div>
+                  <button
+                    onClick={() => handleSplitPersonNext()}
+                    disabled={isSubmitting}
+                    className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
+                    style={{ background: 'var(--green)' }}
+                  >
+                    {isSubmitting ? 'Enregistrement…' : splitIndex < splitPersons.length - 1 ? '✓ Paiement reçu — suivant →' : '✓ Paiement reçu — terminer'}
+                  </button>
+                </>
+              )}
 
-        <p className="text-xs text-center text-[var(--text4)] mb-4">
-          Ticket Restaurant — disponible prochainement
-        </p>
+              {currentPerson.method === 'cash' && (
+                <>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                      <span className="text-sm" style={{ color: 'var(--text4)' }}>{currentPerson.label} — Part</span>
+                      <span className="text-xl font-bold" style={{ color: 'var(--text1)' }}>{currentPerson.amount.toFixed(2).replace('.', ',')} €</span>
+                    </div>
+                    {splitCash && parseFloat(splitCash) - currentPerson.amount > 0 && (
+                      <div className="flex justify-between items-center px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                        <span className="text-sm" style={{ color: 'var(--text2)' }}>Rendu</span>
+                        <span className="text-2xl font-black" style={{ color: '#f59e0b' }}>
+                          {(parseFloat(splitCash) - currentPerson.amount).toFixed(2).replace('.', ',')} €
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['1','2','3','4','5','6','7','8','9','+5','0','⌫'].map(k => (
+                      <button
+                        key={k}
+                        onClick={() => {
+                          if (k === '⌫') { setSplitCash(prev => prev.slice(0, -1)); return }
+                          if (k === '+5') { setSplitCash(prev => String((parseFloat(prev || '0') + 5).toFixed(2))); return }
+                          setSplitCash(prev => (prev === '0' ? k : prev + k))
+                        }}
+                        className="py-4 rounded-xl text-base font-bold"
+                        style={{ background: 'var(--surface2)', color: k === '⌫' ? '#f87171' : 'var(--text1)' }}
+                      >
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => handleSplitPersonNext(parseFloat(splitCash))}
+                    disabled={isSubmitting || !splitCash || parseFloat(splitCash) < currentPerson.amount - 0.01}
+                    className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
+                    style={{ background: 'var(--green)' }}
+                  >
+                    {isSubmitting ? 'Enregistrement…' : splitIndex < splitPersons.length - 1 ? 'Confirmer — suivant →' : 'Confirmer — terminer'}
+                  </button>
+                </>
+              )}
+            </>
+          )}
 
-        <button
-          onClick={mode === 'card' ? startTpe : handlePay}
-          disabled={!canPay || isPaying}
-          className="w-full h-14 rounded-xl text-lg font-bold text-white transition-all disabled:opacity-40 hover:opacity-90"
-          style={{ background: 'var(--green)' }}
-        >
-          {isPaying ? 'Traitement…' : mode === 'card' ? '💳 Lancer le terminal CB' : '✓ Valider le paiement'}
-        </button>
+          {/* ── Step 3: Confirm + receipt ── */}
+          {step === 'confirm' && completedOrder && (
+            <>
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(22,101,52,0.15)', border: '1px solid rgba(74,222,128,0.2)' }}>
+                <span className="text-lg">✅</span>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: '#4ade80' }}>Paiement enregistré</p>
+                  <p className="text-xs" style={{ color: 'var(--text4)' }}>{total.toFixed(2).replace('.', ',')} € TTC</p>
+                </div>
+              </div>
+
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text4)' }}>Envoyer un reçu</p>
+
+              {(['none', 'email', 'sms', 'invoice'] as const).map(choice => {
+                const labels = { none: '🚫 Pas de reçu', email: '📧 Email', sms: '📱 SMS', invoice: '🧾 Facture pro' }
+                const descs  = { none: 'Terminer sans envoyer', email: 'Reçu simple par email', sms: 'Lien vers le reçu par SMS', invoice: 'PDF avec SIRET et TVA détaillée' }
+                return (
+                  <button
+                    key={choice}
+                    onClick={() => setReceiptChoice(choice)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all"
+                    style={receiptChoice === choice
+                      ? { borderColor: 'var(--blue)', background: 'rgba(29,78,216,0.08)' }
+                      : { borderColor: 'var(--border)', background: 'var(--surface2)' }}
+                  >
+                    <span className="text-lg">{labels[choice].split(' ')[0]}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>{labels[choice].slice(3)}</p>
+                      <p className="text-xs" style={{ color: 'var(--text4)' }}>{descs[choice]}</p>
+                    </div>
+                    <div className="w-4 h-4 rounded-full border-2 flex-shrink-0"
+                      style={receiptChoice === choice ? { borderColor: 'var(--blue)', background: 'var(--blue)' } : { borderColor: 'var(--text4)' }}
+                    />
+                  </button>
+                )
+              })}
+
+              {(receiptChoice === 'email' || receiptChoice === 'sms') && (
+                <input
+                  type={receiptChoice === 'email' ? 'email' : 'tel'}
+                  value={receiptContact}
+                  onChange={e => setReceiptContact(e.target.value)}
+                  placeholder={receiptChoice === 'email' ? 'email@client.fr' : '+33 6 12 34 56 78'}
+                  className="w-full px-4 py-3 rounded-xl text-sm"
+                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
+                />
+              )}
+
+              {receiptChoice === 'invoice' && (
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={e => setCompanyName(e.target.value)}
+                    placeholder="Nom de la société *"
+                    className="w-full px-4 py-3 rounded-xl text-sm"
+                    style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
+                  />
+                  <input
+                    type="text"
+                    value={companySiret}
+                    onChange={e => setCompanySiret(e.target.value)}
+                    placeholder="SIRET (optionnel)"
+                    className="w-full px-4 py-3 rounded-xl text-sm"
+                    style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
+                  />
+                </div>
+              )}
+
+              <button
+                onClick={handleTerminate}
+                className="w-full py-5 rounded-xl text-base font-bold text-white"
+                style={{ background: 'var(--blue)' }}
+              >
+                ✓ Terminer &amp; nouvelle commande
+              </button>
+            </>
+          )}
+
+        </div>
       </div>
     </div>
   )
