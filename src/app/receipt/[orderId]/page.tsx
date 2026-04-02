@@ -73,7 +73,7 @@ export default async function ReceiptPage({ params }: Props) {
         {/* Total */}
         <div style={{ borderTop: '2px solid #334155', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '16px', fontWeight: '700' }}>Total TTC</span>
-          <span style={{ fontSize: '24px', fontWeight: '900' }}>{order.total_ttc.toFixed(2).replace('.', ',')} €</span>
+          <span style={{ fontSize: '24px', fontWeight: '900' }}>{(order.total_ttc ?? 0).toFixed(2).replace('.', ',')} €</span>
         </div>
 
         {/* Footer */}
