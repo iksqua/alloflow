@@ -15,6 +15,10 @@ export default async function ReceiptPage({ params }: Props) {
   const { orderId } = await params
   const supabase = createServiceClient()
 
+  // Security model: access control is UUID unguessability (122 random bits).
+  // No authentication required, no RLS — this is intentional for shareable receipt links.
+  // The `.eq('status', 'paid')` filter is the only guard: drafts/pending orders are not exposed.
+  // Do NOT remove this filter.
   const { data: order } = await supabase
     .from('orders')
     .select('created_at, total_ttc, status, subtotal_ht, tax_5_5, tax_10, tax_20, order_items(product_name, emoji, quantity, unit_price, tva_rate), establishments(name, address, siret, receipt_footer)')

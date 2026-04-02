@@ -11,7 +11,8 @@ CREATE TABLE invoices (
   delivery_email   text,
   pdf_url          text,
   created_at       timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (establishment_id, invoice_year, sequence_number)
+  UNIQUE (establishment_id, invoice_year, sequence_number),
+  UNIQUE (order_id)
 );
 
 CREATE INDEX idx_invoices_estab_year ON invoices (establishment_id, invoice_year);
@@ -44,6 +45,12 @@ BEGIN
   PERFORM pg_advisory_xact_lock(
     ('x' || substr(md5(p_establishment_id::text || p_year::text), 1, 16))::bit(64)::bigint
   );
+
+  -- Return existing invoice if already created for this order (idempotent)
+  IF EXISTS (SELECT 1 FROM invoices WHERE order_id = p_order_id) THEN
+    RETURN QUERY SELECT id, number FROM invoices WHERE order_id = p_order_id;
+    RETURN;
+  END IF;
 
   SELECT COALESCE(MAX(sequence_number), 0) + 1
   INTO v_seq
