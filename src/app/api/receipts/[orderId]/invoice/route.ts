@@ -157,7 +157,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
   const { invoice_id: invoiceId, invoice_number: invoiceNumber } = rows[0]
 
-  const dateStr = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(order.created_at))
+  const dateStr = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date())
   const items = (order.order_items ?? []) as Array<{ product_name: string; quantity: number; unit_price: number; tva_rate: number }>
 
   // Step 2: Generate PDF with the actual invoice number
@@ -189,7 +189,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   }
 
   // Step 4: Update invoice row with pdf_url
-  await serviceClient.from('invoices').update({ pdf_url: fileName }).eq('id', invoiceId)
+  const { error: updateError } = await serviceClient.from('invoices').update({ pdf_url: fileName }).eq('id', invoiceId)
+  if (updateError) {
+    console.error('[invoice] Failed to update pdf_url:', updateError)
+    // PDF is uploaded and URL is valid — return success but log inconsistency
+    // The invoice number is registered and the PDF exists in storage
+  }
 
   // Step 5: Create signed URL (1h)
   const { data: signedData } = await serviceClient.storage
