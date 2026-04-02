@@ -1,10 +1,14 @@
 // src/app/api/receipts/[orderId]/sms/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendBrevoSms } from '@/lib/brevo'
 import { z } from 'zod'
 
+// Strip spaces and dashes, then validate E.164 format
 const smsSchema = z.object({
-  phone: z.string().min(10).max(20),
+  phone: z.string()
+    .transform(v => v.replace(/[\s\-]/g, ''))
+    .pipe(z.string().regex(/^\+[1-9]\d{7,14}$/, 'Format E.164 requis (+33612345678)'))
 })
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
@@ -21,18 +25,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Establishment not found' }, { status: 400 })
 
   const { data: order } = await supabase
-    .from('orders').select('status').eq('id', orderId).eq('establishment_id', profile.establishment_id).single()
+    .from('orders')
+    .select('status, total_ttc')
+    .eq('id', orderId)
+    .eq('establishment_id', profile.establishment_id)
+    .single()
 
   if (!order) return NextResponse.json({ error: 'order_not_found' }, { status: 404 })
   if (order.status !== 'paid') return NextResponse.json({ error: 'order_not_paid' }, { status: 422 })
 
-  // Check if SMS sending is configured (Brevo / Twilio)
-  const brevoKey = process.env.BREVO_API_KEY
-  if (!brevoKey) {
-    return NextResponse.json({ success: false, unavailable: true, reason: 'sms_not_configured' }, { status: 501 })
-  }
+  const { data: estab } = await supabase
+    .from('establishments')
+    .select('name, brevo_sender_name')
+    .eq('id', profile.establishment_id)
+    .single()
 
-  // TODO V2 : intégration Brevo transactional SMS
-  console.info(`[Reçu SMS] Commande ${orderId} → ${parsed.data.phone}`)
-  return NextResponse.json({ success: true, phone: parsed.data.phone })
+  if (!estab) return NextResponse.json({ error: 'establishment_not_found' }, { status: 500 })
+
+  const content = `${estab.name} — Votre reçu : https://alloflow.fr/receipt/${orderId} — Total : ${order.total_ttc.toFixed(2)} €`
+  const sender = estab.brevo_sender_name ?? 'Alloflow'
+
+  try {
+    await sendBrevoSms({ sender, recipient: parsed.data.phone, content })
+    return NextResponse.json({ sent: true })
+  } catch (err) {
+    console.error('[receipt/sms]', err)
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'send_failed' }, { status: 500 })
+  }
 }
