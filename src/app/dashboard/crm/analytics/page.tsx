@@ -12,8 +12,7 @@ export default async function CrmAnalyticsPage() {
     .from('profiles').select('establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) redirect('/dashboard')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('v_crm_persona')
     .select('*')
     .eq('establishment_id', profile.establishment_id)
@@ -25,7 +24,7 @@ export default async function CrmAnalyticsPage() {
         <h1 className="text-xl font-semibold text-[var(--text1)]">Persona clients</h1>
         <p className="text-sm text-[var(--text3)]">Données calculées automatiquement depuis l&apos;historique des commandes.</p>
       </div>
-      <PersonaCharts data={data ?? { total: 0 }} />
+      <PersonaCharts data={data ? { ...data, total: data.total ?? 0 } : { total: 0 }} />
     </div>
   )
 }

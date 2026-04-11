@@ -14,8 +14,7 @@ export default async function EquipePage() {
   if (!['admin', 'super_admin'].includes(profile.role as string)) redirect('/dashboard')
 
   // Charger les membres côté serveur pour le SSR initial (même logique que GET /api/settings/team)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profiles } = await (supabase as any)
+  const { data: profiles } = await supabase
     .from('profiles')
     .select('id, role, first_name')
     .eq('establishment_id', profile.establishment_id)

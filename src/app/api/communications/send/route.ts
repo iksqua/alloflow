@@ -29,8 +29,7 @@ export async function POST(req: NextRequest) {
 
   const { customerId, channel, message, campaignId } = body.data
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: customer } = await (supabase as any)
+  const { data: customer } = await supabase
     .from('customers')
     .select('id, first_name, phone, email, opt_in_sms, opt_in_email, opt_in_whatsapp')
     .eq('id', customerId)
@@ -53,8 +52,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Client sans numéro de téléphone' }, { status: 422 })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: establishment } = await (supabase as any)
+  const { data: establishment } = await supabase
     .from('establishments')
     .select('sms_credits, brevo_sender_name')
     .eq('id', profile.establishment_id)
@@ -69,8 +67,7 @@ export async function POST(req: NextRequest) {
   // Deduct credit atomically BEFORE calling Brevo to prevent race conditions.
   // deduct_sms_credit raises an exception if credits = 0, so this is the authoritative check.
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
+    await supabase.rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
   } catch {
     return NextResponse.json({ error: 'Crédits SMS épuisés' }, { status: 402 })
   }
@@ -86,8 +83,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     // Credit already deducted — log failure
     const msg = err instanceof Error ? err.message : 'Erreur Brevo'
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('campaign_sends').insert({
+    await supabase.from('campaign_sends').insert({
       campaign_id:      campaignId ?? null,
       customer_id:      customerId,
       channel,
@@ -98,8 +94,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Log the send
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from('campaign_sends').insert({
+  await supabase.from('campaign_sends').insert({
     campaign_id:      campaignId ?? null,
     customer_id:      customerId,
     channel,

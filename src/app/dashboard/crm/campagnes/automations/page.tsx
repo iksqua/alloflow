@@ -12,10 +12,8 @@ export default async function AutomationsPage() {
   if (!profile?.establishment_id) redirect('/dashboard')
 
   const [rulesResult, estabResult] = await Promise.all([
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from('automation_rules').select('*').eq('establishment_id', profile.establishment_id),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (supabase as any).from('establishments').select('brevo_sender_name, google_review_url, sms_credits').eq('id', profile.establishment_id).single(),
+    supabase.from('automation_rules').select('*').eq('establishment_id', profile.establishment_id),
+    supabase.from('establishments').select('brevo_sender_name, google_review_url, sms_credits').eq('id', profile.establishment_id).single(),
   ])
 
   const rules = rulesResult.data ?? []

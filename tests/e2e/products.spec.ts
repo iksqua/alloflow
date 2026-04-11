@@ -19,11 +19,11 @@ test.describe('Products', () => {
     // Open edit form
     await page.locator(`[data-testid="product-edit-btn-${productId}"]`).click()
 
-    // DB stores TTC directly; form displays raw DB value (4.09 TTC)
+    // DB stores HT (4.09), form converts to TTC for display: 4.09 * 1.10 = 4.499 → 4.50
     const priceInput = page.locator('[data-testid="product-price-input"]')
     await expect(priceInput).toBeVisible()
     const displayed = await priceInput.inputValue()
-    expect(parseFloat(displayed)).toBeCloseTo(4.09, 2)
+    expect(parseFloat(displayed)).toBeCloseTo(4.50, 1)
 
     // Save without modifying price
     await page.locator('[data-testid="product-submit-btn"]').click()

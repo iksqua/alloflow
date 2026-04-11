@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 import { z } from 'zod'
 
 const DEFAULT_LEVELS = [
@@ -42,7 +43,7 @@ export async function GET() {
     return NextResponse.json({ error: 'org_id manquant' }, { status: 400 })
   }
 
-  const supabaseAdmin = createAdminClient(
+  const supabaseAdmin = createAdminClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -56,12 +57,12 @@ export async function GET() {
     { data: config },
     { data: networkCustomers },
   ] = await Promise.all([
-    (supabaseAdmin as any)
+    supabaseAdmin
       .from('network_loyalty_config')
       .select('active, pts_per_euro, min_redemption_pts, levels')
       .eq('org_id', orgId)
       .single(),
-    (supabaseAdmin as any)
+    supabaseAdmin
       .from('network_customers')
       .select('id, tier')
       .eq('org_id', orgId),
@@ -71,14 +72,14 @@ export async function GET() {
   let pointsIssuedMonth = 0
   if (networkCustomers && networkCustomers.length > 0) {
     const ncIds = (networkCustomers as Array<{ id: string; tier: string }>).map(nc => nc.id)
-    const { data: linkedCustomers } = await (supabaseAdmin as any)
+    const { data: linkedCustomers } = await supabaseAdmin
       .from('customers')
       .select('id')
       .in('network_customer_id', ncIds)
 
     if (linkedCustomers && linkedCustomers.length > 0) {
       const customerIds = (linkedCustomers as Array<{ id: string }>).map(c => c.id)
-      const { data: earnTx } = await (supabaseAdmin as any)
+      const { data: earnTx } = await supabaseAdmin
         .from('loyalty_transactions')
         .select('points')
         .eq('type', 'earn')
@@ -142,12 +143,12 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
   }
 
-  const supabaseAdmin = createAdminClient(
+  const supabaseAdmin = createAdminClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { error } = await (supabaseAdmin as any)
+  const { error } = await supabaseAdmin
     .from('network_loyalty_config')
     .upsert({
       org_id:             profile.org_id,

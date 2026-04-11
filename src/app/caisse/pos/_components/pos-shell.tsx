@@ -217,7 +217,6 @@ export function PosShell({
             linkedReward={linkedReward}
             loyaltyDone={loyaltyDone}
             onLoyaltyTrigger={() => setShowLoyalty(true)}
-            onLoyaltySkip={() => setLoyaltyDone(true)}
           />
         </div>
       </div>

@@ -12,8 +12,7 @@ export default async function NouvelleCampagnePage() {
     .from('profiles').select('establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) redirect('/dashboard')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: estab } = await (supabase as any)
+  const { data: estab } = await supabase
     .from('establishments')
     .select('name, sms_credits')
     .eq('id', profile.establishment_id)

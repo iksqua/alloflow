@@ -2,37 +2,70 @@ import { chromium, FullConfig } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
 
-const AUTH_FILE = path.join(__dirname, '.auth/user.json')
+const ACCOUNTS = [
+  {
+    authFile:  path.join(__dirname, '.auth/admin.json'),
+    email:     process.env.TEST_USER_EMAIL!,
+    password:  process.env.TEST_USER_PASSWORD!,
+    envKey:    'TEST_USER_EMAIL / TEST_USER_PASSWORD',
+  },
+  {
+    authFile:  path.join(__dirname, '.auth/caissier.json'),
+    email:     process.env.TEST_CAISSIER_EMAIL!,
+    password:  process.env.TEST_CAISSIER_PASSWORD!,
+    envKey:    'TEST_CAISSIER_EMAIL / TEST_CAISSIER_PASSWORD',
+  },
+  {
+    authFile:  path.join(__dirname, '.auth/franchise.json'),
+    email:     process.env.TEST_FRANCHISE_EMAIL!,
+    password:  process.env.TEST_FRANCHISE_PASSWORD!,
+    envKey:    'TEST_FRANCHISE_EMAIL / TEST_FRANCHISE_PASSWORD',
+  },
+]
+
+const ONE_HOUR_MS = 60 * 60 * 1000
+
+function isAuthFileFresh(filePath: string): boolean {
+  if (!fs.existsSync(filePath)) return false
+  return Date.now() - fs.statSync(filePath).mtimeMs < ONE_HOUR_MS
+}
 
 export default async function globalSetup(_config: FullConfig) {
-  const { BASE_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD } = process.env
-  if (!BASE_URL || !TEST_USER_EMAIL || !TEST_USER_PASSWORD) {
-    throw new Error(
-      'Missing required env vars: BASE_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD. Check .env.test.'
-    )
+  const { BASE_URL } = process.env
+  if (!BASE_URL) {
+    throw new Error('Missing required env var: BASE_URL. Check .env.test.')
   }
 
-  // Skip if auth file already fresh (< 1h old)
-  if (fs.existsSync(AUTH_FILE)) {
-    const stat = fs.statSync(AUTH_FILE)
-    if (Date.now() - stat.mtimeMs < 60 * 60 * 1000) return
+  // Validate credentials for all accounts
+  for (const account of ACCOUNTS) {
+    if (!account.email || !account.password) {
+      throw new Error(`Missing env vars: ${account.envKey}. Check .env.test.`)
+    }
   }
 
-  fs.mkdirSync(path.dirname(AUTH_FILE), { recursive: true })
+  // Check if all auth files are fresh — skip authentication entirely
+  if (ACCOUNTS.every(a => isAuthFileFresh(a.authFile))) return
 
   const browser = await chromium.launch()
   try {
-    const page = await browser.newPage()
+    for (const account of ACCOUNTS) {
+      // Skip this account if its auth file is still fresh
+      if (isAuthFileFresh(account.authFile)) continue
 
-    await page.goto(BASE_URL + '/login')
+      fs.mkdirSync(path.dirname(account.authFile), { recursive: true })
 
-    await page.getByLabel('Email').fill(TEST_USER_EMAIL)
-    await page.getByLabel('Mot de passe').fill(TEST_USER_PASSWORD)
-    await page.getByRole('button', { name: /se connecter|connexion/i }).click()
+      const context = await browser.newContext()
+      const page    = await context.newPage()
 
-    await page.waitForURL('**/dashboard/**', { timeout: 15_000 })
+      await page.goto(BASE_URL + '/login')
+      await page.getByLabel('Email').fill(account.email)
+      await page.getByLabel('Mot de passe').fill(account.password)
+      await page.getByRole('button', { name: /se connecter|connexion/i }).click()
+      await page.waitForURL('**/dashboard/**', { timeout: 15_000 })
 
-    await page.context().storageState({ path: AUTH_FILE })
+      await context.storageState({ path: account.authFile })
+      await context.close()
+    }
   } finally {
     await browser.close()
   }

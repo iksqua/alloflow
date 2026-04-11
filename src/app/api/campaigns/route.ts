@@ -23,8 +23,7 @@ export async function GET() {
     .from('profiles').select('establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ campaigns: [] })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: campaigns } = await (supabase as any)
+  const { data: campaigns } = await supabase
     .from('campaigns')
     .select('id, name, type, channel, status, scheduled_at, sent_at, sent_count, delivered_count, created_at')
     .eq('establishment_id', profile.establishment_id)
@@ -48,8 +47,7 @@ export async function POST(req: NextRequest) {
 
   const { name, channel, template_body, segment_filter, scheduled_at } = body.data
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('campaigns')
     .insert({
       establishment_id: profile.establishment_id,

@@ -14,7 +14,6 @@ interface TicketPanelProps {
   linkedReward:     LoyaltyReward | null
   loyaltyDone:      boolean
   onLoyaltyTrigger: () => void
-  onLoyaltySkip:    () => void
 }
 
 function r2(x: number) { return Math.round(x * 100) / 100 }
@@ -67,7 +66,6 @@ export function TicketPanel({
   linkedReward,
   loyaltyDone,
   onLoyaltyTrigger,
-  onLoyaltySkip,
 }: TicketPanelProps) {
   const { subtotalHt, discountAmount, total } = computeTicketTotals(ticket)
   const isEmpty = ticket.items.length === 0
@@ -76,7 +74,7 @@ export function TicketPanel({
 
   return (
     <div
-      className="flex flex-col flex-shrink-0 border-l border-[var(--border)]"
+      className="flex flex-col flex-shrink-0 overflow-hidden border-l border-[var(--border)]"
       style={{ width: '360px', background: 'var(--surface)' }}
     >
       {/* Header ticket */}
@@ -194,42 +192,30 @@ export function TicketPanel({
           </>
         )}
 
-        {/* Loyalty Trigger OR Encaisser */}
-        {!isEmpty && !loyaltyDone ? (
-          <div className="space-y-2">
-            <button
-              onClick={onLoyaltyTrigger}
-              disabled={!sessionOpen}
-              className="w-full h-12 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
-              style={{ background: '#d97706' }}
-            >
-              🎁 Identifier le client →
-            </button>
-            <div className="text-center">
-              <button
-                onClick={onLoyaltySkip}
-                disabled={!sessionOpen}
-                className="text-xs text-[var(--text4)] hover:text-[var(--text2)] disabled:opacity-30"
-              >
-                Passer sans fidélité
-              </button>
-            </div>
-          </div>
-        ) : (
+        {/* Fidélité + Encaisser */}
+        {!isEmpty && !loyaltyDone && (
           <button
-            onClick={onPay}
-            disabled={isEmpty || !sessionOpen}
-            data-testid="pos-pay-btn"
-            className="w-full h-12 rounded-xl text-base font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
-            style={{ background: isEmpty ? 'var(--border)' : 'var(--green)' }}
+            onClick={onLoyaltyTrigger}
+            disabled={!sessionOpen}
+            className="w-full h-10 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-30 hover:opacity-90"
+            style={{ background: '#d97706' }}
           >
-            {!sessionOpen
-              ? 'Ouvrir la session'
-              : isEmpty
-                ? 'Ticket vide'
-                : `Encaisser ${finalTotal.toFixed(2).replace('.', ',')} €`}
+            🎁 Ajouter un client fidélité
           </button>
         )}
+        <button
+          onClick={onPay}
+          disabled={isEmpty || !sessionOpen}
+          data-testid="pos-pay-btn"
+          className="w-full h-12 rounded-xl text-base font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
+          style={{ background: isEmpty ? 'var(--border)' : 'var(--green)' }}
+        >
+          {!sessionOpen
+            ? 'Ouvrir la session'
+            : isEmpty
+              ? 'Ticket vide'
+              : `Encaisser ${finalTotal.toFixed(2).replace('.', ',')} €`}
+        </button>
       </div>
     </div>
   )

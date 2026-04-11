@@ -45,8 +45,7 @@ export async function POST(req: NextRequest) {
     const newStatus = EVENT_TO_STATUS[event.event]
     if (!newStatus) continue
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
+    await supabase
       .from('campaign_sends')
       .update({ status: newStatus })
       .eq('brevo_message_id', messageId)
@@ -54,15 +53,13 @@ export async function POST(req: NextRequest) {
     // Handle unsubscribe — find customer by phone/email and flip opt-in off
     if (event.event === 'unsubscribed') {
       if (event.phone) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
+        await supabase
           .from('customers')
           .update({ opt_in_sms: false })
           .eq('phone', event.phone)
       }
       if (event.email) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
+        await supabase
           .from('customers')
           .update({ opt_in_email: false })
           .eq('email', event.email)
@@ -71,16 +68,14 @@ export async function POST(req: NextRequest) {
 
     // Update delivered_count on campaign
     if (newStatus === 'delivered') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: send } = await (supabase as any)
+      const { data: send } = await supabase
         .from('campaign_sends')
         .select('campaign_id')
         .eq('brevo_message_id', messageId)
         .single()
 
       if (send?.campaign_id) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).rpc('increment_campaign_delivered', { p_campaign_id: send.campaign_id })
+        await supabase.rpc('increment_campaign_delivered', { p_campaign_id: send.campaign_id })
       }
     }
   }

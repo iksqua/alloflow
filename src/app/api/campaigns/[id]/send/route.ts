@@ -17,8 +17,7 @@ export async function POST(
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
 
   // Load campaign
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: campaign } = await (supabase as any)
+  const { data: campaign } = await supabase
     .from('campaigns')
     .select('*')
     .eq('id', id)
@@ -32,8 +31,7 @@ export async function POST(
   }
 
   // Load establishment (for template vars + credit check)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: estab } = await (supabase as any)
+  const { data: estab } = await supabase
     .from('establishments')
     .select('name, brevo_sender_name, sms_credits')
     .eq('id', profile.establishment_id)
@@ -48,8 +46,7 @@ export async function POST(
 
   // Resolve audience
   const optInField = campaign.channel === 'sms' ? 'opt_in_sms' : campaign.channel === 'email' ? 'opt_in_email' : 'opt_in_whatsapp'
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
+  let query = supabase
     .from('customers')
     .select('id, first_name, phone, email, points, tier, rfm_segment, avg_basket')
     .eq('establishment_id', profile.establishment_id)
@@ -72,12 +69,11 @@ export async function POST(
   let sent = 0, failed = 0
   for (const customer of customers as Array<Record<string, unknown>>) {
     // Idempotency check — skip customers already sent to (prevents duplicates on retry)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingSend } = await (supabase as any)
+    const { data: existingSend } = await supabase
       .from('campaign_sends')
       .select('id')
       .eq('campaign_id', id)
-      .eq('customer_id', customer.id)
+      .eq('customer_id', customer.id as string)
       .eq('status', 'sent')
       .limit(1)
       .maybeSingle()
@@ -96,8 +92,7 @@ export async function POST(
     })
 
     // Step 1: Deduct credit BEFORE sending — prevents double-send on retry
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: deductError } = await (supabase as any).rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
+    const { error: deductError } = await supabase.rpc('deduct_sms_credit', { p_establishment_id: profile.establishment_id })
     if (deductError) {
       // Credits exhausted mid-campaign — stop sending
       failed++
@@ -113,10 +108,9 @@ export async function POST(
         content:   message,
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from('campaign_sends').insert({
+      await supabase.from('campaign_sends').insert({
         campaign_id:      id,
-        customer_id:      customer.id,
+        customer_id:      customer.id as string,
         channel:          campaign.channel,
         status:           'sent',
         brevo_message_id: result.messageId,
@@ -124,16 +118,16 @@ export async function POST(
       sent++
     } catch {
       // Send failed — refund the credit we deducted
+      // refund_sms_credit is not in generated types yet, cast RPC name to bypass
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).rpc('refund_sms_credit', { p_establishment_id: profile.establishment_id }).catch(() => {
+      await (supabase.rpc as any)('refund_sms_credit', { p_establishment_id: profile.establishment_id }).catch(() => {
         // If refund fails, credit is lost — but no duplicate SMS sent (safer)
         console.error('[campaign-send] Failed to refund SMS credit after send failure')
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from('campaign_sends').insert({
+      await supabase.from('campaign_sends').insert({
         campaign_id: id,
-        customer_id: customer.id,
+        customer_id: customer.id as string,
         channel:     campaign.channel,
         status:      'failed',
       })
@@ -142,8 +136,7 @@ export async function POST(
   }
 
   // Update campaign status
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
+  await supabase
     .from('campaigns')
     .update({ status: 'sent', sent_at: new Date().toISOString(), sent_count: sent })
     .eq('id', id)

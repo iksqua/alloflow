@@ -5,10 +5,12 @@ import { createClient } from '@/lib/supabase/server'
 const TIMEZONES = ['Europe/Paris', 'Europe/Brussels', 'Europe/Luxembourg', 'Europe/Zurich', 'Africa/Casablanca', 'Africa/Tunis'] as const
 
 const schema = z.object({
-  name:     z.string().min(1).max(80),
-  siret:    z.string().regex(/^\d{14}$/, '14 chiffres').optional().or(z.literal('')),
-  address:  z.string().max(200).optional(),
-  timezone: z.enum(TIMEZONES),
+  name:              z.string().min(1).max(80),
+  siret:             z.string().regex(/^\d{14}$/, '14 chiffres').optional().or(z.literal('')),
+  address:           z.string().max(200).optional(),
+  timezone:          z.enum(TIMEZONES),
+  receipt_footer:    z.string().max(160).optional().default(''),
+  brevo_sender_name: z.string().max(11).regex(/^[A-Za-z0-9]+$/, 'Alphanumerique, 11 chars max').optional().or(z.literal('')),
 })
 
 export async function GET() {
@@ -25,7 +27,7 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)
     .from('establishments')
-    .select('name, siret, address, timezone')
+    .select('name, siret, address, timezone, receipt_footer, brevo_sender_name')
     .eq('id', profile.establishment_id)
     .single()
 
@@ -50,13 +52,15 @@ export async function PATCH(req: NextRequest) {
   const { data, error } = await (supabase as any)
     .from('establishments')
     .update({
-      name:     body.data.name,
-      siret:    body.data.siret || null,
-      address:  body.data.address || null,
-      timezone: body.data.timezone,
+      name:              body.data.name,
+      siret:             body.data.siret || null,
+      address:           body.data.address || null,
+      timezone:          body.data.timezone,
+      receipt_footer:    body.data.receipt_footer ?? '',
+      brevo_sender_name: body.data.brevo_sender_name || null,
     })
     .eq('id', profile.establishment_id)
-    .select('name, siret, address, timezone')
+    .select('name, siret, address, timezone, receipt_footer, brevo_sender_name')
     .single()
 
   if (error) return NextResponse.json({ error: 'Mise à jour échouée' }, { status: 500 })

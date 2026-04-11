@@ -75,7 +75,7 @@ export async function fetchDailyCA(
   // Use YYYY-MM-DD format to correctly compare against DATE columns in the view
   const fromDate = range.from.toISOString().slice(0, 10)
   const toDate   = range.to.toISOString().slice(0, 10)
-  let query = (supabase as any)
+  let query = supabase
     .from('v_daily_ca')
     .select('day, ca_ttc, tx_count')
     .gte('day', fromDate)
@@ -86,10 +86,10 @@ export async function fetchDailyCA(
 
   const { data, error } = await query
   if (error) throw error
-  return (data ?? []).map((r: any) => ({
-    day: r.day,
-    caTtc: r.ca_ttc,
-    txCount: r.tx_count,
+  return (data ?? []).map((r) => ({
+    day: r.day ?? '',
+    caTtc: r.ca_ttc ?? 0,
+    txCount: r.tx_count ?? 0,
   }))
 }
 
@@ -97,7 +97,7 @@ export async function fetchHourlyTx(
   establishmentId?: string
 ): Promise<HourlyTx[]> {
   const supabase = await createClient()
-  let query = (supabase as any)
+  let query = supabase
     .from('v_hourly_tx')
     .select('hour, tx_count')
     .order('hour', { ascending: true })
@@ -106,9 +106,9 @@ export async function fetchHourlyTx(
 
   const { data, error } = await query
   if (error) throw error
-  return (data ?? []).map((r: any) => ({
-    hour: r.hour,
-    txCount: r.tx_count,
+  return (data ?? []).map((r) => ({
+    hour: r.hour ?? 0,
+    txCount: r.tx_count ?? 0,
   }))
 }
 
@@ -229,7 +229,7 @@ export async function fetchTvaBreakdown(
   // Use YYYY-MM-DD format to correctly compare against DATE columns in the view
   const fromDate = range.from.toISOString().slice(0, 10)
   const toDate   = range.to.toISOString().slice(0, 10)
-  let query = (supabase as any)
+  let query = supabase
     .from('v_tva_breakdown')
     .select('tva_rate, base_ht, tva_amount')
     .gte('day', fromDate)

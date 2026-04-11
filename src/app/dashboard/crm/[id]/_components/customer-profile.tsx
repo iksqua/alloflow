@@ -17,7 +17,7 @@ interface Customer {
   opt_in_email: boolean
   opt_in_whatsapp: boolean
   tags: string[]
-  notes: string | null
+  notes?: string | null
   rfm_segment: 'vip' | 'fidele' | 'nouveau' | 'a_risque' | 'perdu'
   avg_basket: number
   order_count: number

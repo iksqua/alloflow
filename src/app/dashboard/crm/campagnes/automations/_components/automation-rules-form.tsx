@@ -88,18 +88,38 @@ export function AutomationRulesForm({ initialRules, googleReviewUrl, senderName,
 
       {Object.entries(TRIGGER_LABELS).map(([trigger, meta]) => {
         const rule = getRule(trigger)
+        const isStub = trigger === 'tier_upgrade'
         return (
-          <div key={trigger} className="rounded-[12px] p-4" style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+          <div
+            key={trigger}
+            className="rounded-[12px] p-4"
+            style={{
+              background: 'var(--surface2)',
+              border: '1px solid var(--border)',
+              opacity: isStub ? 0.6 : 1,
+            }}
+          >
             <div className="flex items-center justify-between mb-3">
-              <div>
-                <div className="text-sm font-semibold text-[var(--text1)]">{meta.icon} {meta.label}</div>
-                <div className="text-xs text-[var(--text3)]">{meta.desc}</div>
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-[var(--text1)]">{meta.icon} {meta.label}</div>
+                  <div className="text-xs text-[var(--text3)]">{meta.desc}</div>
+                </div>
+                {isStub && (
+                  <span
+                    className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    style={{ background: 'rgba(148,163,184,0.15)', color: 'var(--text3)' }}
+                  >
+                    Bientôt
+                  </span>
+                )}
               </div>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className={`flex items-center gap-2 ${isStub ? 'pointer-events-none' : 'cursor-pointer'}`}>
                 <input
                   type="checkbox"
                   checked={rule.active}
                   onChange={e => update(trigger, 'active', e.target.checked)}
+                  disabled={isStub}
                   className="w-4 h-4 rounded accent-[var(--blue)]"
                 />
                 <span className="text-xs text-[var(--text2)]">{rule.active ? 'Actif' : 'Inactif'}</span>
@@ -111,7 +131,8 @@ export function AutomationRulesForm({ initialRules, googleReviewUrl, senderName,
               onChange={e => update(trigger, 'template_body', e.target.value)}
               rows={2}
               maxLength={160}
-              className="w-full rounded-lg px-3 py-2 text-sm text-[var(--text1)] bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-1 focus:ring-[var(--blue)] resize-none mb-1"
+              disabled={isStub}
+              className="w-full rounded-lg px-3 py-2 text-sm text-[var(--text1)] bg-[var(--surface)] border border-[var(--border)] focus:outline-none focus:ring-1 focus:ring-[var(--blue)] resize-none mb-1 disabled:opacity-60"
               placeholder="Votre message avec {{prenom}}, {{etablissement}}, {{points}}..."
             />
             <div className="text-right text-[10px] text-[var(--text4)] mb-3">{rule.template_body.length}/160</div>
@@ -120,7 +141,7 @@ export function AutomationRulesForm({ initialRules, googleReviewUrl, senderName,
 
             <button
               onClick={() => saveRule(trigger)}
-              disabled={saving === trigger}
+              disabled={saving === trigger || isStub}
               className="px-4 py-1.5 rounded-lg text-xs font-medium text-white disabled:opacity-50"
               style={{ background: 'var(--blue)' }}
             >

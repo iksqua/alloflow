@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface EstablishmentStat {
   id:               string
@@ -52,6 +53,7 @@ export function CommandCenterClient({ initialData }: Props) {
     try {
       const res = await fetch('/api/franchise/network-stats', { cache: 'no-store' })
       if (res.ok) setData(await res.json())
+      else toast.error('Erreur lors de l\'actualisation')
     } finally {
       setRefreshing(false)
     }
@@ -137,6 +139,31 @@ export function CommandCenterClient({ initialData }: Props) {
           )}
         </div>
       </div>
+
+      {/* Fidélité réseau */}
+      {network.loyalty && (
+        <div
+          className="rounded-xl p-4 mb-4 grid grid-cols-4 gap-4"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <div>
+            <p className="text-xs uppercase text-[var(--text4)] mb-1">Membres réseau</p>
+            <p className="text-xl font-bold text-[var(--text1)]">{new Intl.NumberFormat('fr-FR').format(network.loyalty.total_network_customers)}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-[var(--text4)] mb-1">Gold</p>
+            <p className="text-xl font-bold" style={{ color: '#fbbf24' }}>{network.loyalty.gold_count}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-[var(--text4)] mb-1">Silver</p>
+            <p className="text-xl font-bold" style={{ color: '#94a3b8' }}>{network.loyalty.silver_count}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-[var(--text4)] mb-1">Pts émis ce mois</p>
+            <p className="text-xl font-bold text-[var(--text1)]">{new Intl.NumberFormat('fr-FR').format(network.loyalty.points_issued_month)}</p>
+          </div>
+        </div>
+      )}
 
       {/* Tableau par établissement */}
       <div

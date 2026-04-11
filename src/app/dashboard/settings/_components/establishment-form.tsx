@@ -6,6 +6,8 @@ interface Props {
   initialSiret: string
   initialAddress: string
   initialTimezone: string
+  initialReceiptFooter: string
+  initialBrevoSenderName: string
 }
 
 const TIMEZONES = [
@@ -13,14 +15,23 @@ const TIMEZONES = [
   'Europe/Zurich', 'Africa/Casablanca', 'Africa/Tunis',
 ]
 
-export function EstablishmentForm({ initialName, initialSiret, initialAddress, initialTimezone }: Props) {
-  const [name,     setName]     = useState(initialName)
-  const [siret,    setSiret]    = useState(initialSiret)
-  const [address,  setAddress]  = useState(initialAddress)
-  const [timezone, setTimezone] = useState(initialTimezone || 'Europe/Paris')
-  const [saving,   setSaving]   = useState(false)
-  const [saved,    setSaved]    = useState(false)
-  const [error,    setError]    = useState<string | null>(null)
+export function EstablishmentForm({
+  initialName,
+  initialSiret,
+  initialAddress,
+  initialTimezone,
+  initialReceiptFooter,
+  initialBrevoSenderName,
+}: Props) {
+  const [name,            setName]            = useState(initialName)
+  const [siret,           setSiret]           = useState(initialSiret)
+  const [address,         setAddress]         = useState(initialAddress)
+  const [timezone,        setTimezone]        = useState(initialTimezone || 'Europe/Paris')
+  const [receiptFooter,   setReceiptFooter]   = useState(initialReceiptFooter)
+  const [brevoSenderName, setBrevoSenderName] = useState(initialBrevoSenderName)
+  const [saving,          setSaving]          = useState(false)
+  const [saved,           setSaved]           = useState(false)
+  const [error,           setError]           = useState<string | null>(null)
 
   async function handleSave() {
     setSaving(true); setError(null); setSaved(false)
@@ -28,11 +39,18 @@ export function EstablishmentForm({ initialName, initialSiret, initialAddress, i
       const res = await fetch('/api/settings/establishment', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, siret, address, timezone }),
+        body: JSON.stringify({
+          name,
+          siret,
+          address,
+          timezone,
+          receipt_footer:    receiptFooter,
+          brevo_sender_name: brevoSenderName || undefined,
+        }),
       })
       if (!res.ok) {
         const d = await res.json()
-        throw new Error(d.error?.message ?? 'Erreur')
+        throw new Error(d.error?.message ?? d.error ?? 'Erreur')
       }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -50,8 +68,8 @@ export function EstablishmentForm({ initialName, initialSiret, initialAddress, i
   } as React.CSSProperties
 
   const labelStyle = {
-    display: 'block', fontSize: '12px', fontWeight: 500,
-    color: 'var(--text3)', marginBottom: '6px',
+    display: 'block', fontSize: '12px', fontWeight: 600,
+    color: 'var(--text4)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em',
   } as React.CSSProperties
 
   return (
@@ -73,6 +91,34 @@ export function EstablishmentForm({ initialName, initialSiret, initialAddress, i
         <select style={inputStyle} value={timezone} onChange={e => setTimezone(e.target.value)}>
           {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
         </select>
+      </div>
+
+      <hr style={{ borderColor: 'var(--border)', margin: '4px 0' }} />
+
+      <div>
+        <label style={labelStyle}>Pied de ticket (max 160 caractères)</label>
+        <textarea
+          style={{ ...inputStyle, resize: 'vertical', minHeight: '70px' }}
+          value={receiptFooter}
+          onChange={e => setReceiptFooter(e.target.value)}
+          maxLength={160}
+          placeholder="Ex: Merci de votre visite !"
+        />
+        <p className="text-xs mt-1" style={{ color: 'var(--text4)' }}>{receiptFooter.length}/160</p>
+      </div>
+
+      <div>
+        <label style={labelStyle}>Nom expéditeur SMS <span className="normal-case font-normal">(max 11 caractères alphanumériques)</span></label>
+        <input
+          style={{ ...inputStyle, width: '200px' }}
+          value={brevoSenderName}
+          onChange={e => setBrevoSenderName(e.target.value.replace(/[^A-Za-z0-9]/g, ''))}
+          maxLength={11}
+          placeholder="MonCafe"
+        />
+        <p className="text-xs mt-1" style={{ color: 'var(--text4)' }}>
+          Apparaît comme expéditeur sur le téléphone du client.
+        </p>
       </div>
 
       {error && <p className="text-sm" style={{ color: 'var(--red)' }}>{error}</p>}

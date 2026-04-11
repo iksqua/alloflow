@@ -12,10 +12,9 @@ export default async function EtablissementPage() {
   if (!profile?.establishment_id) redirect('/dashboard')
   if (!['admin', 'super_admin'].includes(profile.role as string)) redirect('/dashboard')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: estab } = await (supabase as any)
+  const { data: estab } = await supabase
     .from('establishments')
-    .select('name, siret, address, timezone')
+    .select('name, siret, address, timezone, receipt_footer, brevo_sender_name')
     .eq('id', profile.establishment_id)
     .single()
 
@@ -31,6 +30,8 @@ export default async function EtablissementPage() {
           initialSiret={estab?.siret ?? ''}
           initialAddress={estab?.address ?? ''}
           initialTimezone={estab?.timezone ?? 'Europe/Paris'}
+          initialReceiptFooter={estab?.receipt_footer ?? ''}
+          initialBrevoSenderName={estab?.brevo_sender_name ?? ''}
         />
       </div>
     </div>

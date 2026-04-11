@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 export async function GET() {
   // 1. Auth + role check (anon client)
@@ -21,7 +22,7 @@ export async function GET() {
     return NextResponse.json({ error: 'org_id manquant sur le profil' }, { status: 400 })
   }
 
-  const supabaseAdmin = createAdminClient(
+  const supabaseAdmin = createAdminClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -122,14 +123,13 @@ export async function GET() {
 
   const openSessionEstIds = new Set((openSessions ?? []).map((s: { establishment_id: string }) => s.establishment_id))
 
-  // 7b. stock_bas: any stock item with current_quantity <= 0
-  // Uses (supabaseAdmin as any) because stock_items.current_quantity may not be in database.ts
-  const { data: lowStockItems } = await (supabaseAdmin as any)
+  // 7b. stock_bas: any stock item with quantity <= 0
+  const { data: lowStockItems } = await supabaseAdmin
     .from('stock_items')
     .select('establishment_id')
     .in('establishment_id', estIds)
-    .lte('current_quantity', 0)
-    .not('current_quantity', 'is', null)
+    .lte('quantity', 0)
+    .not('quantity', 'is', null)
 
   const lowStockEstIds = new Set(
     (lowStockItems ?? []).map((s: { establishment_id: string }) => s.establishment_id)
@@ -169,7 +169,7 @@ export async function GET() {
   const networkCaPrev  = Array.from(caPrevMap.values()).reduce((s, v) => s + v, 0)
 
   // 9. Loyalty network stats
-  const { data: networkCustomersData } = await (supabaseAdmin as any)
+  const { data: networkCustomersData } = await supabaseAdmin
     .from('network_customers')
     .select('id, tier')
     .eq('org_id', orgId)
@@ -179,14 +179,14 @@ export async function GET() {
 
   if (nc.length > 0) {
     const ncIds = nc.map(n => n.id)
-    const { data: linkedCustomers } = await (supabaseAdmin as any)
+    const { data: linkedCustomers } = await supabaseAdmin
       .from('customers')
       .select('id')
       .in('network_customer_id', ncIds)
 
     if (linkedCustomers && linkedCustomers.length > 0) {
       const customerIds = (linkedCustomers as Array<{ id: string }>).map(c => c.id)
-      const { data: earnTx } = await (supabaseAdmin as any)
+      const { data: earnTx } = await supabaseAdmin
         .from('loyalty_transactions')
         .select('points')
         .eq('type', 'earn')

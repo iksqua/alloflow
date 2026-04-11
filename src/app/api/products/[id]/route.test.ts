@@ -22,7 +22,7 @@ function mockSupabase(userNull = false) {
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: { id: 'prod-1' }, error: null }),
+      single: vi.fn().mockResolvedValue({ data: { id: 'prod-1', establishment_id: 'est-1' }, error: null }),
     })),
   }
   ;(createClient as ReturnType<typeof vi.fn>).mockResolvedValue(mock)

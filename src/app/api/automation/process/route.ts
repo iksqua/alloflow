@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendBrevoSms, renderTemplate } from '@/lib/brevo'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 // Protect this endpoint with a shared secret
 function isAuthorized(req: NextRequest): boolean {
@@ -12,6 +14,13 @@ function isAuthorized(req: NextRequest): boolean {
   return auth === `Bearer ${cronSecret}`
 }
 
+type AutomationRuleRow = Database['public']['Tables']['automation_rules']['Row']
+type EstablishmentRow  = Database['public']['Tables']['establishments']['Row']
+
+type RuleWithEstab = AutomationRuleRow & {
+  establishments: Pick<EstablishmentRow, 'id' | 'name' | 'brevo_sender_name' | 'google_review_url' | 'sms_credits'> | null
+}
+
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -20,8 +29,7 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
   // Get all active automation rules with their establishment data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: rules } = await (supabase as any)
+  const { data: rules } = await supabase
     .from('automation_rules')
     .select('*, establishments(id, name, brevo_sender_name, google_review_url, sms_credits)')
     .eq('active', true)
@@ -30,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   let processed = 0
 
-  for (const rule of rules) {
+  for (const rule of rules as RuleWithEstab[]) {
     const estab = rule.establishments
     if (!estab || estab.sms_credits <= 0) continue
 
@@ -44,11 +52,14 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ processed })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function processRule(supabase: any, rule: any, estab: any): Promise<number> {
+async function processRule(
+  supabase: SupabaseClient<Database>,
+  rule: AutomationRuleRow,
+  estab: Pick<EstablishmentRow, 'id' | 'name' | 'brevo_sender_name' | 'google_review_url' | 'sms_credits'>
+): Promise<number> {
   const now = new Date()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let customers: any[] = []
+  type CustomerRow = { id: string; first_name: string; phone: string | null; email: string | null; points: number; tier: string; rfm_segment: string; birthdate?: string | null }
+  let customers: CustomerRow[] = []
 
   switch (rule.trigger_type) {
     case 'welcome': {
@@ -61,19 +72,16 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .eq('rfm_segment', 'nouveau')
         .eq(`opt_in_${rule.channel}`, true)
         .lte('last_order_at', cutoff)
-      customers = data ?? []
+      customers = (data ?? []) as CustomerRow[]
       // Dedup: skip customers who already received welcome automation
       if (customers.length > 0) {
         const { data: alreadySent } = await supabase
           .from('campaign_sends')
           .select('customer_id')
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .in('customer_id', customers.map((c: any) => c.id))
+          .in('customer_id', customers.map(c => c.id))
           .eq('trigger_type', 'welcome')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const alreadySentIds = new Set((alreadySent ?? []).map((s: any) => s.customer_id))
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        customers = customers.filter((c: any) => !alreadySentIds.has(c.id))
+        const alreadySentIds = new Set((alreadySent ?? []).map(s => s.customer_id))
+        customers = customers.filter(c => !alreadySentIds.has(c.id))
       }
       break
     }
@@ -90,8 +98,7 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .eq(`opt_in_${rule.channel}`, true)
         .not('birthdate', 'is', null)
       // Filter by MM-DD match in JS (Supabase doesn't support month/day extraction in filters)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      customers = (data ?? []).filter((c: any) => {
+      customers = ((data ?? []) as CustomerRow[]).filter(c => {
         if (!c.birthdate) return false
         const bd = new Date(c.birthdate)
         const bmmdd = `${String(bd.getMonth() + 1).padStart(2, '0')}-${String(bd.getDate()).padStart(2, '0')}`
@@ -103,14 +110,11 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         const { data: alreadySent } = await supabase
           .from('campaign_sends')
           .select('customer_id')
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .in('customer_id', customers.map((c: any) => c.id))
+          .in('customer_id', customers.map(c => c.id))
           .eq('trigger_type', 'birthday')
           .gte('sent_at', yearStart)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const alreadySentIds = new Set((alreadySent ?? []).map((s: any) => s.customer_id))
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        customers = customers.filter((c: any) => !alreadySentIds.has(c.id))
+        const alreadySentIds = new Set((alreadySent ?? []).map(s => s.customer_id))
+        customers = customers.filter(c => !alreadySentIds.has(c.id))
       }
       break
     }
@@ -125,7 +129,7 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .eq('rfm_segment', 'a_risque')
         .eq(`opt_in_${rule.channel}`, true)
         .gte('rfm_updated_at', hourAgo)
-      customers = data ?? []
+      customers = (data ?? []) as CustomerRow[]
       break
     }
 
@@ -139,7 +143,7 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .eq('rfm_segment', 'perdu')
         .eq(`opt_in_${rule.channel}`, true)
         .gte('rfm_updated_at', hourAgo)
-      customers = data ?? []
+      customers = (data ?? []) as CustomerRow[]
       break
     }
 
@@ -155,8 +159,7 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .eq('status', 'paid')
         .gte('created_at', hourAgo)
         .not('customer_id', 'is', null)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const customerIds: string[] = Array.from(new Set<string>((recentOrders ?? []).map((o: any) => o.customer_id as string)))
+      const customerIds: string[] = Array.from(new Set<string>((recentOrders ?? []).map(o => o.customer_id as string)))
       if (!customerIds.length) return 0
 
       // Exclude customers who already got a google_review send in last 90 days
@@ -166,10 +169,9 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .in('customer_id', customerIds)
         .gte('sent_at', ninetyDaysAgo)
         .eq('trigger_type', 'google_review')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const alreadySentIds = new Set((alreadySent ?? []).map((s: any) => s.customer_id))
+      const alreadySentIds = new Set((alreadySent ?? []).map(s => s.customer_id))
 
-      const eligibleIds = customerIds.filter((id: string) => !alreadySentIds.has(id))
+      const eligibleIds = customerIds.filter(id => !alreadySentIds.has(id))
       if (!eligibleIds.length) return 0
 
       const { data } = await supabase
@@ -177,7 +179,7 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
         .select('id, first_name, phone, email, points, tier, rfm_segment')
         .in('id', eligibleIds)
         .eq(`opt_in_${rule.channel}`, true)
-      customers = data ?? []
+      customers = (data ?? []) as CustomerRow[]
       break
     }
 
@@ -202,15 +204,18 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
       etablissement: estab.name,
     })
 
+    // Deduct credit BEFORE sending — consistent with campaigns/[id]/send pattern.
+    // If deduction fails (credits exhausted), stop processing this rule.
+    const { error: deductError } = await supabase.rpc('deduct_sms_credit', { p_establishment_id: estab.id })
+    if (deductError) break
+
     try {
       const result = await sendBrevoSms({
         sender:    estab.brevo_sender_name ?? 'Alloflow',
-        recipient: customer.phone,
+        recipient: customer.phone ?? '',
         content:   message,
       })
-      await supabase.rpc('deduct_sms_credit', { p_establishment_id: estab.id })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from('campaign_sends').insert({
+      await supabase.from('campaign_sends').insert({
         campaign_id:      null,
         customer_id:      customer.id,
         channel:          rule.channel,
@@ -220,10 +225,14 @@ async function processRule(supabase: any, rule: any, estab: any): Promise<number
       })
       sent++
     } catch {
+      // Send failed — refund the credit we already deducted
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.rpc as any)('refund_sms_credit', { p_establishment_id: estab.id }).catch(() => {
+        console.error('[automation] Failed to refund SMS credit after send failure')
+      })
       // Log failure — don't block the loop
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any).from('campaign_sends').insert({
+        await supabase.from('campaign_sends').insert({
           campaign_id:  null,
           customer_id:  customer.id,
           channel:      rule.channel,

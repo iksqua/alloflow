@@ -10,7 +10,7 @@ interface Contract {
 
 interface Props {
   establishmentId: string
-  initialContract: Contract
+  initialContract: Contract | null
 }
 
 const inputStyle = {
@@ -38,12 +38,13 @@ const labelStyle = {
 
 export function FicheClient({ establishmentId, initialContract }: Props) {
   const router = useRouter()
-  const [contract, setContract] = useState(initialContract)
+  const [contract, setContract] = useState<Contract | null>(initialContract)
   const [saving,   setSaving]   = useState(false)
   const [saved,    setSaved]    = useState(false)
   const [error,    setError]    = useState<string | null>(null)
 
   async function handleSave() {
+    if (!contract) return
     setSaving(true); setError(null); setSaved(false)
     try {
       const res = await fetch(`/api/franchise/contracts/${establishmentId}`, {
@@ -72,9 +73,26 @@ export function FicheClient({ establishmentId, initialContract }: Props) {
 
   // Live projection (use actual contract CA month if available — here showing with 15k estimate)
   const estimatedCA = 15000
-  const projRoyalty   = Math.round(estimatedCA * contract.royalty_rate)   / 100
-  const projMarketing = Math.round(estimatedCA * contract.marketing_rate) / 100
+  const projRoyalty   = contract ? Math.round(estimatedCA * contract.royalty_rate)   / 100 : 0
+  const projMarketing = contract ? Math.round(estimatedCA * contract.marketing_rate) / 100 : 0
   const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+
+  if (!contract) {
+    return (
+      <div className="max-w-lg">
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => router.push('/dashboard/franchise/franchises')}
+            className="text-sm text-[var(--text4)] hover:text-[var(--text2)] transition-colors"
+          >
+            ← Retour
+          </button>
+          <h1 className="text-xl font-semibold text-[var(--text1)]">Contrat franchisé</h1>
+        </div>
+        <p className="text-sm text-[var(--text4)]">Contrat introuvable pour cet établissement.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-lg">
@@ -102,7 +120,7 @@ export function FicheClient({ establishmentId, initialContract }: Props) {
                   type="number" min={0} max={50} step={0.5}
                   style={inputStyle}
                   value={contract.royalty_rate}
-                  onChange={e => setContract(prev => ({ ...prev, royalty_rate: parseFloat(e.target.value) || 0 }))}
+                  onChange={e => setContract(prev => prev ? { ...prev, royalty_rate: parseFloat(e.target.value) || 0 } : prev)}
                 />
                 <span className="text-sm text-[var(--text3)]">% du CA HT</span>
               </div>
@@ -114,7 +132,7 @@ export function FicheClient({ establishmentId, initialContract }: Props) {
                   type="number" min={0} max={20} step={0.5}
                   style={inputStyle}
                   value={contract.marketing_rate}
-                  onChange={e => setContract(prev => ({ ...prev, marketing_rate: parseFloat(e.target.value) || 0 }))}
+                  onChange={e => setContract(prev => prev ? { ...prev, marketing_rate: parseFloat(e.target.value) || 0 } : prev)}
                 />
                 <span className="text-sm text-[var(--text3)]">% du CA HT</span>
               </div>
@@ -128,7 +146,7 @@ export function FicheClient({ establishmentId, initialContract }: Props) {
               type="date"
               style={{ ...inputStyle, width: 'auto', fontSize: '14px', fontWeight: 400, textAlign: 'left' as const }}
               value={contract.start_date}
-              onChange={e => setContract(prev => ({ ...prev, start_date: e.target.value }))}
+              onChange={e => setContract(prev => prev ? { ...prev, start_date: e.target.value } : prev)}
             />
           </div>
 

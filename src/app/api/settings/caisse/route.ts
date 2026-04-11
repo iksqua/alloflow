@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 const schema = z.object({
   default_opening_float: z.number().min(0).max(9999),
   auto_print_receipt:    z.boolean(),
-  receipt_footer:        z.string().max(160),
   default_tva_rate:      z.union([z.literal(5.5), z.literal(10), z.literal(20)]),
 })
 
@@ -23,7 +22,7 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)
     .from('establishments')
-    .select('default_opening_float, auto_print_receipt, receipt_footer, default_tva_rate')
+    .select('default_opening_float, auto_print_receipt, default_tva_rate')
     .eq('id', profile.establishment_id)
     .single()
 
@@ -49,7 +48,7 @@ export async function PATCH(req: NextRequest) {
     .from('establishments')
     .update(body.data)
     .eq('id', profile.establishment_id)
-    .select('default_opening_float, auto_print_receipt, receipt_footer, default_tva_rate')
+    .select('default_opening_float, auto_print_receipt, default_tva_rate')
     .single()
 
   if (error) return NextResponse.json({ error: 'Mise à jour échouée' }, { status: 500 })

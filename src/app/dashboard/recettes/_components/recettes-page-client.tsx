@@ -1,6 +1,7 @@
 // src/app/dashboard/recettes/_components/recettes-page-client.tsx
 'use client'
 import { useState, useMemo } from 'react'
+import { toast } from 'sonner'
 import { RecipeForm } from './recipe-form'
 import type { Recipe } from './types'
 
@@ -73,7 +74,9 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
 
   async function handleDelete(id: string) {
     if (!confirm('Supprimer cette recette ?')) return
-    await fetch(`/api/recipes/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE' })
+    if (!res.ok) { toast.error('Erreur lors de la suppression'); return }
+    toast.success('Recette supprimée')
     await reload()
   }
 
@@ -155,6 +158,16 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
       </div>
 
       {/* ── Recipe grid ── */}
+      {filtered.length === 0 && recipes.length > 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-sm text-[var(--text4)]">Aucune recette ne correspond aux filtres</p>
+        </div>
+      )}
+      {recipes.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-sm text-[var(--text4)]">Aucune recette — créez votre première fiche</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map(recipe => {
           const pct     = recipe.food_cost_pct

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import type { Sop, SopCategory, SopWithSteps } from './types'
 import { SopForm } from './sop-form'
 import { SopKitchenMode } from './sop-kitchen-mode'
@@ -48,12 +49,14 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
 
   async function openKitchenMode(sop: Sop) {
     const res = await fetch(`/api/sops/${sop.id}/steps`)
+    if (!res.ok) { toast.error('Erreur lors du chargement des étapes'); return }
     const json = await res.json()
     setKitchenSop({ ...sop, steps: json.steps ?? [] })
   }
 
   async function openEditForm(sop: Sop) {
     const res = await fetch(`/api/sops/${sop.id}/steps`)
+    if (!res.ok) { toast.error('Erreur lors du chargement du SOP'); return }
     const json = await res.json()
     setEditingSop({ ...sop, steps: json.steps ?? [] })
     setShowForm(true)
@@ -61,7 +64,9 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
 
   async function handleDelete(id: string) {
     if (!confirm('Supprimer ce SOP ?')) return
-    await fetch(`/api/sops/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/sops/${id}`, { method: 'DELETE' })
+    if (!res.ok) { toast.error('Erreur lors de la suppression'); return }
+    toast.success('SOP supprimé')
     await reloadSops()
   }
 

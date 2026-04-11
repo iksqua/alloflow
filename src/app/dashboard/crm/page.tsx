@@ -22,9 +22,8 @@ export default async function CrmPage() {
   const establishmentId = profile.establishment_id
 
   // Fetch customers and stats in parallel
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [{ data: customersData }, stats] = await Promise.all([
-    (supabase as any)
+    supabase
       .from('customers')
       .select('id, first_name, last_name, tier, points, phone, email, rfm_segment, last_order_at')
       .eq('establishment_id', establishmentId)

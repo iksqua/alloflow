@@ -4,14 +4,12 @@ import { useState } from 'react'
 interface Props {
   initialOpeningFloat: number
   initialAutoPrint: boolean
-  initialFooter: string
   initialTvaRate: number
 }
 
-export function CaisseSettingsForm({ initialOpeningFloat, initialAutoPrint, initialFooter, initialTvaRate }: Props) {
+export function CaisseSettingsForm({ initialOpeningFloat, initialAutoPrint, initialTvaRate }: Props) {
   const [openingFloat, setOpeningFloat] = useState(initialOpeningFloat)
   const [autoPrint,    setAutoPrint]    = useState(initialAutoPrint)
-  const [footer,       setFooter]       = useState(initialFooter)
   const [tvaRate,      setTvaRate]      = useState(initialTvaRate)
   const [saving,       setSaving]       = useState(false)
   const [saved,        setSaved]        = useState(false)
@@ -26,11 +24,13 @@ export function CaisseSettingsForm({ initialOpeningFloat, initialAutoPrint, init
         body: JSON.stringify({
           default_opening_float: openingFloat,
           auto_print_receipt: autoPrint,
-          receipt_footer: footer,
           default_tva_rate: tvaRate,
         }),
       })
-      if (!res.ok) throw new Error('Erreur')
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error?.message ?? d.error ?? 'Erreur')
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch {
@@ -80,18 +80,6 @@ export function CaisseSettingsForm({ initialOpeningFloat, initialAutoPrint, init
           />
         </button>
         <span className="text-sm text-[var(--text2)]">Impression automatique du ticket</span>
-      </div>
-
-      <div>
-        <label style={labelStyle}>Pied de ticket (max 160 caractères)</label>
-        <textarea
-          style={{ ...inputStyle, width: '100%', resize: 'vertical', minHeight: '70px' }}
-          value={footer}
-          onChange={e => setFooter(e.target.value)}
-          maxLength={160}
-          placeholder="Ex: Merci de votre visite !"
-        />
-        <p className="text-xs mt-1" style={{ color: 'var(--text4)' }}>{footer.length}/160</p>
       </div>
 
       <div>

@@ -18,8 +18,7 @@ export default async function EnvoyerCampagnePage({
     .from('profiles').select('establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) redirect('/dashboard')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: campaign } = await (supabase as any)
+  const { data: campaign } = await supabase
     .from('campaigns')
     .select('id, name, channel, template_body, segment_filter, status, sent_count')
     .eq('id', id)

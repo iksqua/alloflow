@@ -19,8 +19,7 @@ export async function GET() {
     .from('profiles').select('establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ rules: [] })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: rules } = await (supabase as any)
+  const { data: rules } = await supabase
     .from('automation_rules')
     .select('*')
     .eq('establishment_id', profile.establishment_id)
@@ -41,8 +40,7 @@ export async function PUT(req: NextRequest) {
   const body = ruleSchema.safeParse(await req.json())
   if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 422 })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('automation_rules')
     .upsert({
       establishment_id: profile.establishment_id,

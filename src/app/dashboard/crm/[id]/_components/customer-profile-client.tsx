@@ -10,7 +10,7 @@ interface CustomerForEdit {
   opt_in_email: boolean
   opt_in_whatsapp: boolean
   tags: string[]
-  notes: string | null
+  notes?: string | null
 }
 
 interface Props { customer: CustomerForEdit }

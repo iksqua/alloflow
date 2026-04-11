@@ -23,5 +23,6 @@ export default async function FiscalPage() {
     .order('sequence_no', { ascending: false })
     .limit(50)
 
-  return <FiscalPageClient initialEntries={entries ?? []} />
+  type FiscalEntryRow = NonNullable<typeof entries>[number] & { event_type: 'sale' | 'void' | 'refund' | 'z_close' }
+  return <FiscalPageClient initialEntries={(entries ?? []) as FiscalEntryRow[]} />
 }

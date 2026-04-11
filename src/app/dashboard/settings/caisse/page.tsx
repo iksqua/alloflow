@@ -12,10 +12,9 @@ export default async function CaissePage() {
   if (!profile?.establishment_id) redirect('/dashboard')
   if (!['admin', 'super_admin'].includes(profile.role as string)) redirect('/dashboard')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: estab } = await (supabase as any)
+  const { data: estab } = await supabase
     .from('establishments')
-    .select('default_opening_float, auto_print_receipt, receipt_footer, default_tva_rate')
+    .select('default_opening_float, auto_print_receipt, default_tva_rate')
     .eq('id', profile.establishment_id)
     .single()
 
@@ -29,7 +28,6 @@ export default async function CaissePage() {
         <CaisseSettingsForm
           initialOpeningFloat={estab?.default_opening_float ?? 0}
           initialAutoPrint={estab?.auto_print_receipt ?? false}
-          initialFooter={estab?.receipt_footer ?? ''}
           initialTvaRate={estab?.default_tva_rate ?? 10}
         />
       </div>

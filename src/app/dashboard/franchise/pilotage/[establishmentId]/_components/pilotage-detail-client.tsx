@@ -27,7 +27,10 @@ export function PilotageDetailClient({
   initialProducts,
   initialCategories,
   initialItems,
+  initialOrders: _initialOrders,
+  stockCategories: _stockCategories,
   initialRecipes,
+  recipeCategories: _recipeCategories,
 }: Props) {
   const [tab, setTab] = useState<Tab>('produits')
 
@@ -140,8 +143,8 @@ export function PilotageDetailClient({
       {tab === 'recettes' && (
         <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
           <div className="grid px-4 py-2.5 text-xs font-semibold uppercase tracking-wider"
-            style={{ gridTemplateColumns: '2fr 1fr 1fr 80px', gap: '8px', background: 'var(--surface2)', color: 'var(--text4)' }}>
-            <span>Recette</span><span>Catégorie</span><span>Ingrédients</span><span>Type</span>
+            style={{ gridTemplateColumns: '2fr 1fr 1fr 80px 80px', gap: '8px', background: 'var(--surface2)', color: 'var(--text4)' }}>
+            <span>Recette</span><span>Catégorie</span><span>Ingrédients</span><span>Food cost</span><span>Type</span>
           </div>
           {initialRecipes.length === 0 && (
             <div className="px-4 py-10 text-center text-sm text-[var(--text4)]" style={{ background: 'var(--surface)' }}>
@@ -150,10 +153,13 @@ export function PilotageDetailClient({
           )}
           {initialRecipes.map((recipe, i) => (
             <div key={recipe.id} className="grid items-center px-4 py-3"
-              style={{ gridTemplateColumns: '2fr 1fr 1fr 80px', gap: '8px', background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+              style={{ gridTemplateColumns: '2fr 1fr 1fr 80px 80px', gap: '8px', background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
               <span className="text-sm font-medium text-[var(--text1)] truncate">{recipe.title}</span>
               <span className="text-xs text-[var(--text3)]">{recipe.category ?? '—'}</span>
               <span className="text-xs text-[var(--text4)]">{recipe.ingredients?.length ?? 0} ingrédient{(recipe.ingredients?.length ?? 0) > 1 ? 's' : ''}</span>
+              <span className="text-xs tabular-nums" style={{ color: recipe.food_cost_pct !== null ? (recipe.food_cost_pct > 35 ? 'var(--red)' : recipe.food_cost_pct > 25 ? 'var(--amber)' : 'var(--green)') : 'var(--text4)' }}>
+                {recipe.food_cost_pct !== null ? `${recipe.food_cost_pct}%` : '—'}
+              </span>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${recipe.is_internal ? 'text-[var(--text4)] bg-[var(--surface2)]' : 'text-blue-400 bg-blue-900/20'}`}>
                 {recipe.is_internal ? 'Interne' : 'POS'}
               </span>

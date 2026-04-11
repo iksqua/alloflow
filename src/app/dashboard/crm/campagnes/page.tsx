@@ -33,8 +33,7 @@ export default async function CampagnesPage() {
     .from('profiles').select('establishment_id').eq('id', user.id).single()
   if (!profile?.establishment_id) redirect('/dashboard')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: campaigns } = await (supabase as any)
+  const { data: campaigns } = await supabase
     .from('campaigns')
     .select('id, name, channel, status, sent_at, sent_count, delivered_count, created_at')
     .eq('establishment_id', profile.establishment_id)

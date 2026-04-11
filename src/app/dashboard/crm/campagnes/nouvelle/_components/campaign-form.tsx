@@ -93,7 +93,7 @@ export function CampaignForm({ establishmentName }: Props) {
     <div className="flex flex-col gap-6 max-w-2xl">
       {/* Name */}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-[var(--text2)] mb-1.5">
+        <label htmlFor="name" className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">
           Nom de la campagne
         </label>
         <input
@@ -108,7 +108,7 @@ export function CampaignForm({ establishmentName }: Props) {
 
       {/* Channel */}
       <div>
-        <div className="text-sm font-medium text-[var(--text2)] mb-2">Canal</div>
+        <div className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-2">Canal</div>
         <div className="flex gap-2">
           {(['sms', 'email', 'whatsapp'] as const).map(ch => (
             <button
@@ -132,8 +132,8 @@ export function CampaignForm({ establishmentName }: Props) {
 
       {/* Segment filter */}
       <div>
-        <div className="text-sm font-medium text-[var(--text2)] mb-2">
-          Segments ciblés <span className="text-[var(--text3)] font-normal">(vide = tous)</span>
+        <div className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-2">
+          Segments ciblés <span className="text-[var(--text3)] font-normal normal-case">(vide = tous)</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {SEGMENTS.map(seg => (
@@ -158,7 +158,7 @@ export function CampaignForm({ establishmentName }: Props) {
       {/* Message */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label htmlFor="msg" className="text-sm font-medium text-[var(--text2)]">Message</label>
+          <label htmlFor="msg" className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Message</label>
           <span className="text-xs text-[var(--text4)]">{message.length}/160</span>
         </div>
         <div className="flex gap-1.5 flex-wrap mb-2">

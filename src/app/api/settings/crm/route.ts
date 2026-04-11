@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 
 const crmSettingsSchema = z.object({
-  brevo_sender_name: z.string().max(11).regex(/^[A-Za-z0-9]+$/, 'Alphanumerique, 11 chars max').optional(),
   google_review_url: z.string().url().optional().or(z.literal('')),
 })
 
@@ -19,7 +18,7 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)
     .from('establishments')
-    .select('brevo_sender_name, google_review_url, sms_credits')
+    .select('google_review_url, sms_credits')
     .eq('id', profile.establishment_id)
     .single()
 
@@ -43,7 +42,7 @@ export async function PATCH(req: NextRequest) {
     .from('establishments')
     .update(body.data)
     .eq('id', profile.establishment_id)
-    .select('brevo_sender_name, google_review_url, sms_credits')
+    .select('google_review_url, sms_credits')
     .single()
 
   if (error) return NextResponse.json({ error: 'Mise à jour échouée' }, { status: 500 })

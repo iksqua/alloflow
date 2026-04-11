@@ -4,25 +4,25 @@
 // All fields except total are optional — allows `{ total: 0 }` fallback when no data exists
 interface PersonaData {
   total: number
-  women_count?: number
-  men_count?: number
-  other_count?: number
-  unknown_count?: number
+  women_count?: number | null
+  men_count?: number | null
+  other_count?: number | null
+  unknown_count?: number | null
   avg_age?: number | null
   avg_basket?: number | null
-  vip_count?: number
-  fidele_count?: number
-  nouveau_count?: number
-  a_risque_count?: number
-  perdu_count?: number
-  age_18_25?: number
-  age_26_35?: number
-  age_36_45?: number
-  age_46_55?: number
-  age_55_plus?: number
-  freq_low?: number
-  freq_mid?: number
-  freq_high?: number
+  vip_count?: number | null
+  fidele_count?: number | null
+  nouveau_count?: number | null
+  a_risque_count?: number | null
+  perdu_count?: number | null
+  age_18_25?: number | null
+  age_26_35?: number | null
+  age_36_45?: number | null
+  age_46_55?: number | null
+  age_55_plus?: number | null
+  freq_low?: number | null
+  freq_mid?: number | null
+  freq_high?: number | null
   avg_basket_women?: number | null
   avg_basket_men?: number | null
 }

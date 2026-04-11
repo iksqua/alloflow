@@ -32,12 +32,14 @@ export function StocksPageClient({ initialItems, initialOrders, categories }: Pr
 
   async function reloadItems() {
     const res = await fetch('/api/stock-items')
+    if (!res.ok) { toast.error('Erreur lors du chargement des articles'); return }
     const json = await res.json()
     setItems(json.items ?? [])
   }
 
   async function reloadOrders() {
     const res = await fetch('/api/purchase-orders')
+    if (!res.ok) { toast.error('Erreur lors du chargement des commandes'); return }
     const json = await res.json()
     setOrders(json.orders ?? [])
   }
@@ -144,7 +146,7 @@ export function StocksPageClient({ initialItems, initialOrders, categories }: Pr
                       const res = await fetch(`/api/stock-items/${confirmDeleteId}`, { method: 'DELETE' })
                       setConfirmDeleteId(null)
                       if (res.ok) {
-                        toast.success('Article supprime')
+                        toast.success('Article supprimé')
                       } else {
                         toast.error('Erreur lors de la suppression')
                       }
