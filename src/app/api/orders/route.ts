@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       tax_5_5:                  tax55,
       tax_10:                   tax10,
       tax_20:                   tax20,
-      total_ttc:                Math.max(0, totalTtc - (parsed.data.reward_discount_amount ?? 0)),
+      total_ttc:                Math.round(Math.max(0, totalTtc - (parsed.data.reward_discount_amount ?? 0)) * 100) / 100,
     })
     .select()
     .single()

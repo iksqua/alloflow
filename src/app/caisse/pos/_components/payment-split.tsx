@@ -4,7 +4,8 @@ import { useState } from 'react'
 import type { LocalItem, SplitPerson } from '../types'
 
 function lineTtc(item: LocalItem): number {
-  return item.unitPriceHt * (1 + item.tvaRate / 100) * item.quantity
+  const lineHt = Math.round(item.unitPriceHt * item.quantity * 100) / 100
+  return Math.round(lineHt * (1 + item.tvaRate / 100) * 100) / 100
 }
 
 export function computeSplitAmounts(
