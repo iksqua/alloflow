@@ -20,7 +20,8 @@ export default async function OrdersPage() {
     .from('orders')
     .select(`
       id, order_number, total_ttc, status, created_at, customer_id, note,
-      payments (method, amount)
+      payments:order_payments(method, amount),
+      items:order_items(product_name, emoji, quantity, unit_price, tva_rate, line_total)
     `)
     .eq('establishment_id', profile.establishment_id)
     .in('status', ['paid', 'refunded', 'cancelled'])
