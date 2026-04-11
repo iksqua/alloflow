@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status, establishment_id')
+    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status, establishment_id, reward_id, discount_amount')
     .eq('id', id)
     .single()
 
@@ -41,9 +41,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { type, value } = parsed.data
 
   // Calcul selon l'ordre de cascade défini dans la spec :
-  // 1. Remise sur sous-total HT
-  // 2. TVA recalculée sur les montants remisés
-  // 3. total_ttc = HT remisé + TVA
+  // 1. Remise commerciale sur sous-total HT
+  // 2. TVA recalculée proportionnellement
+  // 3. Remise fidélité (si reward_id) appliquée en dernier sur le TTC remisé
   const subtotalHt = order.subtotal_ht
   const discountAmount = type === 'percent'
     ? subtotalHt * (value / 100)
@@ -61,7 +61,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const newTax55 = order.tax_5_5 * ratio
   const newTax10 = order.tax_10 * ratio
   const newTax20 = order.tax_20 * ratio
-  const newTotal = discountedHt + newTax55 + newTax10 + newTax20
+  const commercialTotal = discountedHt + newTax55 + newTax10 + newTax20
+
+  // Preserve loyalty discount: if a reward is attached, discount_amount holds the loyalty amount.
+  // Re-apply it on top of the commercial-discounted total so it is not silently lost.
+  const loyaltyDiscountAmount = order.reward_id ? (order.discount_amount ?? 0) : 0
+  const newTotal = Math.max(0, commercialTotal - loyaltyDiscountAmount)
 
   const { data, error } = await supabase
     .from('orders')

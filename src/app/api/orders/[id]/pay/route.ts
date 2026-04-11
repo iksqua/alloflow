@@ -32,6 +32,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Cross-tenant isolation: resolve cashier's establishment first
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('establishment_id')
+    .eq('id', user.id)
+    .single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { id } = await params
   const body = await req.json()
   const parsed = paySchema.safeParse(body)
@@ -39,11 +47,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('total_ttc, status, table_id, session_id')
+    .select('total_ttc, status, table_id, session_id, establishment_id')
     .eq('id', id)
     .single()
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+
+  // Cross-tenant guard — reject if order belongs to a different establishment
+  if (order.establishment_id !== profile.establishment_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   if (order.status !== 'open' && order.status !== 'paying') {
     return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })
   }
@@ -52,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Use the server-stored total_ttc as the authoritative amount (avoids client/server float mismatch)
   const authorizedTotal = order.total_ttc
 
-  // Validate split totals BEFORE marking the order paid
+  // Validate split totals BEFORE marking the order as paid to avoid an unrecoverable state
   if (method === 'split' && split_payments) {
     const splitTotal = split_payments.reduce((sum, p) => sum + p.amount, 0)
     if (Math.abs(splitTotal - authorizedTotal) > 0.01) {
@@ -108,14 +122,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // --- Fiscal journal entry (NF525 chain hash) ---
+  // profile.establishment_id was already resolved at the top of this handler
   try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('establishment_id')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.establishment_id) {
+    if (profile.establishment_id) {
       // Get last entry for this establishment to chain hash
       const { data: lastEntry } = await supabase
         .from('fiscal_journal_entries')
@@ -132,7 +141,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const entryHash  = computeEntryHash(prevHash, nextSeq, id, authorizedTotal, occurredAt)
 
       await supabase.from('fiscal_journal_entries').insert({
-        establishment_id: profile.establishment_id,
+        establishment_id: profile!.establishment_id,
         sequence_no:      nextSeq,
         event_type:       'sale',
         order_id:         id,
