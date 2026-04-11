@@ -18,7 +18,9 @@ vi.mock('@supabase/supabase-js', () => ({
       }
       if (table === 'profiles') {
         return {
-          update: () => ({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          update: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null }),
+          }),
         }
       }
       return {}

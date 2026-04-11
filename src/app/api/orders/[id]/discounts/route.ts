@@ -41,9 +41,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { type, value } = parsed.data
 
   // Calcul selon l'ordre de cascade défini dans la spec :
-  // 1. Remise sur sous-total HT
-  // 2. TVA recalculée sur les montants remisés
-  // 3. total_ttc = HT remisé + TVA
+  // 1. Remise commerciale sur sous-total HT
+  // 2. TVA recalculée proportionnellement
+  // 3. Remise fidélité (si reward_id) appliquée en dernier sur le TTC remisé
   const subtotalHt = order.subtotal_ht
   const discountAmount = type === 'percent'
     ? subtotalHt * (value / 100)

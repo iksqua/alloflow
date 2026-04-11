@@ -18,12 +18,24 @@ function mockSupabase(userNull = false) {
         data: { user: userNull ? null : { id: 'user-1' } },
       }),
     },
-    from: vi.fn(() => ({
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: { id: 'prod-1', establishment_id: 'est-1' }, error: null }),
-    })),
+    from: vi.fn((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { establishment_id: 'est-1' },
+            error: null,
+          }),
+        }
+      }
+      return {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'prod-1' }, error: null }),
+      }
+    }),
   }
   ;(createClient as ReturnType<typeof vi.fn>).mockResolvedValue(mock)
   return mock

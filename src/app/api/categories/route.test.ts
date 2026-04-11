@@ -9,23 +9,23 @@ import { NextRequest } from 'next/server'
 describe('GET /api/categories', () => {
   it('retourne les catégories triées par sort_order', async () => {
     const mockCategories = [
-      { id: '1', name: 'Cafés', sort_order: 0, products: [{ count: 0 }] },
-      { id: '2', name: 'Cookies', sort_order: 1, products: [{ count: 0 }] },
+      { id: '1', name: 'Cafés', sort_order: 0, products: [{ count: 3 }] },
+      { id: '2', name: 'Cookies', sort_order: 1, products: [{ count: 1 }] },
     ]
     ;(createClient as ReturnType<typeof vi.fn>).mockResolvedValue({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
-      from: vi.fn().mockImplementation((table: string) => {
+      from: vi.fn((table: string) => {
         if (table === 'profiles') {
           return {
             select: vi.fn().mockReturnThis(),
-            eq:     vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: { establishment_id: 'est1' }, error: null }),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: { establishment_id: 'est-1' }, error: null }),
           }
         }
         return {
           select: vi.fn().mockReturnThis(),
-          eq:     vi.fn().mockReturnThis(),
-          order:  vi.fn().mockResolvedValue({ data: mockCategories, error: null }),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({ data: mockCategories, error: null }),
         }
       }),
     })
