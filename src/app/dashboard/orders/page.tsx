@@ -15,12 +15,11 @@ export default async function OrdersPage() {
 
   if (!profile?.establishment_id) redirect('/onboarding')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: orders } = await (supabase as unknown as any)
+  const { data: orders } = await supabase
     .from('orders')
     .select(`
-      id, order_number, total_ttc, status, created_at, customer_id, note,
-      payments:order_payments(method, amount),
+      id, total_ttc, status, created_at, customer_id, note,
+      payments(method, amount),
       items:order_items(product_name, emoji, quantity, unit_price, tva_rate, line_total)
     `)
     .eq('establishment_id', profile.establishment_id)

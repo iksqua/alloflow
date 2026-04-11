@@ -20,7 +20,6 @@ interface OrderItem {
 
 interface Order {
   id: string
-  order_number: number | null
   total_ttc: number
   status: string
   created_at: string
@@ -110,7 +109,7 @@ function OrderDetailPanel({
     return acc
   }, {})
 
-  const label = order.order_number ? `#${order.order_number}` : order.id.slice(0, 8)
+  const label = `#${order.id.slice(0, 8).toUpperCase()}`
 
   return (
     <>
@@ -291,7 +290,7 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter(o =>
-        (o.order_number ? `#${o.order_number}` : '').includes(q) ||
+        o.id.slice(0, 8).toUpperCase().includes(q.toUpperCase()) ||
         o.id.toLowerCase().includes(q) ||
         o.total_ttc.toFixed(2).includes(q)
       )
@@ -307,7 +306,7 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
   }, [orders])
 
   async function handleRefund(order: Order) {
-    const label = order.order_number ? `#${order.order_number}` : order.id.slice(0, 8)
+    const label = `#${order.id.slice(0, 8).toUpperCase()}`
     if (!confirm(`Rembourser la commande ${label} (${order.total_ttc.toFixed(2)} €) ?`)) return
     setRefunding(order.id)
     try {
@@ -403,7 +402,7 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
                   className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface2)]/30 transition-colors cursor-pointer"
                 >
                   <td className="px-4 py-3 font-mono text-xs text-[var(--text4)]">
-                    {order.order_number ? `#${order.order_number}` : order.id.slice(0, 8)}
+                    {`#${order.id.slice(0, 8).toUpperCase()}`}
                   </td>
                   <td className="px-4 py-3 text-xs text-[var(--text3)]">
                     {new Date(order.created_at).toLocaleString('fr-FR', {
