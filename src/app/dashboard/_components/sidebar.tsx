@@ -15,11 +15,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', exact: true },
   { href: '/dashboard/products', label: 'Produits', icon: '🍽️' },
-  { href: '/dashboard/orders', label: 'Commandes', icon: '📋' },
   { href: '/dashboard/stocks', label: 'Stocks', icon: '📦' },
-  { href: '/dashboard/recettes', label: 'Recettes', icon: '📖' },
-  { href: '/dashboard/sops', label: 'SOPs', icon: '📋' },
-  { href: '/dashboard/fiscal', label: 'Journal fiscal', icon: '🗂️' },
+  { href: '/dashboard/orders', label: 'Historique des ventes', icon: '🧾' },
   {
     href: '/dashboard/analytics',
     label: 'Analytics',
@@ -41,6 +38,9 @@ const NAV_ITEMS: NavItem[] = [
       { href: '/dashboard/crm/programme',              label: 'Programme' },
     ],
   },
+  { href: '/dashboard/recettes', label: 'Recettes', icon: '📖' },
+  { href: '/dashboard/sops', label: 'SOPs', icon: '📋' },
+  { href: '/dashboard/fiscal', label: 'Journal fiscal', icon: '🗂️' },
 ]
 
 const SETTINGS_ITEM = { href: '/dashboard/settings', label: 'Paramètres', icon: '⚙️' }
