@@ -12,6 +12,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
 
+  const { id } = await params
+  const body = await req.json()
+  const result = updateProductSchema.safeParse(body)
+
+  if (!result.success) {
+    return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('establishment_id')
@@ -20,14 +28,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   if (!profile?.establishment_id) {
     return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 403 })
-  }
-
-  const { id } = await params
-  const body = await req.json()
-  const result = updateProductSchema.safeParse(body)
-
-  if (!result.success) {
-    return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
   }
 
   const { data, error } = await supabase
