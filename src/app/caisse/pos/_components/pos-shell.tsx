@@ -25,6 +25,12 @@ interface PosShellProps {
   cashierName: string
   userRole: string
   establishmentId: string
+  establishmentInfo: {
+    name: string
+    siret: string | null
+    address: string | null
+    receiptFooter: string | null
+  }
 }
 
 const EMPTY_TICKET: LocalTicket = { items: [], discount: null, tableId: null, note: '' }
@@ -38,6 +44,7 @@ export function PosShell({
   cashierName,
   userRole,
   establishmentId,
+  establishmentInfo,
 }: PosShellProps) {
   const [session, setSession] = useState<CashSession | null>(initialSession)
   const [ticket, setTicket] = useState<LocalTicket>(EMPTY_TICKET)
@@ -218,6 +225,7 @@ export function PosShell({
         <ReceiptModal
           order={completedOrder}
           linkedCustomer={linkedCustomer}
+          establishmentInfo={establishmentInfo}
           onClose={() => { setShowReceipt(false); setCompletedOrder(null) }}
           onNewOrder={() => { setShowReceipt(false); setCompletedOrder(null) }}
         />

@@ -52,6 +52,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Use the server-stored total_ttc as the authoritative amount (avoids client/server float mismatch)
   const authorizedTotal = order.total_ttc
 
+  // Validate split totals BEFORE marking the order paid
+  if (method === 'split' && split_payments) {
+    const splitTotal = split_payments.reduce((sum, p) => sum + p.amount, 0)
+    if (Math.abs(splitTotal - authorizedTotal) > 0.01) {
+      return NextResponse.json({ error: 'split_payments_total_mismatch', expected: authorizedTotal, got: splitTotal }, { status: 400 })
+    }
+  }
+
   // Marquer la commande payée — filtre sur status pour éviter double-paiement concurrent
   const { error: statusError, data: updatedRows } = await supabase
     .from('orders')
@@ -67,14 +75,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!updatedRows || updatedRows.length === 0) {
     return NextResponse.json({ error: 'order_already_paid' }, { status: 409 })
-  }
-
-  // Validate split totals
-  if (method === 'split' && split_payments) {
-    const splitTotal = split_payments.reduce((sum, p) => sum + p.amount, 0)
-    if (Math.abs(splitTotal - authorizedTotal) > 0.01) {
-      return NextResponse.json({ error: 'split_payments_total_mismatch', expected: authorizedTotal, got: splitTotal }, { status: 400 })
-    }
   }
 
   // Enregistrer le(s) paiement(s)

@@ -7,11 +7,17 @@ import type { Order, LoyaltyCustomer } from '../types'
 interface ReceiptModalProps {
   order: Order
   linkedCustomer: LoyaltyCustomer | null
+  establishmentInfo: {
+    name: string
+    siret: string | null
+    address: string | null
+    receiptFooter: string | null
+  }
   onClose: () => void
   onNewOrder: () => void
 }
 
-export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: ReceiptModalProps) {
+export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose, onNewOrder }: ReceiptModalProps) {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState<'email' | 'sms' | null>(null)
@@ -65,7 +71,13 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
       >
         {/* Reçu printable (caché à l'écran, visible à l'impression) */}
         <div className="receipt-printable hidden print:block">
-          <div className="receipt-center receipt-bold" style={{ fontSize: '14px' }}>ALLOFLOW</div>
+          <div className="receipt-center receipt-bold" style={{ fontSize: '14px' }}>{establishmentInfo.name}</div>
+          {establishmentInfo.address && (
+            <div className="receipt-center" style={{ fontSize: '10px' }}>{establishmentInfo.address}</div>
+          )}
+          {establishmentInfo.siret && (
+            <div className="receipt-center" style={{ fontSize: '10px' }}>SIRET : {establishmentInfo.siret}</div>
+          )}
           <div className="receipt-center" style={{ marginBottom: '8px' }}>
             {new Date(order.created_at).toLocaleDateString('fr-FR', {
               day: '2-digit', month: '2-digit', year: 'numeric',
@@ -115,7 +127,7 @@ export function ReceiptModal({ order, linkedCustomer, onClose, onNewOrder }: Rec
           </div>
           <div className="receipt-divider" />
           <div className="receipt-center" style={{ marginTop: '8px', fontSize: '10px' }}>
-            Merci de votre visite !
+            {establishmentInfo.receiptFooter ?? 'Merci de votre visite !'}
           </div>
         </div>
 
