@@ -26,9 +26,14 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('purchase_orders')
-    .select('*, items:purchase_order_items(*, stock_item:stock_items(id, name, unit))')
+    .select(`
+      *,
+      items:purchase_order_items(*, stock_item:stock_items(id, name, unit)),
+      receptions:purchase_order_receptions(id, received_at, notes, lines)
+    `)
     .eq('establishment_id', establishmentId)
     .order('created_at', { ascending: false })
+    .limit(50)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ orders: data ?? [] })
