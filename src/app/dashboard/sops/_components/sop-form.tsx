@@ -108,7 +108,7 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title: payload.title, content: payload.content, category_id: payload.category_id, recipe_id: payload.recipe_id }),
         })
-        if (!patchRes.ok) { const j = await patchRes.json(); throw new Error(j.error ?? 'Erreur mise à jour procédure') }
+        if (!patchRes.ok) { const j = await patchRes.json(); throw new Error(j.error ?? 'Erreur mise à jour guide') }
         // Replace all steps: delete existing, insert new
         for (const oldStep of sop.steps) {
           const delRes = await fetch(`/api/sops/${sop.id}/steps/${oldStep.id}`, { method: 'DELETE' })
@@ -145,8 +145,8 @@ export function SopForm({ open, sop, categories, recipes, onClose, onSave }: Pro
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-[var(--border)] p-6" style={{ background: 'var(--surface)' }}>
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="text-base font-bold text-[var(--text1)]">{sop ? 'Modifier la procédure' : 'Nouvelle procédure'}</h2>
-            <p className="text-xs text-[var(--text3)] mt-0.5">Saisissez les informations et les étapes de la procédure</p>
+            <h2 className="text-base font-bold text-[var(--text1)]">{sop ? 'Modifier le guide' : 'Nouveau guide'}</h2>
+            <p className="text-xs text-[var(--text3)] mt-0.5">Saisissez les informations et les étapes de la guide</p>
           </div>
           <button onClick={onClose} className="text-lg text-[var(--text3)] hover:text-[var(--text1)] transition-colors cursor-pointer">✕</button>
         </div>

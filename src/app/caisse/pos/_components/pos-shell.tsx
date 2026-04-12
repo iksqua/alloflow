@@ -195,7 +195,7 @@ export function PosShell({
           </button>
           <button
             onClick={() => setShowSops(true)}
-            title="Procédures"
+            title="Guides"
             className="h-8 w-8 rounded-lg text-sm text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors flex items-center justify-center"
           >
             📋
