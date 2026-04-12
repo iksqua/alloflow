@@ -71,7 +71,7 @@ export default async function ReportPage({
       </div>
 
       {/* Main layout */}
-      <div className="flex gap-5 min-h-0 flex-1">
+      <div className="flex flex-col lg:flex-row gap-5">
         {/* Left column */}
         <div className="flex flex-col flex-1 gap-4 min-w-0">
           {/* Breadcrumb */}
@@ -94,7 +94,7 @@ export default async function ReportPage({
         </div>
 
         {/* Right column */}
-        <div className="flex flex-col gap-4 w-[240px] shrink-0">
+        <div className="flex flex-col sm:flex-row lg:flex-col gap-4 lg:w-[240px] lg:shrink-0">
           {/* TVA Summary */}
           <TvaSummary data={tvaBreakdown} />
 

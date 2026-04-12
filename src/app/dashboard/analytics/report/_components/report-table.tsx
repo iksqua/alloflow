@@ -82,7 +82,7 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[480px]">
             <thead>
               <tr>
                 <th
@@ -91,22 +91,22 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
                 >
                   Date/Heure <SortIcon col="createdAt" />
                 </th>
-                <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01]">
+                <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] hidden sm:table-cell">
                   Ticket
                 </th>
                 <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01]">
                   Produits
                 </th>
-                <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01]">
+                <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] hidden sm:table-cell">
                   Paiement
                 </th>
                 <th
-                  className="text-right text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] cursor-pointer select-none hover:text-slate-400 transition-colors"
+                  className="text-right text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] cursor-pointer select-none hover:text-slate-400 transition-colors hidden md:table-cell"
                   onClick={() => handleSort('amountHt')}
                 >
                   HT <SortIcon col="amountHt" />
                 </th>
-                <th className="text-right text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01]">
+                <th className="text-right text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] hidden md:table-cell">
                   TVA
                 </th>
                 <th
@@ -132,13 +132,13 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
                       minute: '2-digit',
                     })}
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs font-mono">
+                  <td className="px-4 py-3 text-slate-400 text-xs font-mono hidden sm:table-cell">
                     #{row.ticketNumber}
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs max-w-[200px] truncate">
+                  <td className="px-4 py-3 text-slate-400 text-xs max-w-[160px] truncate">
                     {row.products || '—'}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 hidden sm:table-cell">
                     {row.paymentMethod === 'card' ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-400">
                         💳 Carte
@@ -149,10 +149,10 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-300 text-xs tabular-nums">
+                  <td className="px-4 py-3 text-right text-slate-300 text-xs tabular-nums hidden md:table-cell">
                     {row.amountHt.toFixed(2)} €
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-500 text-xs tabular-nums">
+                  <td className="px-4 py-3 text-right text-slate-500 text-xs tabular-nums hidden md:table-cell">
                     {row.tvaAmount.toFixed(2)} €
                   </td>
                   <td className="px-4 py-3 text-right text-slate-200 text-xs tabular-nums font-semibold">
@@ -163,13 +163,15 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
             </tbody>
             <tfoot>
               <tr className="bg-blue-500/[0.05] border-t border-white/[0.06]">
-                <td colSpan={4} className="px-4 py-3 text-xs font-semibold text-slate-300">
+                <td colSpan={2} className="px-4 py-3 text-xs font-semibold text-slate-300">
                   Total ({rows.length} ligne{rows.length > 1 ? 's' : ''})
                 </td>
-                <td className="px-4 py-3 text-right text-xs font-semibold text-slate-300 tabular-nums">
+                <td className="px-4 py-3 hidden sm:table-cell" />
+                <td className="px-4 py-3 hidden sm:table-cell" />
+                <td className="px-4 py-3 text-right text-xs font-semibold text-slate-300 tabular-nums hidden md:table-cell">
                   {totalHt.toFixed(2)} €
                 </td>
-                <td className="px-4 py-3 text-right text-xs font-semibold text-slate-400 tabular-nums">
+                <td className="px-4 py-3 text-right text-xs font-semibold text-slate-400 tabular-nums hidden md:table-cell">
                   {totalTva.toFixed(2)} €
                 </td>
                 <td className="px-4 py-3 text-right text-xs font-bold text-blue-400 tabular-nums">
