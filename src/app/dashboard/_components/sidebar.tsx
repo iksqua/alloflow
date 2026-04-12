@@ -39,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { href: '/dashboard/recettes', label: 'Recettes', icon: '📖' },
-  { href: '/dashboard/sops', label: 'SOPs', icon: '📋' },
+  { href: '/dashboard/sops', label: 'Procédures', icon: '📋' },
   { href: '/dashboard/fiscal', label: 'Journal fiscal', icon: '🗂️' },
 ]
 

@@ -56,17 +56,17 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
 
   async function openEditForm(sop: Sop) {
     const res = await fetch(`/api/sops/${sop.id}/steps`)
-    if (!res.ok) { toast.error('Erreur lors du chargement du SOP'); return }
+    if (!res.ok) { toast.error('Erreur lors du chargement de la procédure'); return }
     const json = await res.json()
     setEditingSop({ ...sop, steps: json.steps ?? [] })
     setShowForm(true)
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer ce SOP ?')) return
+    if (!confirm('Supprimer cette procédure ?')) return
     const res = await fetch(`/api/sops/${id}`, { method: 'DELETE' })
     if (!res.ok) { toast.error('Erreur lors de la suppression'); return }
-    toast.success('SOP supprimé')
+    toast.success('Procédure supprimée')
     await reloadSops()
   }
 
@@ -76,7 +76,7 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-[var(--text1)]">SOPs</h1>
+            <h1 className="text-xl font-bold text-[var(--text1)]">Procédures</h1>
             <p className="text-xs text-[var(--text4)] mt-0.5">{sops.length} procédure{sops.length !== 1 ? 's' : ''}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -87,7 +87,7 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
             <button onClick={() => { setEditingSop(null); setShowForm(true) }}
               className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
               style={{ background: 'var(--blue)' }}>
-              + Nouveau SOP
+              + Nouvelle procédure
             </button>
           </div>
         </div>
@@ -119,7 +119,7 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
         {filtered.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-5xl mb-4">📋</div>
-            <div className="font-semibold text-[var(--text2)]">Aucun SOP</div>
+            <div className="font-semibold text-[var(--text2)]">Aucune procédure</div>
             <div className="text-sm text-[var(--text4)] mt-1">Créez votre première procédure opérationnelle</div>
           </div>
         ) : (

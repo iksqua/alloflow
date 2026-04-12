@@ -40,7 +40,7 @@ export function SopCategoryManager({ open, categories: initialCategories, onClos
   }
 
   async function deleteCategory(id: string) {
-    if (!confirm(`Supprimer cette catégorie ? Les SOPs associés n'auront plus de catégorie.`)) return
+    if (!confirm(`Supprimer cette catégorie ? Les procédures associées n'auront plus de catégorie.`)) return
     await fetch(`/api/sop-categories/${id}`, { method: 'DELETE' })
     await onSave()
     setCats(prev => prev.filter(c => c.id !== id))
@@ -53,7 +53,7 @@ export function SopCategoryManager({ open, categories: initialCategories, onClos
         <div className="flex items-start justify-between mb-6">
           <div>
             <h2 className="text-base font-bold text-[var(--text1)]">Gérer les catégories</h2>
-            <p className="text-xs text-[var(--text3)] mt-0.5">Organisez vos SOPs par catégories</p>
+            <p className="text-xs text-[var(--text3)] mt-0.5">Organisez vos procédures par catégories</p>
           </div>
           <button onClick={onClose} className="text-lg text-[var(--text3)] hover:text-[var(--text1)] transition-colors cursor-pointer">✕</button>
         </div>
