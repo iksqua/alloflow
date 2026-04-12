@@ -36,16 +36,16 @@ export function PeriodSelector({ current, customFrom, customTo, onChange, loadin
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+    <div className="flex flex-col gap-2">
       {/* Period tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
+      <div className="flex items-center gap-1 p-1 rounded-xl overflow-x-auto flex-shrink-0" style={{ background: 'var(--surface)' }}>
         {(['today', '7d', '30d', 'custom'] as Period[]).map(p => (
           <button
             key={p}
             onClick={() => handlePeriod(p)}
             disabled={loading}
             className={[
-              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
               current === p
                 ? 'text-white shadow-sm'
                 : 'text-[var(--text3)] hover:text-[var(--text2)]',
@@ -60,7 +60,7 @@ export function PeriodSelector({ current, customFrom, customTo, onChange, loadin
 
       {/* Custom date inputs */}
       {(showCustom || current === 'custom') && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input
             type="date"
             value={from}

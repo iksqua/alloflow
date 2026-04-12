@@ -51,7 +51,7 @@ export default async function AnalyticsPage({
   return (
     <div className="flex flex-col min-h-0 flex-1">
       {/* Topbar */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-xl font-bold text-[var(--text1)]">Analytiques</h1>
         <Suspense fallback={<div className="h-7" />}>
           <PeriodPicker

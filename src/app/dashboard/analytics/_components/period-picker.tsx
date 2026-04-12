@@ -49,28 +49,45 @@ function PeriodPickerInner({ currentPeriod, customFrom, customTo, establishments
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 flex-wrap">
-      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
-        {(['today', '7d', '30d', 'custom'] as const).map(p => (
-          <button
-            key={p}
-            onClick={() => handlePeriod(p)}
-            className={[
-              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-              currentPeriod === p
-                ? 'text-white shadow-sm'
-                : 'text-[var(--text3)] hover:text-[var(--text2)]',
-            ].join(' ')}
-            style={currentPeriod === p ? { background: 'var(--blue)' } : undefined}
+    <div className="flex flex-col gap-2">
+      {/* Row 1: period pills + establishment selector */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1 p-1 rounded-xl overflow-x-auto flex-shrink-0" style={{ background: 'var(--surface)' }}>
+          {(['today', '7d', '30d', 'custom'] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => handlePeriod(p)}
+              className={[
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                currentPeriod === p
+                  ? 'text-white shadow-sm'
+                  : 'text-[var(--text3)] hover:text-[var(--text2)]',
+              ].join(' ')}
+              style={currentPeriod === p ? { background: 'var(--blue)' } : undefined}
+            >
+              {LABELS[p]}
+            </button>
+          ))}
+        </div>
+
+        {/* Establishment selector — franchise_admin only */}
+        {establishments.length > 0 && (
+          <select
+            value={currentEstablishment ?? ''}
+            onChange={e => navigate({ site: e.target.value })}
+            className="px-2.5 py-1.5 rounded-lg text-xs border text-[var(--text1)] bg-[var(--surface)] border-[var(--border)] focus:outline-none focus:border-[var(--blue)]"
           >
-            {LABELS[p]}
-          </button>
-        ))}
+            <option value="">Tous les sites</option>
+            {establishments.map(e => (
+              <option key={e.id} value={e.id}>{e.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
-      {/* Custom date inputs */}
+      {/* Row 2: custom date inputs (when needed) */}
       {(showCustom || currentPeriod === 'custom') && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input
             type="date"
             value={from}
@@ -95,20 +112,6 @@ function PeriodPickerInner({ currentPeriod, customFrom, customTo, establishments
             OK
           </button>
         </div>
-      )}
-
-      {/* Establishment selector — franchise_admin only */}
-      {establishments.length > 0 && (
-        <select
-          value={currentEstablishment ?? ''}
-          onChange={e => navigate({ site: e.target.value })}
-          className="px-2.5 py-1.5 rounded-lg text-xs border text-[var(--text1)] bg-[var(--surface)] border-[var(--border)] focus:outline-none focus:border-[var(--blue)]"
-        >
-          <option value="">Tous les sites</option>
-          {establishments.map(e => (
-            <option key={e.id} value={e.id}>{e.name}</option>
-          ))}
-        </select>
       )}
     </div>
   )
