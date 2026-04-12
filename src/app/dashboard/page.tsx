@@ -94,15 +94,13 @@ export default async function DashboardPage() {
         .eq('establishment_id', estId)
         .gt('alert_threshold', 0),
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as unknown as any)
+      supabase
         .from('purchase_orders')
-        .select('id, supplier_name, updated_at')
+        .select('id, supplier, created_at')
         .eq('establishment_id', estId)
         .eq('status', 'received'),
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as unknown as any)
+      supabase
         .from('order_items')
         .select('product_name, quantity, line_total, orders!inner(establishment_id, status, created_at)')
         .eq('orders.establishment_id', estId)
@@ -110,10 +108,9 @@ export default async function DashboardPage() {
         .gte('orders.created_at', todayStart.toISOString())
         .lt('orders.created_at', todayEnd.toISOString()),
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as unknown as any)
+      supabase
         .from('orders')
-        .select('id, order_number, total_ttc, created_at, customer_id, customers(first_name, last_name, tier), order_items(product_name, quantity)')
+        .select('id, total_ttc, created_at, customer_id, customers(first_name, last_name, tier), order_items(product_name, quantity)')
         .eq('establishment_id', estId)
         .eq('status', 'paid')
         .order('created_at', { ascending: false })
@@ -121,8 +118,8 @@ export default async function DashboardPage() {
 
       supabase
         .from('loyalty_transactions')
-        .select('customer_id')
-        .eq('establishment_id', estId)
+        .select('customer_id, customers!inner(establishment_id)')
+        .eq('customers.establishment_id', estId)
         .gte('created_at', todayStart.toISOString())
         .lt('created_at', todayEnd.toISOString()),
     ])
@@ -159,10 +156,10 @@ export default async function DashboardPage() {
       }))
 
     // Pending deliveries
-    const pendingDeliveries = (deliveries ?? []).map((d: { id: string; supplier_name: string; updated_at: string }) => ({
+    const pendingDeliveries = (deliveries ?? []).map((d: { id: string; supplier: string; created_at: string }) => ({
       id: d.id,
-      supplierName: d.supplier_name,
-      receivedAt: d.updated_at,
+      supplierName: d.supplier,
+      receivedAt: d.created_at,
     }))
 
     // Top products
@@ -187,10 +184,9 @@ export default async function DashboardPage() {
     // Recent orders
     const recentOrders = (recentRaw ?? []).map((o: {
       id: string
-      order_number: number
       total_ttc: number
       created_at: string
-      customers: { first_name: string; last_name: string; tier: string } | null
+      customers: { first_name: string; last_name: string | null; tier: string } | null
       order_items: { product_name: string; quantity: number }[]
     }) => {
       const items = o.order_items ?? []
@@ -199,10 +195,11 @@ export default async function DashboardPage() {
         .map((i) => `${i.product_name}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`)
         .join(', ') + (items.length > 3 ? '…' : '')
 
+      const lastName = o.customers?.last_name
       return {
         id: o.id,
-        orderNumber: o.order_number,
-        customerName: o.customers ? `${o.customers.first_name} ${o.customers.last_name.charAt(0)}.` : null,
+        orderNumber: null,
+        customerName: o.customers ? `${o.customers.first_name}${lastName ? ` ${lastName.charAt(0)}.` : ''}` : null,
         customerTier: (o.customers?.tier ?? null) as 'standard' | 'silver' | 'gold' | null,
         totalAmount: o.total_ttc,
         itemsSummary,

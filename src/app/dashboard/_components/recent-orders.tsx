@@ -47,7 +47,7 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium text-[var(--text1)]">
-                  {o.customerName ?? 'Anonyme'} · #{o.orderNumber}
+                  {o.customerName ?? 'Anonyme'} · #{o.orderNumber ?? o.id.slice(0, 8).toUpperCase()}
                 </div>
                 <div className="text-[11px] text-[var(--text3)] truncate mt-0.5">
                   {o.itemsSummary || '—'} · {o.totalAmount.toFixed(2).replace('.', ',')} €

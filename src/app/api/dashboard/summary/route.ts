@@ -30,7 +30,7 @@ export type DashboardSummary = {
   }[]
   recentOrders: {
     id: string
-    orderNumber: number
+    orderNumber: number | null
     customerName: string | null
     customerTier: 'standard' | 'silver' | 'gold' | null
     totalAmount: number
