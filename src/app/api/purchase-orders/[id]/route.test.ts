@@ -28,7 +28,14 @@ describe('PATCH /api/purchase-orders/[id]', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('updates supplier and notes', async () => {
-    const supabase = makeSupabase()
+    let callCount = 0
+    const supabase = makeSupabase({
+      single: vi.fn().mockImplementation(() => {
+        callCount++
+        if (callCount === 1) return Promise.resolve({ data: { establishment_id: 'est-1' }, error: null })
+        return Promise.resolve({ data: { id: 'ord-1', status: 'pending', total_ht: 10 }, error: null })
+      }),
+    })
     vi.mocked(createClient).mockResolvedValue({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
       ...supabase,
