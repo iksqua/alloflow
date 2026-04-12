@@ -52,3 +52,29 @@ export type CreateStockItemInput     = z.infer<typeof createStockItemSchema>
 export type UpdateStockItemInput     = z.infer<typeof updateStockItemSchema>
 export type CreatePurchaseOrderInput = z.infer<typeof createPurchaseOrderSchema>
 export type ReceiveDeliveryInput     = z.infer<typeof receiveDeliverySchema>
+
+export const patchPurchaseOrderSchema = z.object({
+  supplier:                z.string().min(1).max(100).optional(),
+  requested_delivery_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  notes:                   z.string().max(500).nullable().optional(),
+  // Lines to upsert (only those with quantity_received == 0 or new lines)
+  upsert_items: z.array(z.object({
+    id:               uuidStr.optional(),  // omit for new lines
+    stock_item_id:    uuidStr,
+    quantity_ordered: z.number().min(0.001),
+    unit_price:       z.number().min(0),
+  })).optional(),
+  // IDs of lines to delete (only allowed if quantity_received is null/0)
+  delete_item_ids: z.array(uuidStr).optional(),
+})
+
+export const receiveOrderSchema = z.object({
+  notes: z.string().max(500).nullable().optional(),
+  items: z.array(z.object({
+    purchase_order_item_id: uuidStr,
+    quantity_received:      z.number().min(0),
+  })).min(1),
+})
+
+export type PatchPurchaseOrderInput = z.infer<typeof patchPurchaseOrderSchema>
+export type ReceiveOrderInput       = z.infer<typeof receiveOrderSchema>
