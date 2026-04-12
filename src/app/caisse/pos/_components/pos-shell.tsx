@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useOnlineStatus } from '@/lib/hooks/use-online-status'
 import { CategoriesPanel } from './categories-panel'
@@ -34,6 +34,23 @@ interface PosShellProps {
   userRole: string
   establishmentId: string
   establishmentInfo: EstablishmentInfo
+}
+
+function SessionDuration({ openedAt }: { openedAt: string }) {
+  const [label, setLabel] = useState(() => formatDur(openedAt))
+  useEffect(() => {
+    const id = setInterval(() => setLabel(formatDur(openedAt)), 30000)
+    return () => clearInterval(id)
+  }, [openedAt])
+  return <>{label}</>
+}
+
+function formatDur(openedAt: string): string {
+  const ms = Date.now() - new Date(openedAt).getTime()
+  const h = Math.floor(ms / 3600000)
+  const m = Math.floor((ms % 3600000) / 60000)
+  if (h > 0) return `${h}h${m.toString().padStart(2, '0')}`
+  return `${m} min`
 }
 
 const EMPTY_TICKET: LocalTicket = { items: [], discount: null, tableId: null, note: '' }
@@ -131,45 +148,67 @@ export function PosShell({
       {/* Barre de navigation caisse */}
       <div
         className="flex items-center justify-between px-4 h-12 flex-shrink-0 border-b border-[var(--border)]"
-        style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          background: 'var(--bg-tabs)', zIndex: 10,
-        }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'var(--bg-tabs)', zIndex: 10 }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-[var(--blue)] flex items-center justify-center text-xs font-bold text-white">A</div>
-          <span className="text-sm font-semibold text-[var(--text1)]">Caisse</span>
-          {session && (
-            <span className="text-xs text-[var(--green)] bg-[var(--green-bg)] px-2 py-0.5 rounded-full">Session ouverte</span>
-          )}
+        {/* Gauche : logo + caissier */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-[var(--blue)] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">A</div>
+          <div className="hidden sm:flex flex-col leading-tight">
+            <span className="text-xs font-semibold text-[var(--text1)]">Caisse</span>
+            <span className="text-[10px] text-[var(--text3)]">{cashierName}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Centre : statut session */}
+        <button
+          onClick={() => setShowSession(true)}
+          className={[
+            'flex items-center gap-2 h-8 px-3 rounded-lg text-xs font-medium transition-all border',
+            session
+              ? 'text-[var(--green)] hover:bg-[rgba(16,185,129,0.08)]'
+              : 'text-white hover:opacity-90',
+          ].join(' ')}
+          style={session
+            ? { borderColor: 'rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)' }
+            : { background: '#d97706', border: '1px solid #b45309' }
+          }
+        >
+          <span
+            className={session ? 'w-1.5 h-1.5 rounded-full bg-[var(--green)]' : ''}
+            style={session ? { animation: 'none' } : undefined}
+          />
+          {session ? (
+            <span>Session ouverte · <SessionDuration openedAt={session.opened_at} /></span>
+          ) : (
+            <span>🔓 Ouvrir la caisse</span>
+          )}
+        </button>
+
+        {/* Droite : actions */}
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setShowFloorPlan(true)}
-            className="h-8 px-3 rounded-lg text-xs text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"
+            title="Plan de salle"
+            className="h-8 w-8 rounded-lg text-sm text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors flex items-center justify-center"
           >
-            🗺 Plan de salle
+            🗺
           </button>
           <button
             onClick={() => setShowSops(true)}
-            className="h-8 px-3 rounded-lg text-xs text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"
+            title="SOPs"
+            className="h-8 w-8 rounded-lg text-sm text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors flex items-center justify-center"
           >
-            📋 SOPs
+            📋
           </button>
           {userRole !== 'caissier' && (
             <a
-              href="/dashboard/products"
-              className="h-8 px-3 rounded-lg text-xs text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"
+              href="/dashboard"
+              title="Dashboard"
+              className="h-8 px-2.5 rounded-lg text-xs text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors flex items-center"
             >
-              ← Dashboard admin
+              ← Dashboard
             </a>
           )}
-          <button
-            onClick={() => setShowSession(true)}
-            className="h-8 px-3 rounded-lg text-xs font-medium text-[var(--text2)] border border-[var(--border)] hover:bg-[var(--surface2)] transition-colors"
-          >
-            {cashierName}
-          </button>
         </div>
       </div>
 
