@@ -44,7 +44,7 @@ export function ProductsTable({
 
   return (
     <div className="overflow-x-auto">
-    <table className="w-full">
+    <table className="w-full min-w-[480px]">
       <thead>
         <tr style={{ borderBottom: '1px solid var(--border)' }}>
           <th className="px-3 py-2 w-10">
@@ -55,9 +55,12 @@ export function ProductsTable({
               className="w-4 h-4 rounded accent-[var(--blue)] cursor-pointer"
             />
           </th>
-          {['Produit', 'Catégorie', 'Prix TTC', 'TVA', 'Statut', 'Actions'].map(h => (
-            <th key={h} className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-[var(--text3)]">{h}</th>
-          ))}
+          <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-[var(--text3)]">Produit</th>
+          <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-[var(--text3)] hidden sm:table-cell">Catégorie</th>
+          <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-[var(--text3)]">Prix TTC</th>
+          <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-[var(--text3)] hidden md:table-cell">TVA</th>
+          <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-[var(--text3)]">Statut</th>
+          <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-[var(--text3)]">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -91,7 +94,7 @@ export function ProductsTable({
                   </div>
                 </div>
               </td>
-              <td className="px-3 py-2.5">
+              <td className="px-3 py-2.5 hidden sm:table-cell">
                 {product.category ? (
                   <span
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
@@ -111,7 +114,7 @@ export function ProductsTable({
               <td className="px-3 py-2.5 text-sm text-[var(--text1)] tabular-nums">
                 {(product.price * (1 + product.tva_rate / 100)).toFixed(2)} €
               </td>
-              <td className="px-3 py-2.5">
+              <td className="px-3 py-2.5 hidden md:table-cell">
                 <TvaBadge rate={product.tva_rate} />
               </td>
               <td className="px-3 py-2.5">

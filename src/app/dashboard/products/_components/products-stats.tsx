@@ -21,7 +21,7 @@ export function ProductsStats({ products }: ProductsStatsProps) {
   ]
 
   return (
-    <div className="flex gap-4 mb-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
       {stats.map((s) => (
         <div
           key={s.label}

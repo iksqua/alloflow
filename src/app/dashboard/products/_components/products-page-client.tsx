@@ -205,24 +205,24 @@ export function ProductsPageClient({ initialProducts, initialCategories }: Produ
       />
 
       {/* Bouton ajouter + compte */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <p className="text-sm text-[var(--text3)]">
           {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''}
           {search || filterCategoryId || filterStatus !== 'all' ? ' (filtré)' : ''}
         </p>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={() => setStockImportOpen(true)}
-            className="h-9 px-4 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--text3)] hover:bg-[var(--surface2)] transition-colors"
+            className="h-9 px-3 sm:px-4 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--text3)] hover:bg-[var(--surface2)] transition-colors whitespace-nowrap"
           >
-            📦 Depuis le stock
+            📦 <span className="hidden sm:inline">Depuis le stock</span>
           </button>
           <button
             onClick={openCreate}
-            className="h-9 px-4 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            className="h-9 px-3 sm:px-4 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
             style={{ background: 'var(--blue)' }}
           >
-            + Nouveau produit
+            + <span className="hidden sm:inline">Nouveau </span>produit
           </button>
         </div>
       </div>
