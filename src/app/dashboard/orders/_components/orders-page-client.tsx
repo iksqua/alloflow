@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PeriodSelector, type Period } from '@/app/dashboard/_components/period-selector'
 
 interface Payment {
   method: 'card' | 'cash' | 'ticket_resto'
@@ -294,8 +295,26 @@ function dayLabel(key: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
+function periodStart(p: Period, customFrom: string): Date | null {
+  const now = new Date()
+  if (p === 'today') { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }
+  if (p === '7d')    { const d = new Date(now); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0); return d }
+  if (p === '30d')   { const d = new Date(now); d.setDate(d.getDate() - 29); d.setHours(0, 0, 0, 0); return d }
+  if (p === 'custom' && customFrom) return new Date(customFrom + 'T00:00:00')
+  return null
+}
+
+function periodEnd(p: Period, customTo: string): Date | null {
+  if (p === 'today') { const d = new Date(); d.setHours(23, 59, 59, 999); return d }
+  if (p === 'custom' && customTo) return new Date(customTo + 'T23:59:59')
+  return null
+}
+
 export function OrdersPageClient({ initialOrders, userRole }: Props) {
   const [orders, setOrders] = useState(initialOrders)
+  const [period, setPeriod] = useState<Period>('today')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [refunding, setRefunding] = useState<string | null>(null)
@@ -304,8 +323,22 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
 
   const canRefund = userRole === 'admin' || userRole === 'super_admin'
 
+  function handlePeriodChange(p: Period, from?: string, to?: string) {
+    setPeriod(p)
+    if (from !== undefined) setCustomFrom(from)
+    if (to !== undefined) setCustomTo(to)
+  }
+
   const filtered = useMemo(() => {
-    let list = statusFilter === 'all' ? orders : orders.filter(o => o.status === statusFilter)
+    const start = periodStart(period, customFrom)
+    const end = periodEnd(period, customTo)
+    let list = orders.filter(o => {
+      const d = new Date(o.created_at)
+      if (start && d < start) return false
+      if (end && d > end) return false
+      return true
+    })
+    if (statusFilter !== 'all') list = list.filter(o => o.status === statusFilter)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter(o =>
@@ -315,18 +348,7 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
       )
     }
     return list
-  }, [orders, statusFilter, search])
-
-  const todayStats = useMemo(() => {
-    const key = todayKey()
-    const todayOrders = orders.filter(o => localDateKey(o.created_at) === key)
-    const paid = todayOrders.filter(o => o.status === 'paid')
-    return {
-      count: paid.length,
-      revenue: paid.reduce((s, o) => s + o.total_ttc, 0),
-      refunded: todayOrders.filter(o => o.status === 'refunded').length,
-    }
-  }, [orders])
+  }, [orders, statusFilter, search, period, customFrom, customTo])
 
   const groupedByDay = useMemo(() => {
     const map = new Map<string, Order[]>()
@@ -368,23 +390,14 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
     <div>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <h1 className="text-xl font-bold text-[var(--text1)]">Historique des ventes</h1>
-        </div>
-
-        {/* Today's stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {[
-            { label: 'Ventes', value: todayStats.count, fmt: (v: number) => v.toString() },
-            { label: "Chiffre d'affaires", value: todayStats.revenue, fmt: (v: number) => `${v.toFixed(2)} €` },
-            { label: 'Remboursements', value: todayStats.refunded, fmt: (v: number) => v.toString() },
-          ].map(s => (
-            <div key={s.label} className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text4)] mb-1">{s.label}</p>
-              <p className="text-2xl font-black text-[var(--text1)]">{s.fmt(s.value)}</p>
-              <p className="text-[10px] text-[var(--text4)] mt-0.5">Aujourd'hui</p>
-            </div>
-          ))}
+          <PeriodSelector
+            current={period}
+            customFrom={customFrom}
+            customTo={customTo}
+            onChange={handlePeriodChange}
+          />
         </div>
 
         {/* Filters */}
