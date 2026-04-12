@@ -40,13 +40,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const establishmentId = await getEstablishmentId(supabase, user.id)
+  if (!establishmentId) return NextResponse.json({ error: 'Establishment not found' }, { status: 400 })
 
   // Verify order belongs to this establishment and is editable
   const { data: order, error: orderError } = await supabase
     .from('purchase_orders')
     .select('id, status')
     .eq('id', id)
-    .eq('establishment_id', establishmentId ?? '')
+    .eq('establishment_id', establishmentId)
     .single()
 
   if (orderError || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })

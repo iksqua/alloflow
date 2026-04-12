@@ -82,11 +82,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Record reception
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).from('purchase_order_receptions').insert({
+  const { error: receptionError } = await (supabase as any).from('purchase_order_receptions').insert({
     purchase_order_id: id,
     notes: notes ?? null,
     lines: receptionLines,
   })
+  if (receptionError) return NextResponse.json({ error: receptionError.message }, { status: 500 })
 
   // Recalculate status from DB state
   const { data: updatedItems } = await supabase
