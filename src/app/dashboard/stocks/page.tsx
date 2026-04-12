@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { StocksPageClient } from './_components/stocks-page-client'
-import type { StockItem, PurchaseOrder } from './_components/types'
+import type { StockItem } from './_components/types'
 
 export default async function StocksPage() {
   const supabase = await createClient()
@@ -17,19 +17,13 @@ export default async function StocksPage() {
 
   if (!profile?.establishment_id) redirect('/onboarding')
 
-  const [stockRes, ordersRes, categoriesRes] = await Promise.all([
+  const [stockRes, categoriesRes] = await Promise.all([
     supabase
       .from('stock_items')
       .select('*')
       .eq('establishment_id', profile.establishment_id)
       .eq('active', true)
       .order('name'),
-    supabase
-      .from('purchase_orders')
-      .select('*, items:purchase_order_items(*, stock_item:stock_items(id, name, unit))')
-      .eq('establishment_id', profile.establishment_id)
-      .order('created_at', { ascending: false })
-      .limit(20),
     supabase
       .from('categories')
       .select('id, name, color_hex')
@@ -44,7 +38,6 @@ export default async function StocksPage() {
       : i.quantity < i.alert_threshold
       ? 'alert'
       : 'ok',
-    // New columns added in migrations — fallback until Supabase types regenerated
     purchase_price:  (i as unknown as Record<string, number>).purchase_price  ?? 0,
     purchase_qty:    (i as unknown as Record<string, number>).purchase_qty    ?? 0,
     is_pos:          Boolean((i as unknown as Record<string, unknown>).is_pos),
@@ -57,7 +50,6 @@ export default async function StocksPage() {
   return (
     <StocksPageClient
       initialItems={items}
-      initialOrders={(ordersRes.data ?? []) as PurchaseOrder[]}
       categories={(categoriesRes.data ?? []) as { id: string; name: string; color_hex: string }[]}
     />
   )
