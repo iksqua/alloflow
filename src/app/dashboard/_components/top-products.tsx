@@ -1,18 +1,19 @@
 'use client'
-import type { DashboardSummary } from '@/app/api/dashboard/summary/route'
+import type { DashboardData } from '@/app/dashboard/_lib/fetch-dashboard-data'
 
 interface TopProductsProps {
-  products: DashboardSummary['topProducts']
+  products: DashboardData['topProducts']
+  label?: string
 }
 
-export function TopProducts({ products }: TopProductsProps) {
+export function TopProducts({ products, label = "Aujourd'hui" }: TopProductsProps) {
   const maxRevenue = products[0]?.revenue ?? 1
 
   return (
     <div className="rounded-xl border border-[var(--border)] p-5" style={{ background: 'var(--surface)' }}>
       <div className="mb-4">
-        <div className="text-sm font-bold text-[var(--text1)]">Top produits du jour</div>
-        <div className="text-xs text-[var(--text3)] mt-0.5">Par chiffre d'affaires</div>
+        <div className="text-sm font-bold text-[var(--text1)]">Top produits</div>
+        <div className="text-xs text-[var(--text3)] mt-0.5">{label} · Par chiffre d'affaires</div>
       </div>
 
       {products.length === 0 && (
@@ -25,8 +26,7 @@ export function TopProducts({ products }: TopProductsProps) {
             <div className="w-5 text-[11px] font-bold text-[var(--text4)] text-center">#{p.rank}</div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-[var(--text1)] truncate">{p.name}</div>
-              {p.category && <div className="text-[11px] text-[var(--text3)]">{p.category}</div>}
-            </div>
+              </div>
             <div className="text-right">
               <div className="text-sm font-bold text-[var(--text1)]">{p.revenue.toFixed(2).replace('.', ',')} €</div>
               <div className="text-[11px] text-[var(--text3)]">{p.quantity} vendus</div>

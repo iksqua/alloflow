@@ -1,5 +1,5 @@
 'use client'
-import type { DashboardSummary } from '@/app/api/dashboard/summary/route'
+import type { DashboardData } from '@/app/dashboard/_lib/fetch-dashboard-data'
 
 function timeAgo(iso: string): string {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -15,7 +15,7 @@ const TIER_STYLE: Record<string, { bg: string; color: string }> = {
 }
 
 interface RecentOrdersProps {
-  orders: DashboardSummary['recentOrders']
+  orders: DashboardData['recentOrders']
 }
 
 export function RecentOrders({ orders }: RecentOrdersProps) {
