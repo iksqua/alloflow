@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Period, PeriodRange, KpiSummary, DailyCA, HourlyTx, TopProduct, OrderRow, TvaBreakdown } from './types'
 
-export function getPeriodRange(period: Period): PeriodRange {
+export function getPeriodRange(period: Period, customFrom?: string, customTo?: string): PeriodRange {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   switch (period) {
@@ -11,9 +11,14 @@ export function getPeriodRange(period: Period): PeriodRange {
       return { from: new Date(today.getTime() - 6 * 86400000), to: now }
     case '30d':
       return { from: new Date(today.getTime() - 29 * 86400000), to: now }
-    case 'month': {
-      const from = new Date(now.getFullYear(), now.getMonth(), 1)
-      return { from, to: now }
+    case 'custom': {
+      if (customFrom && customTo) {
+        return {
+          from: new Date(customFrom + 'T00:00:00'),
+          to:   new Date(customTo   + 'T23:59:59'),
+        }
+      }
+      return { from: today, to: now }
     }
   }
 }

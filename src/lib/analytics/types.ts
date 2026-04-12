@@ -1,4 +1,4 @@
-export type Period = 'today' | '7d' | '30d' | 'month'
+export type Period = 'today' | '7d' | '30d' | 'custom'
 
 export interface PeriodRange {
   from: Date

@@ -16,7 +16,7 @@ import { TvaSummary } from './_components/tva-summary'
 export default async function ReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; site?: string; page?: string }>
+  searchParams: Promise<{ period?: string; site?: string; page?: string; from?: string; to?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -25,7 +25,7 @@ export default async function ReportPage({
   const params = await searchParams
   const period = (params.period ?? '30d') as Period
   const page = parseInt(params.page ?? '1', 10)
-  const range = getPeriodRange(period)
+  const range = getPeriodRange(period, params.from, params.to)
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -62,6 +62,8 @@ export default async function ReportPage({
         <Suspense fallback={<div className="h-7" />}>
           <PeriodPicker
             currentPeriod={period}
+            customFrom={params.from}
+            customTo={params.to}
             establishments={establishmentList}
             currentEstablishment={siteId}
           />

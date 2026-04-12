@@ -12,7 +12,7 @@ import { TopProducts } from './_components/top-products'
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; site?: string }>
+  searchParams: Promise<{ period?: string; site?: string; from?: string; to?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -20,7 +20,7 @@ export default async function AnalyticsPage({
 
   const params = await searchParams
   const period = (params.period ?? '30d') as Period
-  const range = getPeriodRange(period)
+  const range = getPeriodRange(period, params.from, params.to)
 
   // Get user's establishment_id as the default filter
   const { data: profile } = await supabase
@@ -56,6 +56,8 @@ export default async function AnalyticsPage({
         <Suspense fallback={<div className="h-7" />}>
           <PeriodPicker
             currentPeriod={period}
+            customFrom={params.from}
+            customTo={params.to}
             establishments={establishmentList}
             currentEstablishment={siteId}
           />
