@@ -71,7 +71,22 @@ POST   /api/purchase-orders/[id]/receive → Nouvelle réception partielle ou co
 
 ## Modèle de données
 
-Les tables existantes sont conservées. Un ajout est nécessaire :
+### Tables existantes (référence)
+
+**`purchase_orders`** — colonnes actuelles : `id, establishment_id, order_ref, supplier, supplier_email, requested_delivery_date, status, notes, total_ht, created_by, created_at`
+
+- `total_ht` est une valeur **stockée** (calculée à la création et mise à jour à l'édition) = `SUM(quantity_ordered × unit_price)` sur les lignes
+- `order_ref` suit le format `BC-YYYY-NNNN` (ex. `BC-2026-0042`), généré en comptant les commandes de l'établissement dans l'année en cours
+
+**`purchase_order_items`** — colonnes actuelles : `id, purchase_order_id, stock_item_id, quantity_ordered, quantity_received, unit_price, sort_order`
+
+- `stock_item_id` est une FK vers `stock_items.id` — c'est la clé de jointure pour la mise à jour des stocks à la réception
+- `quantity_received` existe déjà (nullable → `null` = jamais reçu, traiter comme `0`)
+
+**`stock_items`** — colonnes utiles : `id, name, unit, quantity, status, alert_threshold, order_quantity, category`
+
+- `unit` (ex. `kg`, `L`, `btl`) est affiché dans les tableaux de commande/réception
+- `order_quantity` est la quantité de commande par défaut, pré-remplie dans le formulaire
 
 ### Nouvelle table : `purchase_order_receptions`
 
@@ -90,7 +105,7 @@ create table purchase_order_receptions (
 
 ### Modifications sur `purchase_order_items`
 
-Ajouter la colonne `quantity_received` (cumul de toutes les réceptions) si elle n'existe pas déjà.
+`quantity_received` existe déjà avec une valeur nullable. Vérifier que la colonne est bien présente avec la migration ; si elle est `null`, la traiter comme `0` partout dans le code.
 
 ### Statut automatique
 
@@ -114,7 +129,7 @@ Le statut `cancelled` est positionné manuellement via l'action Annuler.
 ### En-tête
 
 - Titre "Commandes fournisseurs"
-- KPI : montant total engagé (somme des commandes `pending` + `partial`)
+- KPI : montant total engagé (somme des `total_ht` des commandes `pending` + `partial` uniquement — les commandes `cancelled` et `received` sont exclues)
 - Bouton "📥 Nouvelle commande" → ouvre le formulaire
 
 ### Tabs de filtrage
@@ -275,12 +290,19 @@ Les quantités déjà réceptionnées restent en stock.
 
 Après confirmation :
 - `status = 'cancelled'`
-- La commande reste visible dans l'historique (tab "Annulées")
+- La commande reste visible dans l'historique (tab "Annulées") en lecture seule, avec son historique de réceptions intact
+- Exclue du KPI "montant engagé"
 - Non réversible
 
 ---
 
 ## Comportements transversaux
+
+### Pré-sélection à la réouverture du formulaire
+- Pas de persistance : si l'utilisateur ferme le formulaire sans sauvegarder, les sélections sont réinitialisées à la réouverture (cohérent avec l'absence de brouillon)
+
+### Ajout de lignes dans le modal édition
+- Le modal édition réutilise une version simplifiée de la sélection d'articles (liste plate avec recherche, pas les onglets catégories complets) pour ne pas complexifier le composant
 
 ### Autocomplétion fournisseurs
 - Au chargement du formulaire, fetch des valeurs distinctes de `supplier` sur les commandes de l'établissement
@@ -296,7 +318,11 @@ Après confirmation :
 
 ### Pas de pagination initiale
 - Chargement des 50 dernières commandes (au lieu de 20 actuellement)
-- Bouton "Charger plus" si nécessaire
+- Bouton "Charger plus" affiché si le nombre total de commandes de l'établissement dépasse 50 ; charge les 50 suivantes
+
+### Concurrence sur la réception
+- Risque accepté pour cette version : deux utilisateurs ouvrant simultanément le modal réception sur la même commande pourraient double-incrémenter les stocks
+- Non adressé dans ce scope (usage mono-utilisateur en pratique)
 
 ---
 
