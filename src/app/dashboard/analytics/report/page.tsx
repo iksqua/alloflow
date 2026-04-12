@@ -29,19 +29,19 @@ export default async function ReportPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('establishment_id')
+    .select('establishment_id, role')
     .eq('id', user.id)
     .single()
 
-  const siteId = params.site || profile?.establishment_id || undefined
+  const isFranchiseAdmin = profile?.role === 'franchise_admin'
 
-  // Fetch establishments for PeriodPicker
-  const { data: establishments } = await supabase
-    .from('establishments')
-    .select('id, name')
-    .order('name')
+  const siteId = isFranchiseAdmin
+    ? (params.site || profile?.establishment_id || undefined)
+    : (profile?.establishment_id || undefined)
 
-  const establishmentList = (establishments ?? []) as { id: string; name: string }[]
+  const establishmentList = isFranchiseAdmin
+    ? ((await supabase.from('establishments').select('id, name').order('name')).data ?? []) as { id: string; name: string }[]
+    : []
 
   // Fetch orders, KPI and TVA breakdown in parallel
   const [{ rows, total }, kpi, tvaBreakdown] = await Promise.all([

@@ -25,20 +25,21 @@ export default async function AnalyticsPage({
   // Get user's establishment_id as the default filter
   const { data: profile } = await supabase
     .from('profiles')
-    .select('establishment_id')
+    .select('establishment_id, role')
     .eq('id', user.id)
     .single()
 
-  // siteId: use picker param if set, otherwise default to user's establishment
-  const siteId = params.site || profile?.establishment_id || undefined
+  const isFranchiseAdmin = profile?.role === 'franchise_admin'
 
-  // Fetch establishments for the picker
-  const { data: establishments } = await supabase
-    .from('establishments')
-    .select('id, name')
-    .order('name')
+  // siteId: franchise_admin can switch sites, others are locked to their establishment
+  const siteId = isFranchiseAdmin
+    ? (params.site || profile?.establishment_id || undefined)
+    : (profile?.establishment_id || undefined)
 
-  const establishmentList = (establishments ?? []) as { id: string; name: string }[]
+  // Only franchise admins see the establishment picker
+  const establishmentList = isFranchiseAdmin
+    ? ((await supabase.from('establishments').select('id, name').order('name')).data ?? []) as { id: string; name: string }[]
+    : []
 
   // Fetch analytics data in parallel
   const [kpi, dailyCA, topProducts] = await Promise.all([
