@@ -74,8 +74,8 @@ export function TicketPanel({
 
   return (
     <div
-      className="flex flex-col flex-shrink-0 overflow-hidden border-l border-[var(--border)]"
-      style={{ width: '360px', background: 'var(--surface)' }}
+      className="flex flex-col h-full overflow-hidden border-l border-[var(--border)]"
+      style={{ background: 'var(--surface)' }}
     >
       {/* Header ticket */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
@@ -148,7 +148,7 @@ export function TicketPanel({
       </div>
 
       {/* Totaux + Actions */}
-      <div className="border-t border-[var(--border)] p-4 space-y-3">
+      <div className="flex-shrink-0 border-t border-[var(--border)] p-4 space-y-3">
         {!isEmpty && (
           <>
             <div className="space-y-1.5 text-sm">
