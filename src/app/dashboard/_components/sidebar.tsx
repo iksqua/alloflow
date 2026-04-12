@@ -57,11 +57,10 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
 
   return (
     <>
-      {/* Hamburger — fixed top-left, visible only on mobile */}
+      {/* Hamburger — aligned with topbar height, visible only on mobile */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-40 w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text2)] hover:text-[var(--text1)] transition-colors md:hidden"
-        style={{ background: 'var(--surface2)' }}
+        className="fixed top-0 left-0 z-50 h-12 w-12 flex items-center justify-center text-[var(--text2)] hover:text-[var(--text1)] transition-colors md:hidden"
         aria-label="Ouvrir le menu"
       >
         ☰
