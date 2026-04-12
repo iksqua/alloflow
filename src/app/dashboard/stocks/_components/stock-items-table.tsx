@@ -31,36 +31,44 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
   return (
     <div>
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher..."
-          className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] bg-[var(--surface)] text-[var(--text2)] w-52"
+          className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] bg-[var(--surface)] text-[var(--text2)] flex-1 min-w-0"
         />
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-          className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] bg-[var(--surface)] text-[var(--text3)]"
-        >
-          <option value="all">Tous les statuts</option>
-          <option value="out_of_stock">Rupture</option>
-          <option value="alert">Alerte</option>
-          <option value="ok">OK</option>
-        </select>
-        <span className="ml-auto text-xs text-[var(--text4)]">{filtered.length} article{filtered.length !== 1 ? 's' : ''}</span>
+        <div className="flex gap-2">
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] bg-[var(--surface)] text-[var(--text3)]"
+          >
+            <option value="all">Tous les statuts</option>
+            <option value="out_of_stock">Rupture</option>
+            <option value="alert">Alerte</option>
+            <option value="ok">OK</option>
+          </select>
+          <span className="flex items-center text-xs text-[var(--text4)] whitespace-nowrap">{filtered.length} article{filtered.length !== 1 ? 's' : ''}</span>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-[var(--text4)]">Aucun article trouvé</div>
       ) : (
         <div className="rounded-xl border border-[var(--border)] overflow-x-auto" style={{ background: 'var(--surface)' }}>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[420px]">
             <thead>
               <tr className="border-b border-[var(--border)]">
-                {['Article', 'Catégorie', 'Stock', 'Seuil', 'Niveau', 'Prix unitaire', 'Fournisseur', 'Statut', ''].map(h => (
-                  <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">{h}</th>
-                ))}
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Article</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden sm:table-cell">Catégorie</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Stock</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden md:table-cell">Seuil</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden md:table-cell">Niveau</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden lg:table-cell">Prix unitaire</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden lg:table-cell">Fournisseur</th>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Statut</th>
+                <th className="px-4 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
@@ -78,12 +86,12 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-[var(--text3)]">{item.category ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-[var(--text3)] hidden sm:table-cell">{item.category ?? '—'}</td>
                     <td className="px-4 py-2.5 font-bold text-[var(--text1)]">
                       {item.quantity} <span className="text-xs text-[var(--text4)] font-normal">{item.unit}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-[var(--text4)] text-xs">{item.alert_threshold} {item.unit}</td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-2.5 text-[var(--text4)] text-xs hidden md:table-cell">{item.alert_threshold} {item.unit}</td>
+                    <td className="px-4 py-2.5 hidden md:table-cell">
                       <div className="w-20 h-1.5 rounded-full bg-[var(--border)]">
                         <div
                           className={`h-1.5 rounded-full ${item.status === 'ok' ? 'bg-green-500' : item.status === 'alert' ? 'bg-amber-500' : 'bg-red-500'}`}
@@ -91,10 +99,10 @@ export function StockItemsTable({ items, onEdit, onDelete }: Props) {
                         />
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-[var(--text2)] tabular-nums">
+                    <td className="px-4 py-2.5 text-[var(--text2)] tabular-nums hidden lg:table-cell">
                       {item.unit_price.toFixed(2)} €<span className="text-xs text-[var(--text4)]">/{item.unit}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-[var(--text3)]">{item.supplier ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-[var(--text3)] hidden lg:table-cell">{item.supplier ?? '—'}</td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status]}`}>
                         {STATUS_LABELS[item.status]}

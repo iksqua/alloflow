@@ -34,7 +34,7 @@ export function StocksPageClient({ initialItems, categories }: Props) {
     <div>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-xl font-bold text-[var(--text1)]">Stocks & Approvisionnement</h1>
             {(alerts > 0 || outOfStock > 0) && (
@@ -44,19 +44,19 @@ export function StocksPageClient({ initialItems, categories }: Props) {
               </p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Link
               href="/dashboard/stocks/commandes"
-              className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--text3)] hover:bg-[var(--surface)]"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--text3)] hover:bg-[var(--surface)] whitespace-nowrap"
             >
-              📥 Commandes
+              📥 <span className="hidden sm:inline">Commandes</span>
             </Link>
             <button
               onClick={() => { setEditingItem(null); setShowItemForm(true) }}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white whitespace-nowrap"
               style={{ background: 'var(--blue)' }}
             >
-              + Nouvel article
+              + <span className="hidden sm:inline">Nouvel </span>article
             </button>
           </div>
         </div>
