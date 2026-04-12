@@ -233,7 +233,7 @@ export function PosShell({
         </div>
 
         {/* Colonne droite — Ticket — plein écran mobile si vue ticket, sidebar desktop */}
-        <div className={`${mobileView === 'menu' ? 'hidden lg:flex' : 'flex'} lg:flex flex-col lg:w-[360px] w-full`}>
+        <div className={`${mobileView === 'menu' ? 'hidden lg:flex' : 'flex'} lg:flex flex-col lg:w-[360px] w-full overflow-hidden`}>
           <TicketPanel
             ticket={ticket}
             onUpdateQuantity={updateQuantity}
