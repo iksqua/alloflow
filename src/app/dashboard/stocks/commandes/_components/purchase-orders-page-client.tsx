@@ -78,7 +78,7 @@ export function PurchaseOrdersPageClient({ initialOrders, stockItems, categories
       </div>
 
       {/* Status tabs */}
-      <div className="flex gap-1 mb-4 border-b border-[var(--border)]">
+      <div className="flex gap-1 mb-4 border-b border-[var(--border)] overflow-x-auto">
         {([
           ['all', 'Toutes', counts.all],
           ['pending', 'En cours', counts.pending],

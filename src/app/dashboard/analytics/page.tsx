@@ -65,7 +65,7 @@ export default async function AnalyticsPage({
       <KpiCards data={kpi} />
 
       {/* Row 1: CA chart + rush hours placeholder */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <CaBarChart data={dailyCA} />
         <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px] flex flex-col">
           <h3 className="text-sm font-semibold text-slate-200 mb-4">Heures de rush</h3>
@@ -76,7 +76,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* Row 2: Top products + network snapshot placeholder */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <TopProducts data={topProducts} />
         <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px] flex flex-col">
           <h3 className="text-sm font-semibold text-slate-200 mb-4">Snapshot réseau</h3>

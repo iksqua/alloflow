@@ -32,7 +32,7 @@ export function StocksPageClient({ initialItems, categories }: Props) {
 
   return (
     <div>
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>

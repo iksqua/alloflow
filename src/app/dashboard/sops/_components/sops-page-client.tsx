@@ -72,14 +72,14 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
 
   return (
     <div>
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-[var(--text1)]">SOPs</h1>
             <p className="text-xs text-[var(--text4)] mt-0.5">{sops.length} procédure{sops.length !== 1 ? 's' : ''}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button onClick={() => setShowCatMgr(true)}
               className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--text3)] hover:bg-[var(--surface)]">
               ⚙️ Catégories
@@ -95,7 +95,7 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
         {/* Filters */}
         <div className="flex items-center gap-3 mb-5 flex-wrap">
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
-            className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] bg-[var(--surface)] text-[var(--text2)] w-52" />
+            className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] bg-[var(--surface)] text-[var(--text2)] w-full sm:w-52" />
           <div className="flex gap-1.5 flex-wrap">
             <button onClick={() => setCatFilter(null)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${catFilter === null ? 'text-white' : 'text-[var(--text3)] hover:bg-[var(--surface)]'}`}
@@ -158,8 +158,13 @@ export function SopsPageClient({ initialSops, initialCategories, recipes }: Prop
                 {/* Actions */}
                 <div className="flex gap-2 flex-shrink-0">
                   <button onClick={() => openKitchenMode(sop)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border)] text-[var(--text2)] hover:bg-[var(--surface2)]">
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[var(--border)] text-[var(--text2)] hover:bg-[var(--surface2)] hidden sm:block">
                     ▶ Mode cuisine
+                  </button>
+                  <button onClick={() => openKitchenMode(sop)}
+                    className="w-7 h-7 rounded flex items-center justify-center border border-[var(--border)] text-[var(--text2)] hover:bg-[var(--surface2)] sm:hidden"
+                    title="Mode cuisine">
+                    ▶
                   </button>
                   <button onClick={() => openEditForm(sop)}
                     className="w-7 h-7 rounded flex items-center justify-center text-[var(--text4)] hover:text-[var(--text2)] hover:bg-[var(--surface2)] transition-colors"

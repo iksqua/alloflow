@@ -73,8 +73,8 @@ export function PurchaseOrdersList({ orders, onSelectOrder, onReceive, onEdit, o
   }
 
   return (
-    <div className="rounded-xl border border-[var(--border)] overflow-hidden" style={{ background: 'var(--surface)' }}>
-      <table className="w-full text-sm">
+    <div className="rounded-xl border border-[var(--border)] overflow-x-auto" style={{ background: 'var(--surface)' }}>
+      <table className="w-full text-sm min-w-[580px]">
         <thead>
           <tr className="border-b border-[var(--border)]" style={{ background: 'var(--surface2)' }}>
             <th className="text-left px-4 py-2.5 text-xs font-semibold text-[var(--text3)] uppercase tracking-wide">Réf</th>

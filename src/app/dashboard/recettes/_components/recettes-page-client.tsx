@@ -83,10 +83,10 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
   function openNew() { setEditingRecipe(null); setShowForm(true) }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-[var(--text1)]">Recettes &amp; Food Cost</h1>
           <p className="text-xs text-[var(--text4)] mt-0.5">
@@ -94,7 +94,7 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
             · {recipes.filter(r => r.is_internal).length} internes
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={catFilter}
             onChange={e => setCatFilter(e.target.value)}
@@ -126,7 +126,7 @@ export function RecettesPageClient({ initialRecipes, categories }: Props) {
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="rounded-xl border border-[var(--border)] p-4" style={{ background: 'var(--surface)' }}>
           <div className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-2">Food cost moyen</div>
           <div className="text-3xl font-black mb-1" style={{ color: avgFoodCost !== null ? fcColor(avgFoodCost) : 'var(--text4)' }}>

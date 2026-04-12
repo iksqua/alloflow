@@ -337,7 +337,7 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Commandes payées', value: stats.count, fmt: (v: number) => v.toString() },
             { label: 'Chiffre d\'affaires', value: stats.revenue, fmt: (v: number) => `${v.toFixed(2)} €` },
@@ -351,16 +351,16 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher par #, montant…"
-            className="flex-1 max-w-xs text-sm px-3 py-2 rounded-lg"
+            className="w-full sm:max-w-xs text-sm px-3 py-2 rounded-lg"
             style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
           />
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {(['all', 'paid', 'refunded', 'cancelled'] as const).map(f => (
               <button
                 key={f}
@@ -378,13 +378,16 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border border-[var(--border)] overflow-hidden" style={{ background: 'var(--surface)' }}>
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-[var(--border)] overflow-x-auto" style={{ background: 'var(--surface)' }}>
+          <table className="w-full text-sm min-w-[540px]">
             <thead>
               <tr className="border-b border-[var(--border)]">
-                {['#', 'Date', 'Montant TTC', 'Paiement', 'Statut', ''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">{h}</th>
-                ))}
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">#</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden sm:table-cell">Date</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Montant TTC</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden md:table-cell">Paiement</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Statut</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -404,7 +407,7 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
                   <td className="px-4 py-3 font-mono text-xs text-[var(--text4)]">
                     {`#${order.id.slice(0, 8).toUpperCase()}`}
                   </td>
-                  <td className="px-4 py-3 text-xs text-[var(--text3)]">
+                  <td className="px-4 py-3 text-xs text-[var(--text3)] hidden sm:table-cell">
                     {new Date(order.created_at).toLocaleString('fr-FR', {
                       day: '2-digit', month: '2-digit', year: 'numeric',
                       hour: '2-digit', minute: '2-digit',
@@ -415,7 +418,7 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
                   }`}>
                     {order.total_ttc.toFixed(2)} €
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 hidden md:table-cell">
                     <PaymentBadges payments={order.payments} />
                   </td>
                   <td className="px-4 py-3">

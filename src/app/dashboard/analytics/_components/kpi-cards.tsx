@@ -21,7 +21,7 @@ export function KpiCards({ data }: KpiCardsProps) {
   const avgTicketFormatted = data.avgTicket.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-5">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
       {/* CA TTC */}
       <div className={cardClass}>
         <span className="text-xs text-slate-400 font-medium">CA TTC</span>

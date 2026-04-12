@@ -42,21 +42,21 @@ export function FiscalPageClient({ initialEntries }: Props) {
 
   return (
     <div>
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-xl font-bold text-[var(--text1)]">Journal fiscal</h1>
             <p className="text-xs text-[var(--text4)] mt-0.5">Registre immuable NF525 — lecture seule</p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold"
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold self-start sm:self-auto"
             style={{ background: 'rgba(16,185,129,.1)', color: '#10b981', border: '1px solid rgba(16,185,129,.2)' }}>
             🔒 Chaîne de hash intacte
           </div>
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Entrées totales', value: entries.length, color: 'text-[var(--text1)]' },
             { label: 'Ventes', value: entries.filter(e => e.event_type === 'sale').length, color: 'text-green-400' },
@@ -70,13 +70,16 @@ export function FiscalPageClient({ initialEntries }: Props) {
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border border-[var(--border)] overflow-hidden" style={{ background: 'var(--surface)' }}>
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-[var(--border)] overflow-x-auto" style={{ background: 'var(--surface)' }}>
+          <table className="w-full text-sm min-w-[480px]">
             <thead>
               <tr className="border-b border-[var(--border)]">
-                {['#', 'Horodatage', 'Type', 'Montant TTC', 'Hash (extrait)', ''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">{h}</th>
-                ))}
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">#</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden sm:table-cell">Horodatage</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Type</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Montant TTC</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden sm:table-cell">Hash (extrait)</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -90,7 +93,7 @@ export function FiscalPageClient({ initialEntries }: Props) {
               {entries.map(entry => (
                 <tr key={entry.id} className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface2)]/30">
                   <td className="px-4 py-3 font-mono text-xs text-[var(--text4)]">#{entry.sequence_no}</td>
-                  <td className="px-4 py-3 text-xs text-[var(--text3)]">
+                  <td className="px-4 py-3 text-xs text-[var(--text3)] hidden sm:table-cell">
                     {new Date(entry.occurred_at).toLocaleString('fr-FR', {
                       day: '2-digit', month: '2-digit', year: 'numeric',
                       hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -109,14 +112,14 @@ export function FiscalPageClient({ initialEntries }: Props) {
                     {entry.event_type === 'void' || entry.event_type === 'refund' ? '-' : ''}
                     {entry.amount_ttc.toFixed(2)} €
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 hidden sm:table-cell">
                     <span className="font-mono text-xs text-[var(--text4)] bg-[var(--bg)] px-2 py-1 rounded">
                       {entry.entry_hash.slice(0, 12)}…
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     {entry.order?.status === 'cancelled' && (
-                      <span className="text-xs text-red-400 font-semibold">Ticket annulé</span>
+                      <span className="text-xs text-red-400 font-semibold">Annulé</span>
                     )}
                   </td>
                 </tr>

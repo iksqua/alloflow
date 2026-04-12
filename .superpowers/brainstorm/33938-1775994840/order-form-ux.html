@@ -1,0 +1,119 @@
+<h2>Sélection des articles dans le bon de commande</h2>
+<p class="subtitle">Avec 200+ articles en stock, quelle interface pour choisir quoi commander ?</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Onglets catégories + cases à cocher</h3>
+      <p>Les catégories apparaissent en onglets horizontaux. Dans chaque onglet, les articles s'affichent en grille avec leur stock actuel. Tu coches ceux à commander et tu saisis la quantité.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Nouveau bon de commande — Sélection articles</div>
+        <div class="mockup-body" style="padding:0">
+          <!-- Category tabs -->
+          <div style="display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,0.08);padding:0 12px;background:rgba(255,255,255,0.03)">
+            <div style="padding:8px 14px;font-size:11px;font-weight:700;border-bottom:2px solid #3b82f6;color:#60a5fa">Boissons (12)</div>
+            <div style="padding:8px 14px;font-size:11px;color:#64748b">Épicerie (34)</div>
+            <div style="padding:8px 14px;font-size:11px;color:#64748b">Frais (18)</div>
+            <div style="padding:8px 14px;font-size:11px;color:#64748b">Emballages (9)</div>
+            <div style="padding:8px 14px;font-size:11px;color:#64748b;background:rgba(245,158,11,0.1);color:#f59e0b">⚠ Alertes (5)</div>
+          </div>
+          <!-- Items grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px">
+            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px">
+              <input type="checkbox" checked style="accent-color:#3b82f6;width:14px;height:14px;flex-shrink:0">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Café Arabica</div>
+                <div style="font-size:10px;color:#f59e0b">⚠ 0.8 kg restant</div>
+              </div>
+              <input type="number" value="5" style="width:36px;font-size:11px;text-align:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#f1f5f9;padding:2px">
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px">
+              <input type="checkbox" style="accent-color:#3b82f6;width:14px;height:14px;flex-shrink:0">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Lait entier</div>
+                <div style="font-size:10px;color:#94a3b8">12 L en stock</div>
+              </div>
+              <input type="number" placeholder="0" style="width:36px;font-size:11px;text-align:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#f1f5f9;padding:2px">
+            </div>
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px">
+              <input type="checkbox" checked style="accent-color:#3b82f6;width:14px;height:14px;flex-shrink:0">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sirop vanille</div>
+                <div style="font-size:10px;color:#ef4444">✕ Rupture</div>
+              </div>
+              <input type="number" value="3" style="width:36px;font-size:11px;text-align:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#f1f5f9;padding:2px">
+            </div>
+          </div>
+          <!-- Footer -->
+          <div style="padding:10px 12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.02)">
+            <span style="font-size:11px;color:#64748b">2 articles sélectionnés</span>
+            <button class="mock-button" style="font-size:11px;padding:4px 12px">Suivant → Infos commande</button>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pour</h4><ul><li>Vue complète du stock par catégorie</li><li>L'onglet "Alertes" rassemble tout ce qui est urgent</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Plus d'écrans pour arriver à la commande</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Vue divisée : catalogue à gauche, commande à droite</h3>
+      <p>Le panneau gauche liste les articles filtrables par catégorie. Un clic sur un article l'ajoute directement au bon de commande (panneau droit) où on ajuste les quantités.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Nouveau bon de commande</div>
+        <div class="mockup-body" style="padding:0;display:flex;min-height:180px">
+          <!-- Left: catalog -->
+          <div style="width:55%;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column">
+            <div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.06)">
+              <input class="mock-input" placeholder="🔍 Rechercher..." style="font-size:11px;padding:4px 8px;width:100%;box-sizing:border-box">
+              <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+                <span style="font-size:10px;padding:2px 8px;border-radius:12px;background:#3b82f6;color:white">Tous</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:12px;background:rgba(245,158,11,0.15);color:#f59e0b">⚠ Alertes</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,0.06);color:#94a3b8">Boissons</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,0.06);color:#94a3b8">Frais</span>
+              </div>
+            </div>
+            <div style="overflow-y:auto;flex:1;padding:6px">
+              <div style="padding:6px 8px;display:flex;justify-content:space-between;align-items:center;border-radius:6px;background:rgba(245,158,11,0.08);margin-bottom:3px;cursor:pointer">
+                <div><div style="font-size:11px;font-weight:600;color:#f1f5f9">Café Arabica</div><div style="font-size:10px;color:#f59e0b">⚠ 0.8 kg</div></div>
+                <span style="font-size:16px;color:#3b82f6;font-weight:300">+</span>
+              </div>
+              <div style="padding:6px 8px;display:flex;justify-content:space-between;align-items:center;border-radius:6px;margin-bottom:3px;cursor:pointer;background:rgba(59,130,246,0.1)">
+                <div><div style="font-size:11px;font-weight:600;color:#60a5fa">Lait entier ✓</div><div style="font-size:10px;color:#94a3b8">12 L</div></div>
+                <span style="font-size:16px;color:#94a3b8">✓</span>
+              </div>
+              <div style="padding:6px 8px;display:flex;justify-content:space-between;align-items:center;border-radius:6px;margin-bottom:3px;cursor:pointer">
+                <div><div style="font-size:11px;font-weight:600;color:#f1f5f9">Sirop vanille</div><div style="font-size:10px;color:#ef4444">✕ Rupture</div></div>
+                <span style="font-size:16px;color:#3b82f6;font-weight:300">+</span>
+              </div>
+            </div>
+          </div>
+          <!-- Right: order -->
+          <div style="flex:1;display:flex;flex-direction:column">
+            <div style="padding:8px;font-size:11px;font-weight:600;color:#94a3b8;border-bottom:1px solid rgba(255,255,255,0.06)">Bon de commande</div>
+            <div style="flex:1;padding:6px">
+              <div style="padding:6px 8px;display:flex;align-items:center;gap:6px;border-radius:6px;background:rgba(255,255,255,0.04);margin-bottom:4px">
+                <div style="flex:1;font-size:11px;color:#f1f5f9">Lait entier</div>
+                <input type="number" value="20" style="width:36px;font-size:11px;text-align:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#f1f5f9;padding:2px">
+                <span style="font-size:10px;color:#94a3b8">L</span>
+                <span style="font-size:10px;color:#ef4444;cursor:pointer">✕</span>
+              </div>
+            </div>
+            <div style="padding:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#94a3b8">1 article · 0,00 €</div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pour</h4><ul><li>Très fluide, tout sur un seul écran</li><li>Idéal pour constituer une commande rapidement</li></ul></div>
+        <div class="cons"><h4>Contre</h4><ul><li>Écran plus chargé, moins adapté mobile</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
