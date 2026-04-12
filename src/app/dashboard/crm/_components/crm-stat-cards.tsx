@@ -36,7 +36,7 @@ function StatCard({ label, value, icon, iconBg, iconColor }: StatCardProps) {
 
 export function CrmStatCards({ stats }: Props) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-5">
       <StatCard
         label="Clients inscrits"
         value={stats.totalCustomers}
@@ -50,6 +50,13 @@ export function CrmStatCards({ stats }: Props) {
         icon="⭐"
         iconBg="rgba(251,191,36,0.15)"
         iconColor="#fbbf24"
+      />
+      <StatCard
+        label="Membres Silver"
+        value={stats.silverCount}
+        icon="🥈"
+        iconBg="rgba(148,163,184,0.15)"
+        iconColor="#94a3b8"
       />
       <StatCard
         label="Points ce mois"

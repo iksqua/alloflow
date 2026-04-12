@@ -16,7 +16,7 @@ export default async function CrmAnalyticsPage() {
     .from('v_crm_persona')
     .select('*')
     .eq('establishment_id', profile.establishment_id)
-    .single()
+    .maybeSingle()
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">

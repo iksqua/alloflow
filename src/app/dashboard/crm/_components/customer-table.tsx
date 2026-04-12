@@ -6,6 +6,7 @@ import type { Customer } from './types'
 
 interface Props {
   customers: Customer[]
+  goldThreshold?: number
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -14,8 +15,7 @@ const TIER_LABELS: Record<string, string> = {
   standard: 'Standard',
 }
 
-// TODO: fetch from loyalty_config when available; using default gold threshold for now
-const GOLD_THRESHOLD_PTS = 2000
+const DEFAULT_GOLD_THRESHOLD = 500
 
 const TIER_COLORS: Record<string, { bg: string; text: string }> = {
   gold: { bg: 'rgba(251,191,36,0.15)', text: '#fbbf24' },
@@ -63,9 +63,8 @@ function RfmBadge({ segment }: { segment: string | null }) {
   )
 }
 
-function PointsCell({ points }: { points: number }) {
-  // Gold threshold = GOLD_THRESHOLD_PTS = 100%
-  const pct = Math.min(100, Math.round((points / GOLD_THRESHOLD_PTS) * 100))
+function PointsCell({ points, threshold }: { points: number; threshold: number }) {
+  const pct = Math.min(100, Math.round((points / threshold) * 100))
   return (
     <div className="flex flex-col gap-1 min-w-[80px]">
       <span className="text-sm text-[var(--text1)]">{points.toLocaleString('fr-FR')} pts</span>
@@ -79,7 +78,7 @@ function PointsCell({ points }: { points: number }) {
   )
 }
 
-export function CustomerTable({ customers }: Props) {
+export function CustomerTable({ customers, goldThreshold = DEFAULT_GOLD_THRESHOLD }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState('')
   const [tierFilter, setTierFilter] = useState<'' | 'gold' | 'silver' | 'standard'>('')
@@ -159,7 +158,7 @@ export function CustomerTable({ customers }: Props) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/[0.06]">
-                {['Client', 'Statut', 'Segment', 'Points', 'CA total', 'Dernière visite', ''].map((col) => (
+                {['Client', 'Statut', 'Segment', 'Points', 'Panier moy.', 'Dernière visite', ''].map((col) => (
                   <th
                     key={col}
                     className="px-4 py-3 text-left text-xs font-medium text-[var(--text3)] uppercase tracking-wide"
@@ -210,11 +209,20 @@ export function CustomerTable({ customers }: Props) {
 
                   {/* Points */}
                   <td className="px-4 py-3">
-                    <PointsCell points={customer.points} />
+                    <PointsCell points={customer.points} threshold={goldThreshold} />
                   </td>
 
                   {/* CA total */}
-                  <td className="px-4 py-3 text-sm text-[var(--text3)]">—</td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm text-[var(--text1)]">
+                      {customer.order_count > 0
+                        ? `${customer.avg_basket.toFixed(2)} €`
+                        : <span className="text-[var(--text3)]">—</span>}
+                    </div>
+                    {customer.order_count > 0 && (
+                      <div className="text-[11px] text-[var(--text3)]">{customer.order_count} commande{customer.order_count > 1 ? 's' : ''}</div>
+                    )}
+                  </td>
 
                   {/* Dernière visite */}
                   <td className="px-4 py-3 text-sm text-[var(--text3)]">

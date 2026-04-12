@@ -10,6 +10,8 @@ export interface Customer {
   email: string | null
   last_order_at: string | null
   rfm_segment: string | null
+  avg_basket: number
+  order_count: number
 }
 
 export interface CrmStats {

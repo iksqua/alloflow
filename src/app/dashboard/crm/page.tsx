@@ -21,24 +21,37 @@ export default async function CrmPage() {
   if (!profile?.establishment_id) redirect('/onboarding')
   const establishmentId = profile.establishment_id
 
-  // Fetch customers and stats in parallel
-  const [{ data: customersData }, stats] = await Promise.all([
+  // Fetch customers, stats and loyalty config in parallel
+  const [{ data: customersData }, stats, { data: loyaltyConfig }] = await Promise.all([
     supabase
       .from('customers')
-      .select('id, first_name, last_name, tier, points, phone, email, rfm_segment, last_order_at')
+      .select('id, first_name, last_name, tier, points, phone, email, rfm_segment, last_order_at, avg_basket, order_count')
       .eq('establishment_id', establishmentId)
       .order('last_order_at', { ascending: false, nullsFirst: false })
       .limit(200),
     fetchCrmStats(establishmentId),
+    supabase
+      .from('loyalty_config')
+      .select('levels')
+      .eq('establishment_id', establishmentId)
+      .maybeSingle(),
   ])
 
   const customers: Customer[] = (customersData ?? []) as Customer[]
+
+  // Extract gold threshold from levels JSON: [{tier:'gold', min_pts: N}, ...]
+  let goldThreshold = 500
+  if (loyaltyConfig?.levels && Array.isArray(loyaltyConfig.levels)) {
+    const goldLevel = (loyaltyConfig.levels as Array<{ tier: string; min_pts?: number; threshold?: number }>)
+      .find((l) => l.tier === 'gold')
+    if (goldLevel) goldThreshold = goldLevel.min_pts ?? goldLevel.threshold ?? 500
+  }
 
   return (
     <div className="p-6">
       <CrmTopbar />
       <CrmStatCards stats={stats} />
-      <CustomerTable customers={customers} />
+      <CustomerTable customers={customers} goldThreshold={goldThreshold} />
     </div>
   )
 }
