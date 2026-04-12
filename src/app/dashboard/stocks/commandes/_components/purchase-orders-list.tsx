@@ -1,4 +1,6 @@
 // src/app/dashboard/stocks/commandes/_components/purchase-orders-list.tsx
+'use client'
+import { useState, useEffect, useRef } from 'react'
 import type { PurchaseOrder } from './types'
 import { statusLabel, statusBadgeClass, isLate } from './types'
 
@@ -8,6 +10,55 @@ interface Props {
   onReceive: (order: PurchaseOrder) => void
   onEdit: (order: PurchaseOrder) => void
   onCancel: (order: PurchaseOrder) => void
+}
+
+function ActionsMenu({ order, onReceive, onEdit, onCancel }: {
+  order: PurchaseOrder
+  onReceive: (o: PurchaseOrder) => void
+  onEdit: (o: PurchaseOrder) => void
+  onCancel: (o: PurchaseOrder) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(v => !v) }}
+        className="text-[var(--text3)] hover:text-[var(--text1)] px-1 py-0.5 rounded hover:bg-[var(--surface2)] text-lg leading-none"
+      >
+        •••
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 w-32 rounded-lg shadow-lg border border-[var(--border)] z-20"
+          style={{ background: 'var(--surface)' }}
+        >
+          <button
+            onClick={e => { e.stopPropagation(); setOpen(false); onEdit(order) }}
+            className="w-full text-left px-3 py-2 text-sm text-[var(--text2)] hover:bg-[var(--surface2)] rounded-t-lg"
+          >
+            Modifier
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); setOpen(false); onCancel(order) }}
+            className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-900/10 rounded-b-lg"
+          >
+            Annuler
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function PurchaseOrdersList({ orders, onSelectOrder, onReceive, onEdit, onCancel }: Props) {
@@ -77,26 +128,7 @@ export function PurchaseOrdersList({ orders, onSelectOrder, onReceive, onEdit, o
                     </button>
                   )}
                   {order.status !== 'received' && order.status !== 'cancelled' && (
-                    <div className="relative group">
-                      <button className="text-[var(--text3)] hover:text-[var(--text1)] px-1 py-0.5 rounded hover:bg-[var(--surface2)] text-lg leading-none">
-                        •••
-                      </button>
-                      <div className="absolute right-0 top-full mt-1 w-32 rounded-lg shadow-lg border border-[var(--border)] z-10 hidden group-hover:block"
-                           style={{ background: 'var(--surface)' }}>
-                        <button
-                          onClick={() => onEdit(order)}
-                          className="w-full text-left px-3 py-2 text-sm text-[var(--text2)] hover:bg-[var(--surface2)] rounded-t-lg"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          onClick={() => onCancel(order)}
-                          className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-900/10 rounded-b-lg"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </div>
+                    <ActionsMenu order={order} onReceive={onReceive} onEdit={onEdit} onCancel={onCancel} />
                   )}
                 </div>
               </td>
