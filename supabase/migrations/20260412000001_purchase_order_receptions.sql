@@ -13,6 +13,9 @@ create table public.purchase_order_receptions (
   -- lines = [{ purchase_order_item_id, quantity_received }]
 );
 
+create index purchase_order_receptions_order_id_idx
+  on public.purchase_order_receptions (purchase_order_id);
+
 alter table public.purchase_order_receptions enable row level security;
 
 create policy "establishment members can manage purchase_order_receptions"
