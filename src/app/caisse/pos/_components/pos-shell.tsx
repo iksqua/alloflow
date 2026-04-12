@@ -135,10 +135,10 @@ export function PosShell({
     : initialProducts
 
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
       {isOffline && (
         <div
-          className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 py-1.5 text-xs font-bold"
+          className="flex-shrink-0 flex items-center justify-center gap-2 py-1.5 text-xs font-bold z-[100]"
           style={{ background: '#f59e0b', color: '#0f172a' }}
         >
           <span>⚡</span>
@@ -148,7 +148,7 @@ export function PosShell({
       {/* Barre de navigation caisse */}
       <div
         className="flex items-center justify-between px-4 h-12 flex-shrink-0 border-b border-[var(--border)]"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'var(--bg-tabs)', zIndex: 10 }}
+        style={{ background: 'var(--bg-tabs)', zIndex: 10 }}
       >
         {/* Gauche : logo + caissier */}
         <div className="flex items-center gap-2.5">
@@ -212,8 +212,8 @@ export function PosShell({
         </div>
       </div>
 
-      {/* 3 colonnes POS (offset topbar 48px) */}
-      <div className="flex flex-1 overflow-hidden" style={{ marginTop: '48px' }}>
+      {/* 3 colonnes POS */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Colonne gauche — Catégories 200px — desktop uniquement */}
         <div className="hidden lg:flex flex-col flex-shrink-0 overflow-y-auto">
           <CategoriesPanel
@@ -261,7 +261,7 @@ export function PosShell({
       </div>
 
       {/* Barre de navigation mobile (masquée sur desktop) */}
-      <div className="lg:hidden flex border-t border-[var(--border)]" style={{ background: 'var(--surface)' }}>
+      <div className="lg:hidden flex flex-shrink-0 border-t border-[var(--border)]" style={{ background: 'var(--surface)' }}>
         <button
           onClick={() => setMobileView('menu')}
           className={`flex-1 py-3 text-sm font-medium ${mobileView === 'menu' ? 'text-[var(--blue)]' : 'text-[var(--text3)]'}`}
