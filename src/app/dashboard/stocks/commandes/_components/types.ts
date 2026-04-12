@@ -70,5 +70,10 @@ export function statusBadgeClass(status: PurchaseOrderStatus): string {
 export function isLate(order: PurchaseOrder): boolean {
   if (!order.requested_delivery_date) return false
   if (order.status !== 'pending' && order.status !== 'partial') return false
-  return new Date(order.requested_delivery_date) < new Date(new Date().toDateString())
+  // Parse both as local midnight to avoid UTC/local timezone mismatch
+  const [y, m, d] = order.requested_delivery_date.split('-').map(Number)
+  const delivery = new Date(y, m - 1, d)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return delivery < today
 }
