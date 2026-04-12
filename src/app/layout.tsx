@@ -17,6 +17,14 @@ export default function RootLayout({
       lang="fr"
       className="h-full antialiased"
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            var t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+          } catch(e) {}
+        `}} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <ToastProvider />

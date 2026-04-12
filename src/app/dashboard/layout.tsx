@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from './_components/sidebar'
 import { CaisseButton } from './_components/caisse-button'
+import { ThemeToggle } from './_components/theme-toggle'
 
 async function signOut() {
   'use server'
@@ -49,11 +50,12 @@ export default async function DashboardLayout({
       <div className="md:ml-[60px] lg:ml-[220px]" style={{ paddingTop: '48px' }}>
         <header
           className="fixed top-0 right-0 h-12 flex items-center justify-between pl-14 pr-4 md:px-6 border-b border-[var(--border)] z-10 left-0 md:left-[60px] lg:left-[220px]"
-          style={{ background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+          style={{ background: 'var(--header-bg)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           <span />
           <div className="flex items-center gap-4">
             <CaisseButton />
+            <ThemeToggle />
             <form action={signOut}>
               <button type="submit" className="text-xs text-[var(--text3)] hover:text-[var(--text1)]">
                 Déconnexion

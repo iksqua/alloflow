@@ -75,12 +75,12 @@ export default async function ReportPage({
         {/* Left column */}
         <div className="flex flex-col flex-1 gap-4 min-w-0">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-slate-500">
+          <nav className="flex items-center gap-1.5 text-xs text-[var(--text4)]">
             <Link href="/dashboard/analytics" className="text-blue-400 hover:underline">
               Analytics
             </Link>
             <span>›</span>
-            <span className="text-slate-400">Rapport des ventes</span>
+            <span className="text-[var(--text3)]">Rapport des ventes</span>
           </nav>
 
           {/* Sortable transactions table */}
@@ -99,8 +99,8 @@ export default async function ReportPage({
           <TvaSummary data={tvaBreakdown} />
 
           {/* Payment split card */}
-          <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px]">
-            <h3 className="text-sm font-semibold text-slate-200 mb-4">Répartition paiements</h3>
+          <div className="rounded-[14px] p-[18px]" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <h3 className="text-sm font-semibold text-[var(--text1)] mb-4">Répartition paiements</h3>
 
             <div className="flex flex-col gap-3">
               {/* Carte */}
@@ -109,24 +109,24 @@ export default async function ReportPage({
                   <span className="flex items-center gap-1.5 text-xs text-blue-400 font-semibold">
                     💳 Carte
                   </span>
-                  <span className="text-xs text-slate-300 tabular-nums font-semibold">
+                  <span className="text-xs text-[var(--text2)] tabular-nums font-semibold">
                     {kpi.cardAmount.toFixed(2)} €
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface2)' }}>
                     <div
                       className="h-full rounded-full bg-blue-400 transition-all"
                       style={{ width: `${kpi.cardPct}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-slate-500 w-8 text-right tabular-nums">
+                  <span className="text-[10px] text-[var(--text4)] w-8 text-right tabular-nums">
                     {kpi.cardPct} %
                   </span>
                 </div>
               </div>
 
-              <div className="h-px bg-white/[0.04]" />
+              <div className="h-px" style={{ background: 'var(--border)' }} />
 
               {/* Espèces */}
               <div className="flex flex-col gap-1.5">
@@ -134,28 +134,28 @@ export default async function ReportPage({
                   <span className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
                     💵 Espèces
                   </span>
-                  <span className="text-xs text-slate-300 tabular-nums font-semibold">
+                  <span className="text-xs text-[var(--text2)] tabular-nums font-semibold">
                     {kpi.cashAmount.toFixed(2)} €
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface2)' }}>
                     <div
                       className="h-full rounded-full bg-amber-400 transition-all"
                       style={{ width: `${kpi.cashPct}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-slate-500 w-8 text-right tabular-nums">
+                  <span className="text-[10px] text-[var(--text4)] w-8 text-right tabular-nums">
                     {kpi.cashPct} %
                   </span>
                 </div>
               </div>
 
-              <div className="h-px bg-white/[0.04]" />
+              <div className="h-px" style={{ background: 'var(--border)' }} />
 
               {/* Total TTC */}
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider">Total TTC</span>
+                <span className="text-[10px] text-[var(--text4)] uppercase tracking-wider">Total TTC</span>
                 <span className="text-sm text-blue-400 font-bold tabular-nums">
                   {kpi.caTtc.toFixed(2)} €
                 </span>

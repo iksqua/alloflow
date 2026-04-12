@@ -48,8 +48,8 @@ const TIER_OPTIONS = [
 ]
 
 const TIER_COLORS: Record<string, string> = {
-  standard: 'text-slate-300',
-  silver:   'text-slate-300',
+  standard: 'text-[var(--text2)]',
+  silver:   'text-[var(--text2)]',
   gold:     'text-amber-400',
 }
 
@@ -140,11 +140,11 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
       )}
 
       {/* Programme ON/OFF */}
-      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
+      <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[13px] font-semibold text-slate-100">Programme de fidélité</p>
-            <p className="text-xs text-slate-400 mt-0.5">Activer ou désactiver le programme pour votre établissement</p>
+            <p className="text-[13px] font-semibold text-[var(--text1)]">Programme de fidélité</p>
+            <p className="text-xs text-[var(--text3)] mt-0.5">Activer ou désactiver le programme pour votre établissement</p>
           </div>
           <button
             type="button"
@@ -158,8 +158,8 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Points */}
-      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
-        <p className="text-[13px] font-semibold text-slate-100 mb-4">Règles de points</p>
+      <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <p className="text-[13px] font-semibold text-[var(--text1)] mb-4">Règles de points</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">
@@ -171,7 +171,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
               min="0"
               value={ptsPerEuro}
               onChange={e => setPtsPerEuro(e.target.value)}
-              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
               style={{ background: 'var(--surface2)' }}
             />
           </div>
@@ -184,7 +184,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
               min="0"
               value={signupBonus}
               onChange={e => setSignupBonus(e.target.value)}
-              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
               style={{ background: 'var(--surface2)' }}
             />
           </div>
@@ -197,7 +197,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
               min="1"
               value={ptsValidityDays}
               onChange={e => setPtsValidityDays(e.target.value)}
-              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
               style={{ background: 'var(--surface2)' }}
             />
           </div>
@@ -210,7 +210,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
               min="0"
               value={minRedemptionPts}
               onChange={e => setMinRedemptionPts(e.target.value)}
-              className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
               style={{ background: 'var(--surface2)' }}
             />
           </div>
@@ -218,8 +218,8 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Niveaux */}
-      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
-        <p className="text-[13px] font-semibold text-slate-100 mb-4">Niveaux de fidélité</p>
+      <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <p className="text-[13px] font-semibold text-[var(--text1)] mb-4">Niveaux de fidélité</p>
         <div className="grid grid-cols-3 gap-3">
           {levels.map(level => (
             <div
@@ -227,11 +227,11 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
               className={`rounded-xl border p-4 ${TIER_BADGE[level.key] ?? 'bg-slate-700/30 border-slate-600/30'}`}
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className={`text-sm font-bold ${TIER_COLORS[level.key] ?? 'text-slate-300'}`}>
+                <span className={`text-sm font-bold ${TIER_COLORS[level.key] ?? 'text-[var(--text2)]'}`}>
                   {level.name}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 mb-2">
+              <p className="text-[10px] text-[var(--text4)] mb-2">
                 {level.min} – {level.max !== null ? level.max : '∞'} pts
               </p>
               <label className="block text-[10px] font-semibold text-[var(--text4)] uppercase tracking-wide mb-1">
@@ -242,7 +242,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
                 onChange={e => updateLevelDescription(level.key, e.target.value)}
                 rows={2}
                 placeholder="Avantages du niveau..."
-                className="w-full border border-white/10 rounded-lg px-2 py-1.5 text-xs text-[var(--text1)] resize-none focus:outline-none focus:border-violet-500/50 transition-colors"
+                className="w-full border border-[var(--border)] rounded-lg px-2 py-1.5 text-xs text-[var(--text1)] resize-none focus:outline-none focus:border-violet-500/50 transition-colors"
                 style={{ background: 'var(--surface2)' }}
               />
             </div>
@@ -251,9 +251,9 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
       </div>
 
       {/* Récompenses */}
-      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
+      <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[13px] font-semibold text-slate-100">Récompenses</p>
+          <p className="text-[13px] font-semibold text-[var(--text1)]">Récompenses</p>
           <button
             type="button"
             onClick={addReward}
@@ -264,7 +264,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
         </div>
 
         {rewards.length === 0 ? (
-          <p className="text-xs text-slate-500 text-center py-4 border border-dashed border-white/10 rounded-xl">
+          <p className="text-xs text-[var(--text4)] text-center py-4 border border-dashed border-[var(--border)] rounded-xl">
             Aucune récompense — cliquez sur + Ajouter une récompense
           </p>
         ) : (
@@ -272,7 +272,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
             {/* Header */}
             <div className="grid grid-cols-[1fr_80px_120px_80px_120px_36px] gap-2 px-1">
               {['Nom', 'Points', 'Type', 'Valeur', 'Niveau', ''].map(h => (
-                <span key={h} className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{h}</span>
+                <span key={h} className="text-[10px] font-semibold text-[var(--text4)] uppercase tracking-wide">{h}</span>
               ))}
             </div>
 
@@ -283,7 +283,7 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
                   value={reward.name}
                   onChange={e => updateReward(idx, 'name', e.target.value)}
                   placeholder="Café offert"
-                  className="border border-white/10 rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
                   style={{ background: 'var(--surface2)' }}
                 />
                 <input
@@ -291,13 +291,13 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
                   min="1"
                   value={reward.ptsRequired}
                   onChange={e => updateReward(idx, 'ptsRequired', parseInt(e.target.value) || 0)}
-                  className="border border-white/10 rounded-lg px-2 py-2 text-sm text-[var(--text1)] text-right focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="border border-[var(--border)] rounded-lg px-2 py-2 text-sm text-[var(--text1)] text-right focus:outline-none focus:border-violet-500/50 transition-colors"
                   style={{ background: 'var(--surface2)' }}
                 />
                 <select
                   value={reward.type}
                   onChange={e => updateReward(idx, 'type', e.target.value)}
-                  className="border border-white/10 rounded-lg px-2 py-2 text-xs text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="border border-[var(--border)] rounded-lg px-2 py-2 text-xs text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
                   style={{ background: 'var(--surface2)' }}
                 >
                   {REWARD_TYPES.map(t => (
@@ -310,13 +310,13 @@ export function LoyaltyConfigForm({ initialConfig }: Props) {
                   step="0.01"
                   value={reward.value}
                   onChange={e => updateReward(idx, 'value', parseFloat(e.target.value) || 0)}
-                  className="border border-white/10 rounded-lg px-2 py-2 text-sm text-[var(--text1)] text-right focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="border border-[var(--border)] rounded-lg px-2 py-2 text-sm text-[var(--text1)] text-right focus:outline-none focus:border-violet-500/50 transition-colors"
                   style={{ background: 'var(--surface2)' }}
                 />
                 <select
                   value={reward.levelRequired}
                   onChange={e => updateReward(idx, 'levelRequired', e.target.value)}
-                  className="border border-white/10 rounded-lg px-2 py-2 text-xs text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="border border-[var(--border)] rounded-lg px-2 py-2 text-xs text-[var(--text1)] focus:outline-none focus:border-violet-500/50 transition-colors"
                   style={{ background: 'var(--surface2)' }}
                 >
                   {TIER_OPTIONS.map(t => (

@@ -68,7 +68,7 @@ function PointsCell({ points, threshold }: { points: number; threshold: number }
   return (
     <div className="flex flex-col gap-1 min-w-[80px]">
       <span className="text-sm text-[var(--text1)]">{points.toLocaleString('fr-FR')} pts</span>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface2)' }}>
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${pct}%`, background: '#8b5cf6' }}
@@ -99,10 +99,11 @@ export function CustomerTable({ customers, goldThreshold = DEFAULT_GOLD_THRESHOL
 
   return (
     <div
-      className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] overflow-hidden"
+      className="rounded-[14px] overflow-hidden"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
     >
       {/* Filters bar */}
-      <div className="flex items-center gap-3 p-4 border-b border-white/[0.06]">
+      <div className="flex items-center gap-3 p-4 border-b border-[var(--border)]">
         <div className="relative flex-1 max-w-xs">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text3)] text-sm">🔍</span>
           <input
@@ -110,17 +111,18 @@ export function CustomerTable({ customers, goldThreshold = DEFAULT_GOLD_THRESHOL
             placeholder="Rechercher un client…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg text-sm bg-white/[0.05] border border-white/[0.08] text-[var(--text1)] placeholder:text-[var(--text3)] focus:outline-none focus:border-[#8b5cf6] transition-colors"
+            className="w-full pl-9 pr-3 py-2 rounded-lg text-sm border text-[var(--text1)] placeholder:text-[var(--text3)] focus:outline-none focus:border-[#8b5cf6] transition-colors"
+            style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}
           />
         </div>
         <div className="relative">
           <select
             value={tierFilter}
             onChange={(e) => setTierFilter(e.target.value as '' | 'gold' | 'silver' | 'standard')}
-            className="px-3 py-2 rounded-lg text-sm bg-white/[0.05] border transition-colors cursor-pointer focus:outline-none text-[var(--text1)]"
+            className="px-3 py-2 rounded-lg text-sm border transition-colors cursor-pointer focus:outline-none text-[var(--text1)]"
             style={{
-              borderColor: tierFilter ? '#8b5cf6' : 'rgba(255,255,255,0.08)',
-              background: tierFilter ? 'rgba(139,92,246,0.1)' : undefined,
+              borderColor: tierFilter ? '#8b5cf6' : 'var(--border)',
+              background: tierFilter ? 'rgba(139,92,246,0.1)' : 'var(--surface2)',
             }}
           >
             <option value="">Tous les niveaux</option>
@@ -157,7 +159,7 @@ export function CustomerTable({ customers, goldThreshold = DEFAULT_GOLD_THRESHOL
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-[var(--border)]">
                 {['Client', 'Statut', 'Segment', 'Points', 'Panier moy.', 'Dernière visite', ''].map((col) => (
                   <th
                     key={col}
@@ -173,7 +175,7 @@ export function CustomerTable({ customers, goldThreshold = DEFAULT_GOLD_THRESHOL
                 <tr
                   key={customer.id}
                   className={[
-                    'border-b border-white/[0.04] transition-colors hover:bg-white/[0.03]',
+                    'border-b border-[var(--border)] transition-colors hover:bg-[var(--surface2)]',
                     i === filtered.length - 1 ? 'border-b-0' : '',
                   ].join(' ')}
                 >

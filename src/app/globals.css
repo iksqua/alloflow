@@ -91,6 +91,9 @@
   --row-edit-bg:      rgba(29, 78, 216, 0.1);
   --overlay-bg:       rgba(0, 0, 0, 0.6);
 
+  /* Header */
+  --header-bg:        rgba(15, 23, 42, 0.85);
+
   /* Radius */
   --radius:           0.75rem;
 
@@ -111,6 +114,37 @@
   --destructive:      var(--red);
 }
 
+
+/* ─── Light mode ─────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg:               #f1f5f9;
+  --surface:          #ffffff;
+  --surface2:         #f8fafc;
+  --border-color:     #e2e8f0;
+  --border-active:    #cbd5e1;
+
+  --text1:            #0f172a;
+  --text2:            #1e293b;
+  --text3:            #64748b;
+  --text4:            #94a3b8;
+
+  --blue-light:       #dbeafe;
+  --blue-hover:       #1d4ed8;
+  --selection-bg:     rgba(29, 78, 216, 0.08);
+  --overlay-bg:       rgba(0, 0, 0, 0.35);
+  --header-bg:        rgba(248, 250, 252, 0.9);
+
+  --background:       var(--bg);
+  --foreground:       var(--text1);
+  --card:             var(--surface);
+  --card-foreground:  var(--text1);
+  --secondary:        var(--surface2);
+  --secondary-foreground: var(--text2);
+  --muted:            var(--surface);
+  --muted-foreground: var(--text3);
+  --border:           var(--border-color);
+  --input:            var(--surface2);
+}
 
 @layer base {
   * {

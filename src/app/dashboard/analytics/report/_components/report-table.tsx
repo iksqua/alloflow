@@ -15,6 +15,9 @@ interface ReportTableProps {
   totalTtc: number
 }
 
+const cardStyle = { background: 'var(--surface)', border: '1px solid var(--border)' }
+const thStyle = { borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }
+
 export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: ReportTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -45,7 +48,7 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
   })
 
   function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <span className="ml-1 text-slate-600">↕</span>
+    if (sortKey !== col) return <span className="ml-1 text-[var(--text4)]">↕</span>
     return (
       <span className="ml-1 text-blue-400">
         {sortDir === 'asc' ? '↑' : '↓'}
@@ -59,12 +62,12 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
   }
 
   return (
-    <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] overflow-hidden">
+    <div className="rounded-[14px] overflow-hidden" style={cardStyle}>
       {/* Table header bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.01]">
-        <span className="text-sm font-semibold text-slate-200">
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }}>
+        <span className="text-sm font-semibold text-[var(--text1)]">
           Transactions
-          <span className="ml-2 text-xs text-slate-500 font-normal">({total} au total)</span>
+          <span className="ml-2 text-xs text-[var(--text4)] font-normal">({total} au total)</span>
         </span>
         <button
           onClick={handleExport}
@@ -76,7 +79,7 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
       </div>
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+        <div className="flex flex-col items-center justify-center py-16 text-[var(--text4)]">
           <span className="text-3xl mb-3">📊</span>
           <p className="text-sm">Aucune transaction sur cette période</p>
         </div>
@@ -86,31 +89,34 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
             <thead>
               <tr>
                 <th
-                  className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] cursor-pointer select-none hover:text-slate-400 transition-colors"
+                  className="text-left text-[10px] text-[var(--text4)] uppercase tracking-wider px-4 py-3 cursor-pointer select-none hover:text-[var(--text3)] transition-colors"
+                  style={thStyle}
                   onClick={() => handleSort('createdAt')}
                 >
                   Date/Heure <SortIcon col="createdAt" />
                 </th>
-                <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] hidden sm:table-cell">
+                <th className="text-left text-[10px] text-[var(--text4)] uppercase tracking-wider px-4 py-3 hidden sm:table-cell" style={thStyle}>
                   Ticket
                 </th>
-                <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01]">
+                <th className="text-left text-[10px] text-[var(--text4)] uppercase tracking-wider px-4 py-3" style={thStyle}>
                   Produits
                 </th>
-                <th className="text-left text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] hidden sm:table-cell">
+                <th className="text-left text-[10px] text-[var(--text4)] uppercase tracking-wider px-4 py-3 hidden sm:table-cell" style={thStyle}>
                   Paiement
                 </th>
                 <th
-                  className="text-right text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] cursor-pointer select-none hover:text-slate-400 transition-colors hidden md:table-cell"
+                  className="text-right text-[10px] text-[var(--text4)] uppercase tracking-wider px-4 py-3 cursor-pointer select-none hover:text-[var(--text3)] transition-colors hidden md:table-cell"
+                  style={thStyle}
                   onClick={() => handleSort('amountHt')}
                 >
                   HT <SortIcon col="amountHt" />
                 </th>
-                <th className="text-right text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] hidden md:table-cell">
+                <th className="text-right text-[10px] text-[var(--text4)] uppercase tracking-wider px-4 py-3 hidden md:table-cell" style={thStyle}>
                   TVA
                 </th>
                 <th
-                  className="text-right text-[10px] text-slate-500 uppercase tracking-wider px-4 py-3 border-b border-white/[0.06] bg-white/[0.01] cursor-pointer select-none hover:text-slate-400 transition-colors"
+                  className="text-right text-[10px] text-[var(--text4)] uppercase tracking-wider px-4 py-3 cursor-pointer select-none hover:text-[var(--text3)] transition-colors"
+                  style={thStyle}
                   onClick={() => handleSort('amountTtc')}
                 >
                   TTC <SortIcon col="amountTtc" />
@@ -121,9 +127,10 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
               {sorted.map((row, i) => (
                 <tr
                   key={row.id}
-                  className={`${i % 2 === 1 ? 'bg-white/[0.015]' : ''} hover:bg-blue-500/[0.04] transition-colors`}
+                  className="hover:bg-blue-500/[0.04] transition-colors"
+                  style={i % 2 === 1 ? { background: 'var(--surface2)' } : undefined}
                 >
-                  <td className="px-4 py-3 text-slate-300 text-xs whitespace-nowrap">
+                  <td className="px-4 py-3 text-[var(--text2)] text-xs whitespace-nowrap">
                     {new Date(row.createdAt).toLocaleString('fr-FR', {
                       day: '2-digit',
                       month: '2-digit',
@@ -132,10 +139,10 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
                       minute: '2-digit',
                     })}
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs font-mono hidden sm:table-cell">
+                  <td className="px-4 py-3 text-[var(--text3)] text-xs font-mono hidden sm:table-cell">
                     #{row.ticketNumber}
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs max-w-[160px] truncate">
+                  <td className="px-4 py-3 text-[var(--text3)] text-xs max-w-[160px] truncate">
                     {row.products || '—'}
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
@@ -149,29 +156,29 @@ export function ReportTable({ rows, total, totalHt, totalTva, totalTtc }: Report
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-300 text-xs tabular-nums hidden md:table-cell">
+                  <td className="px-4 py-3 text-right text-[var(--text2)] text-xs tabular-nums hidden md:table-cell">
                     {row.amountHt.toFixed(2)} €
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-500 text-xs tabular-nums hidden md:table-cell">
+                  <td className="px-4 py-3 text-right text-[var(--text4)] text-xs tabular-nums hidden md:table-cell">
                     {row.tvaAmount.toFixed(2)} €
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-200 text-xs tabular-nums font-semibold">
+                  <td className="px-4 py-3 text-right text-[var(--text1)] text-xs tabular-nums font-semibold">
                     {row.amountTtc.toFixed(2)} €
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-blue-500/[0.05] border-t border-white/[0.06]">
-                <td colSpan={2} className="px-4 py-3 text-xs font-semibold text-slate-300">
+              <tr style={{ background: 'var(--surface2)', borderTop: '1px solid var(--border)' }}>
+                <td colSpan={2} className="px-4 py-3 text-xs font-semibold text-[var(--text2)]">
                   Total ({rows.length} ligne{rows.length > 1 ? 's' : ''})
                 </td>
                 <td className="px-4 py-3 hidden sm:table-cell" />
                 <td className="px-4 py-3 hidden sm:table-cell" />
-                <td className="px-4 py-3 text-right text-xs font-semibold text-slate-300 tabular-nums hidden md:table-cell">
+                <td className="px-4 py-3 text-right text-xs font-semibold text-[var(--text2)] tabular-nums hidden md:table-cell">
                   {totalHt.toFixed(2)} €
                 </td>
-                <td className="px-4 py-3 text-right text-xs font-semibold text-slate-400 tabular-nums hidden md:table-cell">
+                <td className="px-4 py-3 text-right text-xs font-semibold text-[var(--text3)] tabular-nums hidden md:table-cell">
                   {totalTva.toFixed(2)} €
                 </td>
                 <td className="px-4 py-3 text-right text-xs font-bold text-blue-400 tabular-nums">

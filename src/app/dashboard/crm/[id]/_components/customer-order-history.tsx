@@ -33,8 +33,8 @@ function formatItems(items: OrderItem[]) {
 
 export function CustomerOrderHistory({ orders }: Props) {
   return (
-    <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
-      <h2 className="text-[13px] font-semibold text-slate-100 mb-4">Historique des commandes</h2>
+    <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <h2 className="text-[13px] font-semibold text-[var(--text1)] mb-4">Historique des commandes</h2>
 
       {orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-[var(--text3)]">
@@ -45,7 +45,7 @@ export function CustomerOrderHistory({ orders }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-[var(--border)]">
                 {['Date', 'Produits', 'Montant TTC', 'Points gagnés'].map((col) => (
                   <th
                     key={col}
@@ -61,7 +61,7 @@ export function CustomerOrderHistory({ orders }: Props) {
                 <tr
                   key={order.id}
                   className={[
-                    'border-b border-white/[0.04]',
+                    'border-b border-[var(--border)]',
                     i === orders.length - 1 ? 'border-b-0' : '',
                   ].join(' ')}
                 >

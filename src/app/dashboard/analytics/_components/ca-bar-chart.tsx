@@ -15,13 +15,15 @@ function isToday(iso: string): boolean {
   return iso.startsWith(todayStr)
 }
 
+const cardStyle = { background: 'var(--surface)', border: '1px solid var(--border)' }
+
 export function CaBarChart({ data }: CaBarChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px] flex flex-col">
-        <span className="text-sm font-semibold text-slate-200 mb-4">Chiffre d&apos;affaires</span>
+      <div className="rounded-[14px] p-[18px] flex flex-col" style={cardStyle}>
+        <span className="text-sm font-semibold text-[var(--text1)] mb-4">Chiffre d&apos;affaires</span>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-slate-500 text-center py-8 text-sm">Aucune vente sur la période</p>
+          <p className="text-[var(--text4)] text-center py-8 text-sm">Aucune vente sur la période</p>
         </div>
       </div>
     )
@@ -33,10 +35,10 @@ export function CaBarChart({ data }: CaBarChartProps) {
   const midIndex = Math.floor(data.length / 2)
 
   return (
-    <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px]">
+    <div className="rounded-[14px] p-[18px]" style={cardStyle}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-semibold text-slate-200">
+        <span className="text-sm font-semibold text-[var(--text1)]">
           CA — {data.length} dernier{data.length > 1 ? 's' : ''} jour{data.length > 1 ? 's' : ''}
         </span>
         <span className="text-sm font-bold text-blue-400">{totalFormatted}</span>
@@ -69,7 +71,7 @@ export function CaBarChart({ data }: CaBarChartProps) {
           return (
             <div key={d.day} className="flex-1 text-center">
               {showLabel && (
-                <span className="text-[9px] text-slate-500">
+                <span className="text-[9px] text-[var(--text4)]">
                   {isToday(d.day) ? 'auj.' : formatDay(d.day)}
                 </span>
               )}

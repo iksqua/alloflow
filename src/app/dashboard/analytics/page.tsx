@@ -70,10 +70,10 @@ export default async function AnalyticsPage({
       {/* Row 1: CA chart + rush hours placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <CaBarChart data={dailyCA} />
-        <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px] flex flex-col">
-          <h3 className="text-sm font-semibold text-slate-200 mb-4">Heures de rush</h3>
+        <div className="rounded-[14px] p-[18px] flex flex-col" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <h3 className="text-sm font-semibold text-[var(--text1)] mb-4">Heures de rush</h3>
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-slate-500 text-center py-8 text-sm">Bientôt disponible</p>
+            <p className="text-[var(--text4)] text-center py-8 text-sm">Bientôt disponible</p>
           </div>
         </div>
       </div>
@@ -81,10 +81,10 @@ export default async function AnalyticsPage({
       {/* Row 2: Top products + network snapshot placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <TopProducts data={topProducts} />
-        <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-[18px] flex flex-col">
-          <h3 className="text-sm font-semibold text-slate-200 mb-4">Snapshot réseau</h3>
+        <div className="rounded-[14px] p-[18px] flex flex-col" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <h3 className="text-sm font-semibold text-[var(--text1)] mb-4">Snapshot réseau</h3>
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-slate-500 text-center py-8 text-sm">Bientôt disponible</p>
+            <p className="text-[var(--text4)] text-center py-8 text-sm">Bientôt disponible</p>
           </div>
         </div>
       </div>

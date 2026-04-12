@@ -32,8 +32,8 @@ export function CustomerNotes({ customerId, initialNotes }: Props) {
   }
 
   return (
-    <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
-      <h2 className="text-[13px] font-semibold text-slate-100 mb-4">Notes caissier</h2>
+    <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <h2 className="text-[13px] font-semibold text-[var(--text1)] mb-4">Notes caissier</h2>
 
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5">
@@ -44,7 +44,7 @@ export function CustomerNotes({ customerId, initialNotes }: Props) {
           onChange={(e) => setNotes(e.target.value)}
           rows={4}
           placeholder="Ajouter des notes sur ce client…"
-          className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm text-[var(--text1)] placeholder:text-[var(--text4)] focus:outline-none focus:border-[#8b5cf6] transition-colors resize-none"
+          className="w-full rounded-lg px-3 py-2 text-sm text-[var(--text1)] placeholder:text-[var(--text4)] focus:outline-none focus:border-[#8b5cf6] transition-colors resize-none border border-[var(--border)]"
           style={{ background: 'var(--surface2)' }}
         />
         <div className="flex items-center justify-between">

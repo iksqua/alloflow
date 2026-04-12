@@ -89,7 +89,7 @@ export function Sidebar({ userName, userRole, establishmentName }: SidebarProps)
           'lg:w-[220px]',
         ].join(' ')}
         style={{
-          background: '#111827',
+          background: 'var(--surface)',
           borderRight: '1px solid var(--border)',
         }}
       >

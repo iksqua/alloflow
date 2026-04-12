@@ -16,7 +16,8 @@ interface StatCardProps {
 function StatCard({ label, value, icon, iconBg, iconColor }: StatCardProps) {
   return (
     <div
-      className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-4 flex flex-col gap-3"
+      className="rounded-[14px] p-4 flex flex-col gap-3"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs text-[var(--text3)] font-medium uppercase tracking-wide">

@@ -68,7 +68,7 @@ export function CustomerProfile({ customer, totalRevenue, visitCount, avgTicket 
   const tierColors = TIER_COLORS[customer.tier] ?? TIER_COLORS.standard
 
   return (
-    <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
+    <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
       {/* Back link */}
       <Link
         href="/dashboard/crm"

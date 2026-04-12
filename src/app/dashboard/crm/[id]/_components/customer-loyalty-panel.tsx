@@ -61,8 +61,8 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards, network 
   return (
     <div className="flex flex-col gap-5">
       {/* Points card */}
-      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
-        <h2 className="text-[13px] font-semibold text-slate-100 mb-4">Programme de fidélité</h2>
+      <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <h2 className="text-[13px] font-semibold text-[var(--text1)] mb-4">Programme de fidélité</h2>
 
         <div className="mb-4">
           <div className="flex items-end justify-between mb-2">
@@ -76,7 +76,7 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards, network 
               </span>
             )}
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface2)' }}>
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${progressPct}%`, background: '#8b5cf6' }}
@@ -86,20 +86,20 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards, network 
         </div>
 
         {/* Send QR */}
-        <div className="pt-4 border-t border-white/[0.06]">
+        <div className="pt-4 border-t border-[var(--border)]">
           <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-2">Envoyer le QR code</p>
           <div className="flex gap-2">
             <button
               disabled
               title="Bientôt disponible"
-              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-[var(--text2)] opacity-50 cursor-not-allowed"
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] text-[var(--text2)] opacity-50 cursor-not-allowed"
             >
               📱 SMS
             </button>
             <button
               disabled
               title="Bientôt disponible"
-              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-white/10 text-[var(--text2)] opacity-50 cursor-not-allowed"
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] text-[var(--text2)] opacity-50 cursor-not-allowed"
             >
               ✉ Email
             </button>
@@ -108,7 +108,7 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards, network 
 
         {/* Network identity */}
         {network && (
-          <div className="pt-4 border-t border-white/[0.06]">
+          <div className="pt-4 border-t border-[var(--border)]">
             <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-2">Réseau</p>
             <div className="flex items-center gap-2">
               <span
@@ -135,8 +135,8 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards, network 
 
       {/* Available rewards */}
       {rewards.length > 0 && (
-        <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
-          <h2 className="text-[13px] font-semibold text-slate-100 mb-4">Récompenses disponibles</h2>
+        <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <h2 className="text-[13px] font-semibold text-[var(--text1)] mb-4">Récompenses disponibles</h2>
           <div className="flex flex-col gap-2">
             {rewards.map((reward) => {
               const canUse = customer.points >= reward.points_required
@@ -144,7 +144,7 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards, network 
                 <div
                   key={reward.id}
                   className="flex items-center justify-between p-3 rounded-[10px]"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
                 >
                   <div className="flex-1 min-w-0 mr-2">
                     <div className="text-sm text-[var(--text1)] truncate">{reward.name}</div>
@@ -170,8 +170,8 @@ export function CustomerLoyaltyPanel({ customer, transactions, rewards, network 
       )}
 
       {/* Loyalty timeline */}
-      <div className="bg-[#0f2744] border border-white/[0.06] rounded-[14px] p-5">
-        <h2 className="text-[13px] font-semibold text-slate-100 mb-4">Historique des points</h2>
+      <div className="rounded-[14px] p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <h2 className="text-[13px] font-semibold text-[var(--text1)] mb-4">Historique des points</h2>
 
         {transactions.length === 0 ? (
           <p className="text-sm text-[var(--text3)] text-center py-4">Aucune transaction</p>
