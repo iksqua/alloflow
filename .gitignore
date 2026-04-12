@@ -43,6 +43,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .worktrees/
+.claude/worktrees/
+.superpowers/
 
 # Playwright
 tests/e2e/.auth/
