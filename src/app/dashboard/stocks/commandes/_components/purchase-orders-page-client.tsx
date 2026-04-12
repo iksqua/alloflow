@@ -59,9 +59,9 @@ export function PurchaseOrdersPageClient({ initialOrders, stockItems, categories
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-[var(--text1)]">Commandes fournisseurs</h1>
           <p className="text-sm text-[var(--text3)] mt-0.5">
@@ -70,10 +70,10 @@ export function PurchaseOrdersPageClient({ initialOrders, stockItems, categories
         </div>
         <button
           onClick={() => setModal({ type: 'create' })}
-          className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white"
+          className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white whitespace-nowrap flex-shrink-0"
           style={{ background: 'var(--blue)' }}
         >
-          📥 Nouvelle commande
+          📥 <span className="hidden sm:inline">Nouvelle commande</span>
         </button>
       </div>
 

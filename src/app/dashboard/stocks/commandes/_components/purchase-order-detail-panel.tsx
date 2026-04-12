@@ -87,8 +87,8 @@ export function PurchaseOrderDetailPanel({ order, onClose, onReceive, onEdit, on
           {/* Lines table */}
           <div>
             <div className="text-xs font-semibold text-[var(--text3)] uppercase tracking-wide mb-2">Articles</div>
-            <div className="rounded-lg border border-[var(--border)] overflow-hidden">
-              <table className="w-full text-xs">
+            <div className="rounded-lg border border-[var(--border)] overflow-x-auto">
+              <table className="w-full text-xs min-w-[280px]">
                 <thead>
                   <tr style={{ background: 'var(--surface2)' }} className="border-b border-[var(--border)]">
                     <th className="text-left px-3 py-2 text-[var(--text3)]">Article</th>

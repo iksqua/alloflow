@@ -275,6 +275,25 @@ function OrderDetailPanel({
   )
 }
 
+function localDateKey(dateStr: string): string {
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function todayKey(): string {
+  return localDateKey(new Date().toISOString())
+}
+
+function dayLabel(key: string): string {
+  const today = todayKey()
+  const yesterday = localDateKey(new Date(Date.now() - 86400000).toISOString())
+  if (key === today) return "Aujourd'hui"
+  if (key === yesterday) return 'Hier'
+  const d = new Date(key + 'T12:00:00')
+  const label = d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
 export function OrdersPageClient({ initialOrders, userRole }: Props) {
   const [orders, setOrders] = useState(initialOrders)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -298,12 +317,33 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
     return list
   }, [orders, statusFilter, search])
 
-  const stats = useMemo(() => {
-    const paid = orders.filter(o => o.status === 'paid')
-    const revenue = paid.reduce((s, o) => s + o.total_ttc, 0)
-    const refunded = orders.filter(o => o.status === 'refunded').length
-    return { count: paid.length, revenue, refunded }
+  const todayStats = useMemo(() => {
+    const key = todayKey()
+    const todayOrders = orders.filter(o => localDateKey(o.created_at) === key)
+    const paid = todayOrders.filter(o => o.status === 'paid')
+    return {
+      count: paid.length,
+      revenue: paid.reduce((s, o) => s + o.total_ttc, 0),
+      refunded: todayOrders.filter(o => o.status === 'refunded').length,
+    }
   }, [orders])
+
+  const groupedByDay = useMemo(() => {
+    const map = new Map<string, Order[]>()
+    for (const order of filtered) {
+      const key = localDateKey(order.created_at)
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(order)
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([key, dayOrders]) => ({
+        key,
+        orders: dayOrders,
+        paidCount: dayOrders.filter(o => o.status === 'paid').length,
+        paidTotal: dayOrders.filter(o => o.status === 'paid').reduce((s, o) => s + o.total_ttc, 0),
+      }))
+  }, [filtered])
 
   async function handleRefund(order: Order) {
     const label = `#${order.id.slice(0, 8).toUpperCase()}`
@@ -315,7 +355,6 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
       if (!res.ok) { toast.error(data.error ?? 'Erreur remboursement'); return }
       toast.success(`Commande ${label} remboursée`)
       setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'refunded' } : o))
-      // Update selected order status in panel if it's the same
       setSelectedOrder(prev => prev?.id === order.id ? { ...prev, status: 'refunded' } : prev)
       router.refresh()
     } catch {
@@ -329,23 +368,21 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
     <div>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-[var(--text1)]">Commandes</h1>
-            <p className="text-xs text-[var(--text4)] mt-0.5">Historique des transactions</p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-[var(--text1)]">Historique des ventes</h1>
         </div>
 
-        {/* Stats */}
+        {/* Today's stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
-            { label: 'Commandes payées', value: stats.count, fmt: (v: number) => v.toString() },
-            { label: 'Chiffre d\'affaires', value: stats.revenue, fmt: (v: number) => `${v.toFixed(2)} €` },
-            { label: 'Remboursements', value: stats.refunded, fmt: (v: number) => v.toString() },
+            { label: 'Ventes', value: todayStats.count, fmt: (v: number) => v.toString() },
+            { label: "Chiffre d'affaires", value: todayStats.revenue, fmt: (v: number) => `${v.toFixed(2)} €` },
+            { label: 'Remboursements', value: todayStats.refunded, fmt: (v: number) => v.toString() },
           ].map(s => (
             <div key={s.label} className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text4)] mb-1">{s.label}</p>
               <p className="text-2xl font-black text-[var(--text1)]">{s.fmt(s.value)}</p>
+              <p className="text-[10px] text-[var(--text4)] mt-0.5">Aujourd'hui</p>
             </div>
           ))}
         </div>
@@ -377,70 +414,80 @@ export function OrdersPageClient({ initialOrders, userRole }: Props) {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Grouped by day */}
         <div className="rounded-xl border border-[var(--border)] overflow-x-auto" style={{ background: 'var(--surface)' }}>
-          <table className="w-full text-sm min-w-[540px]">
-            <thead>
-              <tr className="border-b border-[var(--border)]">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">#</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden sm:table-cell">Date</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Montant TTC</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide hidden md:table-cell">Paiement</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Statut</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-[var(--text4)] text-sm">
-                    Aucune commande
-                  </td>
-                </tr>
-              )}
-              {filtered.map(order => (
-                <tr
-                  key={order.id}
-                  onClick={() => setSelectedOrder(order)}
-                  className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface2)]/30 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-3 font-mono text-xs text-[var(--text4)]">
-                    {`#${order.id.slice(0, 8).toUpperCase()}`}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-[var(--text3)] hidden sm:table-cell">
-                    {new Date(order.created_at).toLocaleString('fr-FR', {
-                      day: '2-digit', month: '2-digit', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit',
-                    })}
-                  </td>
-                  <td className={`px-4 py-3 font-bold tabular-nums ${
-                    order.status === 'refunded' ? 'text-amber-400' : 'text-[var(--text1)]'
-                  }`}>
-                    {order.total_ttc.toFixed(2)} €
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <PaymentBadges payments={order.payments} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CLASSES[order.status] ?? ''}`}>
-                      {STATUS_LABELS[order.status] ?? order.status}
+          {groupedByDay.map(group => (
+            <div key={group.key}>
+              {/* Day header */}
+              <div
+                className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)]"
+                style={{ background: 'var(--surface2)' }}
+              >
+                <span className="text-xs font-semibold text-[var(--text2)]">
+                  {dayLabel(group.key)}
+                  {group.key !== todayKey() && (
+                    <span className="ml-1.5 font-normal text-[var(--text4)]">
+                      · {new Date(group.key + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
-                    {canRefund && order.status === 'paid' && (
-                      <button
-                        onClick={() => handleRefund(order)}
-                        disabled={refunding === order.id}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-amber-900/20 text-amber-400 hover:bg-amber-900/40 transition-colors disabled:opacity-50"
-                      >
-                        {refunding === order.id ? 'En cours…' : 'Rembourser'}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  )}
+                </span>
+                {group.paidCount > 0 && (
+                  <span className="text-xs text-[var(--text3)]">
+                    {group.paidCount} vente{group.paidCount > 1 ? 's' : ''} ·{' '}
+                    <span className="font-semibold text-[var(--text2)]">{group.paidTotal.toFixed(2)} €</span>
+                  </span>
+                )}
+              </div>
+              {/* Orders */}
+              <table className="w-full text-sm min-w-[540px]">
+                <tbody>
+                  {group.orders.map(order => (
+                    <tr
+                      key={order.id}
+                      onClick={() => setSelectedOrder(order)}
+                      className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface2)]/30 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--text4)] w-28">
+                        {`#${order.id.slice(0, 8).toUpperCase()}`}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-[var(--text3)] hidden sm:table-cell w-20">
+                        {new Date(order.created_at).toLocaleTimeString('fr-FR', {
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </td>
+                      <td className={`px-4 py-3 font-bold tabular-nums ${
+                        order.status === 'refunded' ? 'text-amber-400' : 'text-[var(--text1)]'
+                      }`}>
+                        {order.total_ttc.toFixed(2)} €
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <PaymentBadges payments={order.payments} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CLASSES[order.status] ?? ''}`}>
+                          {STATUS_LABELS[order.status] ?? order.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                        {canRefund && order.status === 'paid' && (
+                          <button
+                            onClick={() => handleRefund(order)}
+                            disabled={refunding === order.id}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-amber-900/20 text-amber-400 hover:bg-amber-900/40 transition-colors disabled:opacity-50"
+                          >
+                            {refunding === order.id ? 'En cours…' : 'Rembourser'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+          {groupedByDay.length === 0 && (
+            <div className="px-4 py-12 text-center text-[var(--text4)] text-sm">Aucune commande</div>
+          )}
         </div>
 
         <p className="text-xs text-[var(--text4)] mt-3 text-center">

@@ -121,10 +121,10 @@ export function PurchaseOrdersList({ orders, onSelectOrder, onReceive, onEdit, o
                   {(order.status === 'pending' || order.status === 'partial') && (
                     <button
                       onClick={() => onReceive(order)}
-                      className="text-xs px-2 py-1 rounded-lg font-semibold text-white"
+                      className="text-xs px-2 py-1 rounded-lg font-semibold text-white whitespace-nowrap"
                       style={{ background: 'var(--blue)' }}
                     >
-                      Réceptionner
+                      ✓ <span className="hidden sm:inline">Réceptionner</span>
                     </button>
                   )}
                   {order.status !== 'received' && order.status !== 'cancelled' && (
