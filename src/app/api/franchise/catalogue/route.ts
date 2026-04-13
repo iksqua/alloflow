@@ -27,12 +27,16 @@ export async function GET() {
   const supabase = adminClient()
   const { data: items, error } = await supabase
     .from('network_catalog_items')
-    .select('*, network_catalog_item_data(payload, previous_payload)')
+    .select('*, network_catalog_item_data(payload, previous_payload), catalog_item_comments(count)')
     .eq('org_id', caller.orgId)
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ items: items ?? [] })
+  const mapped = (items ?? []).map((item) => {
+    const raw = item.catalog_item_comments as { count: string | number }[] | null
+    return { ...item, comment_count: Number(raw?.[0]?.count ?? 0), catalog_item_comments: undefined }
+  })
+  return NextResponse.json({ items: mapped })
 }
 
 export async function POST(req: NextRequest) {

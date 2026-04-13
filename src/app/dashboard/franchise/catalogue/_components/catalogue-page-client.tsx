@@ -8,6 +8,7 @@ type CatalogItem = {
   is_mandatory: boolean; is_seasonal: boolean; expires_at?: string | null
   status: string; version: number
   image_url?: string | null
+  comment_count?: number
   network_catalog_item_data?: { payload: Record<string, unknown> }
 }
 
