@@ -45,6 +45,10 @@ function ItemThumbnail({ src }: { src?: string | null }) {
 export function CatalogueReseauPageClient({ initialItems }: { initialItems: unknown[] }) {
   const [items, setItems] = useState<EstablishmentCatalogItem[]>(initialItems as EstablishmentCatalogItem[])
   const [tab, setTab]     = useState<'product' | 'recipe' | 'sop' | 'ingredient'>('product')
+  const [feedbackOpen,   setFeedbackOpen]   = useState<string | null>(null)
+  const [feedbackText,   setFeedbackText]   = useState('')
+  const [feedbackSent,   setFeedbackSent]   = useState<Set<string>>(() => new Set())
+  const [feedbackSaving, setFeedbackSaving] = useState(false)
 
   const filtered = items.filter(i => i.network_catalog_items?.type === tab)
 
@@ -69,6 +73,29 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
     } else {
       const d = await res.json()
       toast.error(d.error ?? 'Erreur')
+    }
+  }
+
+  async function handleSendFeedback(catalogItemId: string, eciId: string) {
+    if (!feedbackText.trim()) return
+    setFeedbackSaving(true)
+    try {
+      const res = await fetch(`/api/catalogue-reseau/${catalogItemId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: feedbackText.trim() }),
+      })
+      if (res.ok) {
+        setFeedbackSent(prev => new Set([...prev, eciId]))
+        setFeedbackOpen(null)
+        setFeedbackText('')
+        toast.success('Retour envoyé')
+      } else {
+        const d = await res.json()
+        toast.error(d.error ?? 'Impossible d\'envoyer le retour')
+      }
+    } finally {
+      setFeedbackSaving(false)
     }
   }
 
@@ -185,6 +212,47 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
                       {JSON.stringify(cat.network_catalog_item_data.payload, null, 2)}
                     </pre>
                   </div>
+                </div>
+              )}
+
+              {/* Feedback franchisé → siège */}
+              {!eci.is_upcoming && (
+                <div className="mt-2">
+                  {feedbackSent.has(eci.id) ? (
+                    <span className="text-xs text-[var(--text4)]">✓ Retour envoyé</span>
+                  ) : feedbackOpen === eci.id ? (
+                    <div className="mt-2 rounded-lg p-3" style={{ background: 'var(--surface2)' }}>
+                      <textarea
+                        value={feedbackText}
+                        onChange={e => setFeedbackText(e.target.value)}
+                        placeholder="Ex: ingrédient difficile à trouver, fournisseur souvent en rupture…"
+                        maxLength={1000}
+                        rows={2}
+                        className="w-full bg-transparent border-none outline-none text-xs resize-none"
+                        style={{ color: 'var(--text2)', fontFamily: 'inherit' }}
+                      />
+                      <div className="flex justify-between items-center mt-2">
+                        <button
+                          onClick={() => { setFeedbackOpen(null); setFeedbackText('') }}
+                          className="text-xs text-[var(--text4)]">
+                          Annuler
+                        </button>
+                        <button
+                          onClick={() => handleSendFeedback(cat.id, eci.id)}
+                          disabled={feedbackSaving || !feedbackText.trim()}
+                          className="text-xs px-3 py-1 rounded-lg text-white font-medium"
+                          style={{ background: 'var(--blue)', opacity: (feedbackSaving || !feedbackText.trim()) ? 0.5 : 1 }}>
+                          {feedbackSaving ? 'Envoi…' : 'Envoyer'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setFeedbackOpen(eci.id); setFeedbackText('') }}
+                      className="text-xs text-[var(--text4)] underline">
+                      + Laisser un retour
+                    </button>
+                  )}
                 </div>
               )}
             </div>
