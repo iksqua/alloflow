@@ -19,3 +19,11 @@ export function isItemExpired(expiresAt: string | null): boolean {
   if (!expiresAt) return false
   return new Date(expiresAt) < new Date()
 }
+
+/** true if available_from is set and is strictly in the future */
+export function isUpcoming(availableFrom: string | null): boolean {
+  if (!availableFrom) return false
+  // Compare date strings directly (YYYY-MM-DD) — no time zone issues
+  const today = new Date().toISOString().split('T')[0]
+  return availableFrom > today
+}

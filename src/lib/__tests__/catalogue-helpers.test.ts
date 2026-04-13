@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeComplianceScore, hasUnseenNotifications, isItemExpired } from '../catalogue-helpers'
+import { computeComplianceScore, hasUnseenNotifications, isItemExpired, isUpcoming } from '../catalogue-helpers'
 
 describe('computeComplianceScore', () => {
   it('returns 100 when all mandatory items are active', () => {
@@ -44,5 +44,21 @@ describe('isItemExpired', () => {
   })
   it('returns false when expires_at is null', () => {
     expect(isItemExpired(null)).toBe(false)
+  })
+})
+
+describe('isUpcoming', () => {
+  it('returns true for a future date', () => {
+    expect(isUpcoming('2099-12-31')).toBe(true)
+  })
+  it('returns false for a past date', () => {
+    expect(isUpcoming('2020-01-01')).toBe(false)
+  })
+  it('returns false for today', () => {
+    const today = new Date().toISOString().split('T')[0]
+    expect(isUpcoming(today)).toBe(false)
+  })
+  it('returns false when null', () => {
+    expect(isUpcoming(null)).toBe(false)
   })
 })
