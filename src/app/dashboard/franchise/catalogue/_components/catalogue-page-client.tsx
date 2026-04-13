@@ -7,6 +7,7 @@ type CatalogItem = {
   id: string; type: string; name: string; description?: string
   is_mandatory: boolean; is_seasonal: boolean; expires_at?: string | null
   status: string; version: number
+  image_url?: string | null
   network_catalog_item_data?: { payload: Record<string, unknown> }
 }
 
@@ -25,6 +26,22 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   color: active ? 'var(--text1)' : 'var(--text3)', border: 'none',
   boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : undefined,
 })
+
+function ItemThumbnail({ src }: { src?: string | null }) {
+  const [err, setErr] = useState(false)
+  if (src && !err) {
+    return (
+      <img src={src} alt="" onError={() => setErr(true)}
+        className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+    )
+  }
+  return (
+    <div className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-lg"
+      style={{ background: 'var(--surface2)', color: 'var(--text4)' }}>
+      📷
+    </div>
+  )
+}
 
 export function CataloguePageClient({ initialItems }: { initialItems: unknown[] }) {
   const [items, setItems]       = useState<CatalogItem[]>(initialItems as CatalogItem[])
@@ -121,6 +138,7 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
             style={{ background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
           >
             <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <ItemThumbnail src={item.image_url} />
               <div>
                 <p className="text-sm font-medium text-[var(--text1)]">{item.name}</p>
                 {item.description && <p className="text-xs text-[var(--text4)] truncate">{item.description}</p>}
