@@ -11,10 +11,10 @@ type CatalogItem = {
 }
 
 const STATUS_CLASSES: Record<string, string> = {
-  draft:     'bg-slate-800/60 text-slate-400',
   published: 'bg-green-900/20 text-green-400',
   archived:  'bg-red-900/20 text-red-400',
 }
+const STATUS_STYLE_DRAFT: React.CSSProperties = { background: 'var(--surface2)', color: 'var(--text3)' }
 const STATUS_LABELS: Record<string, string> = {
   draft: 'DRAFT', published: 'PUBLIÉ', archived: 'ARCHIVÉ',
 }
@@ -28,9 +28,10 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
 
 export function CataloguePageClient({ initialItems }: { initialItems: unknown[] }) {
   const [items, setItems]       = useState<CatalogItem[]>(initialItems as CatalogItem[])
-  const [tab, setTab]           = useState<'product' | 'recipe' | 'sop'>('product')
+  const [tab, setTab]           = useState<'product' | 'recipe' | 'sop' | 'ingredient'>('product')
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<CatalogItem | null>(null)
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
   const filtered = items.filter(i => i.type === tab)
 
@@ -42,6 +43,24 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
     } else {
       const d = await res.json()
       toast.error(d.error ?? 'Erreur')
+    }
+  }
+
+  async function handleDuplicate(id: string) {
+    if (duplicatingId) return
+    setDuplicatingId(id)
+    try {
+      const res = await fetch(`/api/franchise/catalogue/${id}/duplicate`, { method: 'POST' })
+      if (res.ok) {
+        const d = await res.json()
+        setItems(prev => [d.item, ...prev])
+        toast.success('Item dupliqué — modifiez-le avant de publier')
+      } else {
+        const d = await res.json()
+        toast.error(d.error ?? 'Erreur lors de la duplication')
+      }
+    } finally {
+      setDuplicatingId(null)
     }
   }
 
@@ -82,9 +101,9 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
       </div>
 
       <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
-        {(['product', 'recipe', 'sop'] as const).map(t => (
+        {(['product', 'recipe', 'sop', 'ingredient'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>
-            {t === 'product' ? '🛍 Produits' : t === 'recipe' ? '📋 Recettes' : '📖 SOPs'}
+            {t === 'product' ? '🛍 Produits' : t === 'recipe' ? '📋 Recettes' : t === 'sop' ? '📖 SOPs' : '🥕 Ingrédients'}
           </button>
         ))}
       </div>
@@ -106,7 +125,10 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
                 <p className="text-sm font-medium text-[var(--text1)]">{item.name}</p>
                 {item.description && <p className="text-xs text-[var(--text4)] truncate">{item.description}</p>}
               </div>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status] ?? STATUS_CLASSES.draft}`}>
+              <span
+                className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status] ?? ''}`}
+                style={STATUS_CLASSES[item.status] ? undefined : STATUS_STYLE_DRAFT}
+              >
                 {STATUS_LABELS[item.status] ?? 'DRAFT'}
               </span>
               {item.is_mandatory && (
@@ -123,6 +145,13 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
                 className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)]"
                 style={{ background: 'var(--surface2)' }}>
                 Éditer
+              </button>
+              <button
+                onClick={() => handleDuplicate(item.id)}
+                disabled={duplicatingId === item.id}
+                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)] disabled:opacity-50"
+                style={{ background: 'var(--surface2)' }}>
+                {duplicatingId === item.id ? '…' : '⎘ Dupliquer'}
               </button>
               {item.status === 'draft' && (
                 <button onClick={() => handlePublish(item.id)}

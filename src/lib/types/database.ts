@@ -805,6 +805,7 @@ export type Database = {
       }
       network_catalog_items: {
         Row: {
+          available_from: string | null
           created_at: string
           description: string | null
           expires_at: string | null
@@ -819,6 +820,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          available_from?: string | null
           created_at?: string
           description?: string | null
           expires_at?: string | null
@@ -833,6 +835,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          available_from?: string | null
           created_at?: string
           description?: string | null
           expires_at?: string | null

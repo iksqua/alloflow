@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { updateEstablishmentCatalogItemSchema } from '@/lib/validations/catalogue'
+import { isUpcoming } from '@/lib/catalogue-helpers'
 
 async function getAdminProfile() {
   const supabase = await createClient()
@@ -24,14 +25,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: eci } = await supabase
     .from('establishment_catalog_items')
-    .select('id, catalog_item_id, network_catalog_items(is_mandatory)')
+    .select('id, catalog_item_id, network_catalog_items(is_mandatory, available_from)')
     .eq('id', id)
     .eq('establishment_id', caller.establishmentId)
     .single()
 
   if (!eci) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const catalogItem = eci.network_catalog_items as { is_mandatory: boolean } | null
+  const catalogItem = eci.network_catalog_items as { is_mandatory: boolean; available_from: string | null } | null
+
+  // Block activation of upcoming items server-side
+  if (body.data.is_active === true && isUpcoming(catalogItem?.available_from ?? null)) {
+    return NextResponse.json({ error: 'Item non encore disponible' }, { status: 400 })
+  }
+
   if (body.data.is_active === false && catalogItem?.is_mandatory) {
     return NextResponse.json({ error: 'Impossible de désactiver un item obligatoire' }, { status: 400 })
   }

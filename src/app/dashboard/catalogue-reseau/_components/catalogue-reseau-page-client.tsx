@@ -2,17 +2,19 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { hasUnseenNotifications } from '@/lib/catalogue-helpers'
+import { SopKitchenViewer } from './sop-kitchen-viewer'
 
 type NetworkCatalogItem = {
   id: string; type: string; name: string; description?: string
   is_mandatory: boolean; is_seasonal: boolean; expires_at?: string | null
-  status: string; version: number
+  available_from?: string | null; status: string; version: number
   network_catalog_item_data?: { payload: Record<string, unknown>; previous_payload: Record<string, unknown> | null } | null
 }
 
 type EstablishmentCatalogItem = {
   id: string; is_active: boolean; local_price: number | null; local_stock_threshold: number | null
   current_version: number; notified_at: string | null; seen_at: string | null
+  is_upcoming: boolean
   network_catalog_items: NetworkCatalogItem | null
 }
 
@@ -25,7 +27,7 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
 
 export function CatalogueReseauPageClient({ initialItems }: { initialItems: unknown[] }) {
   const [items, setItems] = useState<EstablishmentCatalogItem[]>(initialItems as EstablishmentCatalogItem[])
-  const [tab, setTab]     = useState<'product' | 'recipe' | 'sop'>('product')
+  const [tab, setTab]     = useState<'product' | 'recipe' | 'sop' | 'ingredient'>('product')
 
   const filtered = items.filter(i => i.network_catalog_items?.type === tab)
 
@@ -53,6 +55,11 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
     }
   }
 
+  function formatDate(d: string) {
+    if (!d) return '?'
+    return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+  }
+
   return (
     <div className="max-w-4xl">
       <div className="mb-6">
@@ -61,9 +68,9 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
       </div>
 
       <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
-        {(['product', 'recipe', 'sop'] as const).map(t => (
+        {(['product', 'recipe', 'sop', 'ingredient'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>
-            {t === 'product' ? '🛍 Produits' : t === 'recipe' ? '📋 Recettes' : '📖 SOPs'}
+            {t === 'product' ? '🛍 Produits' : t === 'recipe' ? '📋 Recettes' : t === 'sop' ? '📖 SOPs' : '🥕 Ingrédients'}
           </button>
         ))}
       </div>
@@ -77,7 +84,6 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
           if (!cat) return null
           const isNew     = eci.current_version === 1 && !eci.seen_at
           const isUpdated = eci.current_version < cat.version
-          const hasDiff   = isUpdated && cat.network_catalog_item_data?.previous_payload
 
           return (
             <div key={eci.id} className="px-4 py-3" style={{ background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
@@ -85,46 +91,80 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
                   <div>
                     <p className="text-sm font-medium text-[var(--text1)]">{cat.name}</p>
-                    {cat.description && <p className="text-xs text-[var(--text4)]">{cat.description}</p>}
+                    {cat.type === 'ingredient' && cat.network_catalog_item_data?.payload?.unit != null && (
+                      <p className="text-xs text-[var(--text4)]">{String(cat.network_catalog_item_data.payload.unit)}{cat.network_catalog_item_data.payload.category ? ` · ${String(cat.network_catalog_item_data.payload.category)}` : ''}</p>
+                    )}
+                    {cat.description && cat.type !== 'ingredient' && <p className="text-xs text-[var(--text4)]">{cat.description}</p>}
                   </div>
                   {cat.is_mandatory && (
                     <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-900/20 text-purple-400">OBLIGATOIRE</span>
                   )}
                   {cat.is_seasonal && (
                     <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-900/20 text-amber-400">
-                      SAISONNIER{cat.expires_at ? ` · ${new Date(cat.expires_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}` : ''}
+                      SAISONNIER{cat.expires_at ? ` · ${formatDate(cat.expires_at)}` : ''}
                     </span>
                   )}
-                  {isNew     && <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-900/20 text-green-400">NOUVEAU</span>}
-                  {isUpdated && <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-900/20 text-amber-400">MIS À JOUR</span>}
+                  {eci.is_upcoming && cat.available_from && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-900/20 text-blue-400">
+                      PROCHAINEMENT · {formatDate(cat.available_from)}
+                    </span>
+                  )}
+                  {!eci.is_upcoming && isNew     && <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-900/20 text-green-400">NOUVEAU</span>}
+                  {!eci.is_upcoming && isUpdated && <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-900/20 text-amber-400">MIS À JOUR</span>}
                 </div>
-                {!cat.is_mandatory && (
-                  <button
-                    onClick={() => handleToggle(eci.id, !eci.is_active)}
-                    className={`text-xs px-3 py-1.5 rounded-lg flex-shrink-0 font-medium border ${
-                      eci.is_active
-                        ? 'bg-green-900/20 text-green-400 border-green-900/30'
-                        : 'border-[var(--border)] text-[var(--text3)]'
-                    }`}
-                    style={eci.is_active ? {} : { background: 'var(--surface2)' }}
-                  >
-                    {eci.is_active ? 'Actif' : 'Inactif'}
-                  </button>
-                )}
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* SOP viewer button */}
+                  {cat.type === 'sop' && cat.network_catalog_item_data?.payload && !eci.is_upcoming && (
+                    <SopKitchenViewer
+                      id={cat.id}
+                      name={cat.name}
+                      payload={cat.network_catalog_item_data.payload}
+                    />
+                  )}
+                  {cat.type === 'sop' && eci.is_upcoming && (
+                    <button disabled className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text4)]"
+                      style={{ background: 'var(--surface2)' }}
+                      title={cat.available_from ? `Disponible le ${formatDate(cat.available_from)}` : 'Bientôt disponible'}>
+                      ▶ Bientôt
+                    </button>
+                  )}
+
+                  {/* Toggle actif/inactif — not for ingredients, not for upcoming items */}
+                  {cat.type !== 'ingredient' && !cat.is_mandatory && !eci.is_upcoming && (
+                    <button
+                      onClick={() => handleToggle(eci.id, !eci.is_active)}
+                      className={`text-xs px-3 py-1.5 rounded-lg flex-shrink-0 font-medium border ${
+                        eci.is_active
+                          ? 'bg-green-900/20 text-green-400 border-green-900/30'
+                          : 'border-[var(--border)] text-[var(--text3)]'
+                      }`}
+                      style={eci.is_active ? {} : { background: 'var(--surface2)' }}
+                    >
+                      {eci.is_active ? 'Actif' : 'Inactif'}
+                    </button>
+                  )}
+                  {eci.is_upcoming && cat.type !== 'sop' && (
+                    <span className="text-xs text-[var(--text4)]" title={`Disponible le ${cat.available_from ? formatDate(cat.available_from) : '?'}`}>
+                      Disponible le {cat.available_from ? formatDate(cat.available_from) : '?'}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {hasDiff && (
+              {/* Diff AVANT/APRÈS — only for updated, non-upcoming items */}
+              {!eci.is_upcoming && isUpdated && cat.network_catalog_item_data?.previous_payload && (
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div className="rounded-lg p-3 bg-red-900/10 border border-red-900/20">
                     <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1">Avant</p>
                     <pre className="text-xs text-[var(--text3)] whitespace-pre-wrap">
-                      {JSON.stringify(cat.network_catalog_item_data!.previous_payload, null, 2)}
+                      {JSON.stringify(cat.network_catalog_item_data.previous_payload, null, 2)}
                     </pre>
                   </div>
                   <div className="rounded-lg p-3 bg-green-900/10 border border-green-900/20">
                     <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1">Après</p>
                     <pre className="text-xs text-[var(--text3)] whitespace-pre-wrap">
-                      {JSON.stringify(cat.network_catalog_item_data!.payload, null, 2)}
+                      {JSON.stringify(cat.network_catalog_item_data.payload, null, 2)}
                     </pre>
                   </div>
                 </div>

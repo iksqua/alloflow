@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { isUpcoming } from '@/lib/catalogue-helpers'
+import { sopPayloadSchema, ingredientPayloadSchema } from '@/lib/validations/catalogue'
 
 async function getFranchiseAdmin() {
   const supabase = await createClient()
@@ -27,13 +29,28 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const supabase = adminClient()
 
   const { data: item } = await supabase
-    .from('network_catalog_items').select('id, org_id, status, version').eq('id', id).single()
+    .from('network_catalog_items')
+    .select('id, org_id, status, version, available_from, type, network_catalog_item_data(payload)')
+    .eq('id', id).single()
   if (!item || item.org_id !== caller.orgId)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (item.status === 'published')
     return NextResponse.json({ error: 'Déjà publié' }, { status: 409 })
   if (item.status === 'archived')
     return NextResponse.json({ error: 'Item archivé — impossible de republier' }, { status: 409 })
+
+  // Server-side payload validation before publish
+  const rawData = item.network_catalog_item_data
+  const dataRow = Array.isArray(rawData) ? (rawData[0] ?? null) : rawData
+  const payload = dataRow?.payload ?? {}
+  if (item.type === 'sop') {
+    const result = sopPayloadSchema.safeParse(payload)
+    if (!result.success) return NextResponse.json({ error: 'Un SOP doit avoir au moins une étape avant d\'être publié' }, { status: 422 })
+  }
+  if (item.type === 'ingredient') {
+    const result = ingredientPayloadSchema.safeParse(payload)
+    if (!result.success) return NextResponse.json({ error: result.error.flatten().fieldErrors.unit?.[0] ?? 'Payload ingrédient invalide' }, { status: 422 })
+  }
 
   const { error: pubErr } = await supabase
     .from('network_catalog_items')
@@ -52,11 +69,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const estIds = (establishments ?? []).map((e: { id: string }) => e.id)
 
   if (estIds.length > 0) {
+    const isUpcomingItem = isUpcoming(item.available_from)
+
     const rows = estIds.map((estId: string) => ({
       establishment_id: estId,
       catalog_item_id:  id,
       is_active:        true,
       current_version:  item.version,
+      // Don't notify if item is PROCHAINEMENT — franchisees see it as upcoming, no urgent banner
+      notified_at:      isUpcomingItem ? null : new Date().toISOString(),
     }))
     await supabase.from('establishment_catalog_items').upsert(rows, { onConflict: 'establishment_id,catalog_item_id' })
   }
