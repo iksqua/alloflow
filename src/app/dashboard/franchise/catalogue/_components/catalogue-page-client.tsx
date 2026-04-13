@@ -51,6 +51,10 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
   const [editItem, setEditItem] = useState<CatalogItem | null>(null)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
+  const [commentsOpen,    setCommentsOpen]    = useState<string | null>(null)
+  const [commentsData,    setCommentsData]    = useState<Record<string, { content: string; created_at: string; establishments: { name: string } | null }[]>>({})
+  const [commentsLoading, setCommentsLoading] = useState(false)
+
   const filtered = items.filter(i => i.type === tab)
 
   async function handlePublish(id: string) {
@@ -102,6 +106,26 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
     setShowForm(false); setEditItem(null)
   }
 
+  async function loadComments(id: string) {
+    if (commentsData[id]) { setCommentsOpen(id); return }
+    setCommentsLoading(true)
+    try {
+      const res = await fetch(`/api/franchise/catalogue/${id}/comments`)
+      if (res.ok) {
+        const d = await res.json()
+        setCommentsData(prev => ({ ...prev, [id]: d.comments }))
+        setCommentsOpen(id)
+      } else {
+        toast.error('Impossible de charger les retours')
+        // commentsOpen stays null — panel does not expand on error
+      }
+    } catch {
+      toast.error('Impossible de charger les retours')
+    } finally {
+      setCommentsLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-4xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -133,59 +157,93 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
           </div>
         )}
         {filtered.map((item, i) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-between px-4 py-3 gap-4"
-            style={{ background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
-          >
-            <div className="flex items-center gap-2 min-w-0 flex-wrap">
-              <ItemThumbnail src={item.image_url} />
-              <div>
-                <p className="text-sm font-medium text-[var(--text1)]">{item.name}</p>
-                {item.description && <p className="text-xs text-[var(--text4)] truncate">{item.description}</p>}
-              </div>
-              <span
-                className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status] ?? ''}`}
-                style={STATUS_CLASSES[item.status] ? undefined : STATUS_STYLE_DRAFT}
-              >
-                {STATUS_LABELS[item.status] ?? 'DRAFT'}
-              </span>
-              {item.is_mandatory && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-900/20 text-purple-400">OBLIGATOIRE</span>
-              )}
-              {item.is_seasonal && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-900/20 text-amber-400">
-                  SAISONNIER{item.expires_at ? ` · ${new Date(item.expires_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}` : ''}
+          <div key={item.id}>
+            <div
+              className="flex items-center justify-between px-4 py-3 gap-4"
+              style={{ background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
+            >
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <ItemThumbnail src={item.image_url} />
+                <div>
+                  <p className="text-sm font-medium text-[var(--text1)]">{item.name}</p>
+                  {item.description && <p className="text-xs text-[var(--text4)] truncate">{item.description}</p>}
+                </div>
+                <span
+                  className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status] ?? ''}`}
+                  style={STATUS_CLASSES[item.status] ? undefined : STATUS_STYLE_DRAFT}
+                >
+                  {STATUS_LABELS[item.status] ?? 'DRAFT'}
                 </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button onClick={() => { setEditItem(item); setShowForm(true) }}
-                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)]"
-                style={{ background: 'var(--surface2)' }}>
-                Éditer
-              </button>
-              <button
-                onClick={() => handleDuplicate(item.id)}
-                disabled={duplicatingId === item.id}
-                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)] disabled:opacity-50"
-                style={{ background: 'var(--surface2)' }}>
-                {duplicatingId === item.id ? '…' : '⎘ Dupliquer'}
-              </button>
-              {item.status === 'draft' && (
-                <button onClick={() => handlePublish(item.id)}
-                  className="text-xs px-3 py-1.5 rounded-lg font-medium text-white"
-                  style={{ background: 'var(--blue)' }}>
-                  Publier
+                {item.is_mandatory && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-900/20 text-purple-400">OBLIGATOIRE</span>
+                )}
+                {item.is_seasonal && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-900/20 text-amber-400">
+                    SAISONNIER{item.expires_at ? ` · ${new Date(item.expires_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}` : ''}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => commentsOpen === item.id ? setCommentsOpen(null) : loadComments(item.id)}
+                  className="text-xs px-2 py-1.5 rounded-lg flex items-center gap-1 flex-shrink-0"
+                  style={{
+                    background: (item.comment_count ?? 0) > 0 ? 'rgba(59,130,246,0.15)' : 'var(--surface2)',
+                    color: (item.comment_count ?? 0) > 0 ? '#60a5fa' : 'var(--text3)',
+                    border: '1px solid var(--border)',
+                  }}>
+                  💬 {item.comment_count ?? 0}
                 </button>
-              )}
-              {item.status !== 'archived' && (
-                <button onClick={() => handleArchive(item.id)}
-                  className="text-xs px-3 py-1.5 rounded-lg font-medium border border-red-900/30 bg-red-900/20 text-red-400">
-                  Archiver
+                <button onClick={() => { setEditItem(item); setShowForm(true) }}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)]"
+                  style={{ background: 'var(--surface2)' }}>
+                  Éditer
                 </button>
-              )}
+                <button
+                  onClick={() => handleDuplicate(item.id)}
+                  disabled={duplicatingId === item.id}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)] disabled:opacity-50"
+                  style={{ background: 'var(--surface2)' }}>
+                  {duplicatingId === item.id ? '…' : '⎘ Dupliquer'}
+                </button>
+                {item.status === 'draft' && (
+                  <button onClick={() => handlePublish(item.id)}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium text-white"
+                    style={{ background: 'var(--blue)' }}>
+                    Publier
+                  </button>
+                )}
+                {item.status !== 'archived' && (
+                  <button onClick={() => handleArchive(item.id)}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium border border-red-900/30 bg-red-900/20 text-red-400">
+                    Archiver
+                  </button>
+                )}
+              </div>
             </div>
+
+            {commentsOpen === item.id && (
+              <div className="px-4 pb-3 pt-1">
+                <div className="rounded-lg p-3" style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+                  {commentsLoading ? (
+                    <p className="text-xs text-[var(--text4)]">Chargement…</p>
+                  ) : (commentsData[item.id] ?? []).length === 0 ? (
+                    <p className="text-xs text-[var(--text4)]">Aucun retour pour l'instant</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {(commentsData[item.id] ?? []).map(c => (
+                        <div key={c.created_at} className="text-xs">
+                          <span className="font-medium text-[var(--text3)]">
+                            {c.establishments?.name ?? 'Établissement'} · {new Date(c.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                          <p className="text-[var(--text2)] mt-0.5">{c.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
