@@ -10,6 +10,22 @@ type CatalogItem = {
   network_catalog_item_data?: { payload: Record<string, unknown> }
 }
 
+const STATUS_CLASSES: Record<string, string> = {
+  draft:     'bg-slate-800/60 text-slate-400',
+  published: 'bg-green-900/20 text-green-400',
+  archived:  'bg-red-900/20 text-red-400',
+}
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'DRAFT', published: 'PUBLIÉ', archived: 'ARCHIVÉ',
+}
+
+const tabStyle = (active: boolean): React.CSSProperties => ({
+  padding: '6px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+  background: active ? 'var(--surface2)' : 'transparent',
+  color: active ? 'var(--text1)' : 'var(--text3)', border: 'none',
+  boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : undefined,
+})
+
 export function CataloguePageClient({ initialItems }: { initialItems: unknown[] }) {
   const [items, setItems]       = useState<CatalogItem[]>(initialItems as CatalogItem[])
   const [tab, setTab]           = useState<'product' | 'recipe' | 'sop'>('product')
@@ -49,44 +65,23 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
     setShowForm(false); setEditItem(null)
   }
 
-  const tabStyle = (active: boolean) => ({
-    padding: '6px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-    background: active ? 'var(--surface2)' : 'transparent',
-    color: active ? 'var(--text1)' : 'var(--text3)',
-    border: 'none',
-  } as React.CSSProperties)
-
-  const statusBadge = (status: string) => {
-    const map: Record<string, { bg: string; color: string; label: string }> = {
-      draft:     { bg: '#1a1a2e', color: '#94a3b8', label: 'DRAFT' },
-      published: { bg: '#0f2010', color: '#4ade80', label: 'PUBLIÉ' },
-      archived:  { bg: '#1a1010', color: '#f87171', label: 'ARCHIVÉ' },
-    }
-    const s = map[status] ?? map.draft
-    return (
-      <span style={{ background: s.bg, color: s.color, padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
-        {s.label}
-      </span>
-    )
-  }
-
   return (
     <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-semibold text-[var(--text1)]">Catalogue réseau</h1>
           <p className="text-sm text-[var(--text4)] mt-0.5">Gérez les produits, recettes et SOPs partagés avec vos franchisés</p>
         </div>
         <button
           onClick={() => { setEditItem(null); setShowForm(true) }}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-white"
+          className="px-4 py-2 rounded-lg text-sm font-medium text-white flex-shrink-0"
           style={{ background: 'var(--blue)' }}
         >
           + Nouvel item
         </button>
       </div>
 
-      <div className="flex gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--surface)' }}>
+      <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
         {(['product', 'recipe', 'sop'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>
             {t === 'product' ? '🛍 Produits' : t === 'recipe' ? '📋 Recettes' : '📖 SOPs'}
@@ -106,25 +101,27 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
             className="flex items-center justify-between px-4 py-3 gap-4"
             style={{ background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
               <div>
                 <p className="text-sm font-medium text-[var(--text1)]">{item.name}</p>
                 {item.description && <p className="text-xs text-[var(--text4)] truncate">{item.description}</p>}
               </div>
-              {statusBadge(item.status)}
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status] ?? STATUS_CLASSES.draft}`}>
+                {STATUS_LABELS[item.status] ?? 'DRAFT'}
+              </span>
               {item.is_mandatory && (
-                <span style={{ background: '#1a1530', color: '#a78bfa', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>OBLIGATOIRE</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-900/20 text-purple-400">OBLIGATOIRE</span>
               )}
               {item.is_seasonal && (
-                <span style={{ background: '#1a1200', color: '#fbbf24', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-900/20 text-amber-400">
                   SAISONNIER{item.expires_at ? ` · ${new Date(item.expires_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}` : ''}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button onClick={() => { setEditItem(item); setShowForm(true) }}
-                className="text-xs px-3 py-1.5 rounded-lg"
-                style={{ background: 'var(--surface2)', color: 'var(--text3)', border: '1px solid var(--border)' }}>
+                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)]"
+                style={{ background: 'var(--surface2)' }}>
                 Éditer
               </button>
               {item.status === 'draft' && (
@@ -136,8 +133,7 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
               )}
               {item.status !== 'archived' && (
                 <button onClick={() => handleArchive(item.id)}
-                  className="text-xs px-3 py-1.5 rounded-lg"
-                  style={{ background: '#1a1010', color: '#f87171', border: '1px solid #3a1010' }}>
+                  className="text-xs px-3 py-1.5 rounded-lg font-medium border border-red-900/30 bg-red-900/20 text-red-400">
                   Archiver
                 </button>
               )}
