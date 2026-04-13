@@ -22,7 +22,7 @@ export async function GET() {
     .select(`
       *,
       network_catalog_items (
-        id, type, name, description, is_mandatory, is_seasonal, expires_at, available_from, status, version,
+        id, type, name, description, is_mandatory, is_seasonal, expires_at, available_from, status, version, image_url,
         network_catalog_item_data (payload, previous_payload)
       )
     `)
