@@ -4,6 +4,14 @@ import { toast } from 'sonner'
 import { hasUnseenNotifications } from '@/lib/catalogue-helpers'
 import { SopKitchenViewer } from './sop-kitchen-viewer'
 
+const HIDDEN_PAYLOAD_KEYS = ['reference_package_price', 'reference_package_size']
+
+function filterPayloadForDisplay(payload: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([k]) => !HIDDEN_PAYLOAD_KEYS.includes(k))
+  )
+}
+
 type NetworkCatalogItem = {
   id: string; type: string; name: string; description?: string
   is_mandatory: boolean; is_seasonal: boolean; expires_at?: string | null
@@ -139,6 +147,17 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
                     {cat.type === 'ingredient' && cat.network_catalog_item_data?.payload?.unit != null && (
                       <p className="text-xs text-[var(--text4)]">{String(cat.network_catalog_item_data.payload.unit)}{cat.network_catalog_item_data.payload.category ? ` · ${String(cat.network_catalog_item_data.payload.category)}` : ''}</p>
                     )}
+                    {cat.type === 'ingredient' && (() => {
+                      const p = cat.network_catalog_item_data?.payload as Record<string, unknown> | undefined
+                      const price = p?.reference_package_price as number | undefined
+                      const size  = p?.reference_package_size  as number | undefined
+                      if (!price || !size) return null
+                      return (
+                        <p className="text-xs text-[var(--text4)] mt-0.5">
+                          Réf. siège : {(price / size).toFixed(4)} €/{p?.unit as string}
+                        </p>
+                      )
+                    })()}
                     {cat.description && cat.type !== 'ingredient' && <p className="text-xs text-[var(--text4)]">{cat.description}</p>}
                   </div>
                   {cat.is_mandatory && (
@@ -203,13 +222,13 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
                   <div className="rounded-lg p-3 bg-red-900/10 border border-red-900/20">
                     <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1">Avant</p>
                     <pre className="text-xs text-[var(--text3)] whitespace-pre-wrap">
-                      {JSON.stringify(cat.network_catalog_item_data.previous_payload, null, 2)}
+                      {JSON.stringify(filterPayloadForDisplay(cat.network_catalog_item_data.previous_payload ?? {}), null, 2)}
                     </pre>
                   </div>
                   <div className="rounded-lg p-3 bg-green-900/10 border border-green-900/20">
                     <p className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1">Après</p>
                     <pre className="text-xs text-[var(--text3)] whitespace-pre-wrap">
-                      {JSON.stringify(cat.network_catalog_item_data.payload, null, 2)}
+                      {JSON.stringify(filterPayloadForDisplay(cat.network_catalog_item_data.payload ?? {}), null, 2)}
                     </pre>
                   </div>
                 </div>

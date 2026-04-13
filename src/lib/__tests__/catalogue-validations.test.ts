@@ -58,6 +58,25 @@ describe('ingredientPayloadSchema', () => {
   })
 })
 
+describe('ingredientPayloadSchema — reference price', () => {
+  it('accepts payload without reference price (backward compat)', () => {
+    expect(ingredientPayloadSchema.safeParse({ unit: 'ml' }).success).toBe(true)
+  })
+  it('accepts payload with both reference price fields', () => {
+    const r = ingredientPayloadSchema.safeParse({ unit: 'ml', reference_package_price: 7.45, reference_package_size: 750 })
+    expect(r.success).toBe(true)
+  })
+  it('rejects price without size', () => {
+    expect(ingredientPayloadSchema.safeParse({ unit: 'ml', reference_package_price: 7.45 }).success).toBe(false)
+  })
+  it('rejects size without price', () => {
+    expect(ingredientPayloadSchema.safeParse({ unit: 'ml', reference_package_size: 750 }).success).toBe(false)
+  })
+  it('rejects negative price', () => {
+    expect(ingredientPayloadSchema.safeParse({ unit: 'ml', reference_package_price: -1, reference_package_size: 750 }).success).toBe(false)
+  })
+})
+
 describe('createCatalogueItemSchema', () => {
   it('rejects invalid available_from format', () => {
     const result = createCatalogueItemSchema.safeParse({

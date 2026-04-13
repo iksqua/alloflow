@@ -22,8 +22,20 @@ function initSteps(payload: Record<string, unknown>): SopStepDraft[] {
   return raw.length > 0 ? raw.map(s => ({ ...s, id: s.id ?? crypto.randomUUID() })) : []
 }
 
-function initIngredientPayload(payload: Record<string, unknown>) {
-  return { unit: (payload?.unit as string) ?? 'kg', category: (payload?.category as string) ?? '' }
+type IngPayload = {
+  unit: string
+  category: string
+  reference_package_price: number | ''
+  reference_package_size:  number | ''
+}
+
+function initIngredientPayload(payload: Record<string, unknown>): IngPayload {
+  return {
+    unit:                    (payload?.unit as string) ?? 'kg',
+    category:                (payload?.category as string) ?? '',
+    reference_package_price: (payload?.reference_package_price as number | undefined) ?? '',
+    reference_package_size:  (payload?.reference_package_size as number | undefined) ?? '',
+  }
 }
 
 export function CatalogueItemForm({
@@ -45,7 +57,7 @@ export function CatalogueItemForm({
     payload:        item?.network_catalog_item_data?.payload ?? {},
   })
   const [sopSteps,  setSopSteps]  = useState<SopStepDraft[]>(() => initSteps(form.payload))
-  const [ingPayload, setIngPayload] = useState(() => initIngredientPayload(form.payload))
+  const [ingPayload, setIngPayload] = useState<IngPayload>(() => initIngredientPayload(form.payload))
   const [saving, setSaving] = useState(false)
   const [imageFile,    setImageFile]    = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(item?.image_url ?? null)
@@ -61,7 +73,16 @@ export function CatalogueItemForm({
 
   function buildPayload(): Record<string, unknown> {
     if (form.type === 'sop')        return { steps: sopSteps }
-    if (form.type === 'ingredient') return { unit: ingPayload.unit, ...(ingPayload.category ? { category: ingPayload.category } : {}) }
+    if (form.type === 'ingredient') {
+      const refPrice = Number(ingPayload.reference_package_price)
+      const refSize  = Number(ingPayload.reference_package_size)
+      const hasRef   = refPrice > 0 && refSize > 0
+      return {
+        unit: ingPayload.unit,
+        ...(ingPayload.category ? { category: ingPayload.category } : {}),
+        ...(hasRef ? { reference_package_price: refPrice, reference_package_size: refSize } : {}),
+      }
+    }
     return form.payload
   }
 
@@ -191,21 +212,44 @@ export function CatalogueItemForm({
 
           {/* Ingredient-specific fields */}
           {form.type === 'ingredient' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Unité *</label>
-                <select style={inputStyle} value={ingPayload.unit}
-                  onChange={e => setIngPayload(p => ({ ...p, unit: e.target.value }))}>
-                  {['g', 'kg', 'ml', 'cl', 'L', 'pièce'].map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Unité *</label>
+                  <select style={inputStyle} value={ingPayload.unit}
+                    onChange={e => setIngPayload(p => ({ ...p, unit: e.target.value }))}>
+                    {['g', 'kg', 'ml', 'cl', 'L', 'pièce'].map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Catégorie</label>
+                  <input style={inputStyle} value={ingPayload.category}
+                    onChange={e => setIngPayload(p => ({ ...p, category: e.target.value }))}
+                    placeholder="Ex: Pâtisserie" />
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>Catégorie</label>
-                <input style={inputStyle} value={ingPayload.category}
-                  onChange={e => setIngPayload(p => ({ ...p, category: e.target.value }))}
-                  placeholder="Ex: Pâtisserie" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Prix du package (€)</label>
+                  <input type="number" step="0.01" min="0" style={inputStyle}
+                    value={ingPayload.reference_package_price}
+                    onChange={e => setIngPayload(p => ({ ...p, reference_package_price: e.target.value === '' ? '' : Number(e.target.value) }))}
+                    placeholder="Ex: 7.45" />
+                </div>
+                <div>
+                  <label className={labelCls}>Contenance ({ingPayload.unit})</label>
+                  <input type="number" step="0.001" min="0" style={inputStyle}
+                    value={ingPayload.reference_package_size}
+                    onChange={e => setIngPayload(p => ({ ...p, reference_package_size: e.target.value === '' ? '' : Number(e.target.value) }))}
+                    placeholder="Ex: 750" />
+                </div>
               </div>
-            </div>
+              {Number(ingPayload.reference_package_price) > 0 && Number(ingPayload.reference_package_size) > 0 && (
+                <p className="text-xs text-[var(--text4)] -mt-1">
+                  = {(Number(ingPayload.reference_package_price) / Number(ingPayload.reference_package_size)).toFixed(4)} €/{ingPayload.unit}
+                </p>
+              )}
+            </>
           )}
 
           {/* SOP step editor */}
