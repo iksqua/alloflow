@@ -51,9 +51,9 @@ export function SopKitchenViewer({
   payload: Record<string, unknown>
 }) {
   const [open, setOpen] = useState(false)
-  const steps = (payload?.steps ?? []) as PayloadStep[]
+  const sop = payloadToSopWithSteps(id, name, payload)
 
-  if (steps.length === 0) return null
+  if (sop.steps.length === 0) return null
 
   return (
     <>
@@ -66,7 +66,7 @@ export function SopKitchenViewer({
       </button>
       {open && (
         <SopKitchenMode
-          sop={payloadToSopWithSteps(id, name, payload)}
+          sop={sop}
           onClose={() => setOpen(false)}
         />
       )}
