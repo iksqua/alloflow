@@ -58,12 +58,17 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (copyErr || !copy) return NextResponse.json({ error: copyErr?.message ?? 'Failed to duplicate' }, { status: 500 })
 
   // Copy payload data
-  const originalData = original.network_catalog_item_data as { payload: Record<string, unknown> } | null
+  const rawData = original.network_catalog_item_data
+  const originalData = Array.isArray(rawData) ? (rawData[0] ?? null) as { payload: Record<string, unknown> } | null : rawData as { payload: Record<string, unknown> } | null
   if (originalData?.payload) {
     const { error: dataErr } = await supabase
       .from('network_catalog_item_data')
       .insert({ catalog_item_id: copy.id, payload: originalData.payload, previous_payload: null })
-    if (dataErr) return NextResponse.json({ error: dataErr.message }, { status: 500 })
+    if (dataErr) {
+      // Compensate: delete the orphaned item row we just created
+      await supabase.from('network_catalog_items').delete().eq('id', copy.id)
+      return NextResponse.json({ error: dataErr.message }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ item: copy }, { status: 201 })
