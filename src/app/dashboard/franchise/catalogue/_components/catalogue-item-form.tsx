@@ -8,6 +8,7 @@ type CatalogItem = {
   is_mandatory: boolean; is_seasonal: boolean; expires_at?: string | null
   available_from?: string | null; status: string; version: number
   network_catalog_item_data?: { payload: Record<string, unknown> }
+  image_url?: string | null
 }
 
 const inputStyle: React.CSSProperties = {
@@ -46,11 +47,22 @@ export function CatalogueItemForm({
   const [sopSteps,  setSopSteps]  = useState<SopStepDraft[]>(() => initSteps(form.payload))
   const [ingPayload, setIngPayload] = useState(() => initIngredientPayload(form.payload))
   const [saving, setSaving] = useState(false)
+  const [imageFile,    setImageFile]    = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(item?.image_url ?? null)
+  const [imageRemoved, setImageRemoved] = useState(false)
 
   function buildPayload(): Record<string, unknown> {
     if (form.type === 'sop')        return { steps: sopSteps }
     if (form.type === 'ingredient') return { unit: ingPayload.unit, ...(ingPayload.category ? { category: ingPayload.category } : {}) }
     return form.payload
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    setImageRemoved(false)
+    setImagePreview(URL.createObjectURL(file))
   }
 
   async function handleSave() {
@@ -73,8 +85,27 @@ export function CatalogueItemForm({
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error?.message ?? d.error ?? 'Erreur') }
       const data = await res.json()
-      onSaved(data.item)
       toast.success(item ? 'Item mis à jour' : 'Item créé')
+
+      // Image lifecycle: upload new, delete removed
+      let finalImageUrl: string | null = data.item.image_url ?? null
+
+      if (imageRemoved && item?.image_url) {
+        await fetch(`/api/franchise/catalogue/${data.item.id}/image`, { method: 'DELETE' })
+        finalImageUrl = null
+      } else if (imageFile) {
+        const fd = new FormData()
+        fd.append('file', imageFile)
+        const imgRes = await fetch(`/api/franchise/catalogue/${data.item.id}/image`, { method: 'POST', body: fd })
+        if (imgRes.ok) {
+          const imgData = await imgRes.json()
+          finalImageUrl = imgData.image_url
+        } else {
+          toast.error('Item sauvegardé mais la photo n\'a pas pu être uploadée')
+        }
+      }
+
+      onSaved({ ...data.item, image_url: finalImageUrl })
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Erreur')
     } finally {
@@ -106,18 +137,45 @@ export function CatalogueItemForm({
             </select>
           </div>
 
-          {/* Nom */}
-          <div>
-            <label className={labelCls}>Nom *</label>
-            <input style={inputStyle} value={form.name}
-              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Ex: Farine T45" />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className={labelCls}>Description</label>
-            <textarea style={{ ...inputStyle, height: '64px', resize: 'none' }} value={form.description}
-              onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
+          {/* Photo + Nom + Description */}
+          <div className="flex gap-4 items-start">
+            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+              <label className="cursor-pointer">
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+                <div
+                  className="w-20 h-20 rounded-xl flex flex-col items-center justify-center overflow-hidden"
+                  style={{ border: '2px dashed var(--border)', background: 'var(--surface2)' }}
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center w-full h-full gap-1">
+                      <span className="text-2xl">📷</span>
+                      <span className="text-xs text-[var(--text4)]">Photo</span>
+                    </div>
+                  )}
+                </div>
+              </label>
+              {imagePreview && (
+                <button type="button"
+                  onClick={() => { setImageFile(null); setImagePreview(null); setImageRemoved(true) }}
+                  className="text-xs text-[var(--text4)] underline">
+                  Supprimer
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-3 flex-1">
+              <div>
+                <label className={labelCls}>Nom *</label>
+                <input style={inputStyle} value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Ex: Farine T45" />
+              </div>
+              <div>
+                <label className={labelCls}>Description</label>
+                <textarea style={{ ...inputStyle, height: '64px', resize: 'none' }} value={form.description}
+                  onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
+              </div>
+            </div>
           </div>
 
           {/* Ingredient-specific fields */}
