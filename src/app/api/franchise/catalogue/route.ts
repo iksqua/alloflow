@@ -6,10 +6,10 @@ import { createCatalogueItemSchema } from '@/lib/validations/catalogue'
 async function getFranchiseAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) return { error: 401 as const }
   const { data: profile } = await supabase
     .from('profiles').select('role, org_id').eq('id', user.id).single()
-  if (!profile || profile.role !== 'franchise_admin' || !profile.org_id) return null
+  if (!profile || profile.role !== 'franchise_admin' || !profile.org_id) return { error: 403 as const }
   return { userId: user.id, orgId: profile.org_id }
 }
 
@@ -22,7 +22,7 @@ function adminClient() {
 
 export async function GET() {
   const caller = await getFranchiseAdmin()
-  if (!caller) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if ('error' in caller) return NextResponse.json({ error: caller.error === 401 ? 'Unauthorized' : 'Forbidden' }, { status: caller.error })
 
   const supabase = adminClient()
   const { data: items, error } = await supabase
@@ -37,7 +37,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const caller = await getFranchiseAdmin()
-  if (!caller) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if ('error' in caller) return NextResponse.json({ error: caller.error === 401 ? 'Unauthorized' : 'Forbidden' }, { status: caller.error })
 
   const body = createCatalogueItemSchema.safeParse(await req.json())
   if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 422 })
@@ -47,12 +47,13 @@ export async function POST(req: NextRequest) {
 
   const { data: item, error: itemErr } = await supabase
     .from('network_catalog_items')
-    .insert({ ...itemFields, org_id: caller.orgId })
+    .insert({ ...itemFields, org_id: caller.orgId, status: 'draft' })
     .select().single()
 
   if (itemErr || !item) return NextResponse.json({ error: itemErr?.message ?? 'Erreur' }, { status: 500 })
 
-  await supabase.from('network_catalog_item_data').insert({ catalog_item_id: item.id, payload })
+  const { error: dataErr } = await supabase.from('network_catalog_item_data').insert({ catalog_item_id: item.id, payload })
+  if (dataErr) return NextResponse.json({ error: dataErr.message }, { status: 500 })
 
   return NextResponse.json({ item }, { status: 201 })
 }

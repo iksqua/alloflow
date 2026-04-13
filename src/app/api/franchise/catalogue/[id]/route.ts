@@ -6,10 +6,10 @@ import { updateCatalogueItemSchema } from '@/lib/validations/catalogue'
 async function getFranchiseAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) return { error: 401 as const }
   const { data: profile } = await supabase
     .from('profiles').select('role, org_id').eq('id', user.id).single()
-  if (!profile || profile.role !== 'franchise_admin' || !profile.org_id) return null
+  if (!profile || profile.role !== 'franchise_admin' || !profile.org_id) return { error: 403 as const }
   return { userId: user.id, orgId: profile.org_id }
 }
 
@@ -22,7 +22,7 @@ function adminClient() {
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const caller = await getFranchiseAdmin()
-  if (!caller) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if ('error' in caller) return NextResponse.json({ error: caller.error === 401 ? 'Unauthorized' : 'Forbidden' }, { status: caller.error })
 
   const { id } = await params
   const body = updateCatalogueItemSchema.safeParse(await req.json())
