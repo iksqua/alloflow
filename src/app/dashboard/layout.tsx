@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from './_components/sidebar'
 import { CaisseButton } from './_components/caisse-button'
 import { ThemeToggle } from './_components/theme-toggle'
+import { CatalogueNotificationBanner } from './catalogue-reseau/_components/catalogue-notification-banner'
 
 async function signOut() {
   'use server'
@@ -63,7 +64,12 @@ export default async function DashboardLayout({
             </form>
           </div>
         </header>
-        <main className="p-6">{children}</main>
+        <main>
+          {profile.role === 'admin' && profile.establishment_id && (
+            <CatalogueNotificationBanner establishmentId={profile.establishment_id} />
+          )}
+          <div className="p-6">{children}</div>
+        </main>
       </div>
     </div>
   )
