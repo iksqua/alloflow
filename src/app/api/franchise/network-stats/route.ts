@@ -137,14 +137,16 @@ export async function GET() {
   )
 
   // Compliance score: mandatory items adoption per establishment
-  const { count: totalMandatory } = await supabaseAdmin
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- new tables not yet in generated types (post-migration)
+  const supabaseAdminAny = supabaseAdmin as any
+  const { count: totalMandatory } = await supabaseAdminAny
     .from('network_catalog_items')
     .select('*', { count: 'exact', head: true })
     .eq('org_id', orgId)
     .eq('is_mandatory', true)
     .eq('status', 'published')
 
-  const { data: activePerEst } = await supabaseAdmin
+  const { data: activePerEst } = await supabaseAdminAny
     .from('establishment_catalog_items')
     .select('establishment_id, network_catalog_items!inner(is_mandatory)')
     .eq('network_catalog_items.is_mandatory', true)

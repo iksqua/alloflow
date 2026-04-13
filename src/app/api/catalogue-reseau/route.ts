@@ -17,7 +17,8 @@ export async function GET() {
   if ('error' in caller) return NextResponse.json({ error: caller.error === 401 ? 'Unauthorized' : 'Forbidden' }, { status: caller.error })
 
   const supabase = await createClient()
-  const { data: items, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- new tables not yet in generated types (post-migration)
+  const { data: items, error } = await (supabase as any)
     .from('establishment_catalog_items')
     .select(`
       *,
@@ -31,7 +32,8 @@ export async function GET() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Check seasonal expiry at read time
-  const result = (items ?? []).map((item) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- items typed as any from untyped table query
+  const result = (items ?? []).map((item: any) => {
     const catalogItem = item.network_catalog_items as { is_seasonal?: boolean; expires_at?: string | null; status?: string } | null
     if (catalogItem?.is_seasonal && isItemExpired(catalogItem.expires_at ?? null)) {
       return { ...item, network_catalog_items: { ...catalogItem, status: 'archived' } }

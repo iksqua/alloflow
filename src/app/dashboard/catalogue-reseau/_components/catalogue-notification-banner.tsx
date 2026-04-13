@@ -3,9 +3,11 @@ import Link from 'next/link'
 
 export async function CatalogueNotificationBanner({ establishmentId }: { establishmentId: string }) {
   const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- new tables not yet in generated types (post-migration)
+  const db = supabase as any
 
   // Fetch items with notified_at set, then filter JS-side (cross-column comparison)
-  const { data: notifiedItems } = await supabase
+  const { data: notifiedItems } = await db
     .from('establishment_catalog_items')
     .select('notified_at, seen_at')
     .eq('establishment_id', establishmentId)
@@ -16,7 +18,7 @@ export async function CatalogueNotificationBanner({ establishmentId }: { establi
       !i.seen_at || new Date(i.seen_at) < new Date(i.notified_at!)
   ).length
 
-  const { data: newOptionalItems } = await supabase
+  const { data: newOptionalItems } = await db
     .from('establishment_catalog_items')
     .select('seen_at, network_catalog_items!inner(is_mandatory)')
     .eq('establishment_id', establishmentId)

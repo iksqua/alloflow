@@ -18,7 +18,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const supabase = await createClient()
 
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- new tables not yet in generated types (post-migration)
+  const { error } = await (supabase as any)
     .from('establishment_catalog_items')
     .update({ seen_at: new Date().toISOString() })
     .eq('id', id)

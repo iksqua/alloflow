@@ -21,8 +21,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 422 })
 
   const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- new tables not yet in generated types (post-migration)
+  const db = supabase as any
 
-  const { data: eci } = await supabase
+  const { data: eci } = await db
     .from('establishment_catalog_items')
     .select('id, catalog_item_id, network_catalog_items(is_mandatory)')
     .eq('id', id)
@@ -36,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Impossible de désactiver un item obligatoire' }, { status: 400 })
   }
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await db
     .from('establishment_catalog_items')
     .update(body.data)
     .eq('id', id)
