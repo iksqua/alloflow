@@ -1,6 +1,7 @@
 'use client'
 
 export type SopStepDraft = {
+  id: string
   sort_order: number
   title: string
   description: string
@@ -17,7 +18,7 @@ const inputStyle: React.CSSProperties = {
 const labelCls = 'block text-xs font-semibold text-[var(--text4)] uppercase tracking-wide mb-1.5'
 
 function emptyStep(sort_order: number): SopStepDraft {
-  return { sort_order, title: '', description: '', duration_seconds: null, media_url: null, note_type: null, note_text: null }
+  return { id: crypto.randomUUID(), sort_order, title: '', description: '', duration_seconds: null, media_url: null, note_type: null, note_text: null }
 }
 
 export function SopStepsEditor({
@@ -49,7 +50,7 @@ export function SopStepsEditor({
   return (
     <div className="flex flex-col gap-3">
       {steps.map((step, i) => (
-        <div key={i} className="rounded-xl p-4" style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+        <div key={step.id} className="rounded-xl p-4" style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-[var(--text4)] uppercase tracking-wide">Étape {i + 1}</span>
             <div className="flex gap-1">
@@ -80,7 +81,7 @@ export function SopStepsEditor({
                 <label className={labelCls}>Durée (secondes)</label>
                 <input type="number" style={inputStyle} min={0}
                   value={step.duration_seconds ?? ''}
-                  onChange={e => update(i, { duration_seconds: e.target.value ? Number(e.target.value) : null })} />
+                  onChange={e => update(i, { duration_seconds: e.target.value ? Math.max(0, Number(e.target.value)) : null })} />
               </div>
               <div>
                 <label className={labelCls}>URL vidéo/image</label>
@@ -107,6 +108,12 @@ export function SopStepsEditor({
           </div>
         </div>
       ))}
+
+      {steps.length === 0 && (
+        <div className="py-6 text-center text-sm text-[var(--text4)]">
+          Aucune étape — cliquez sur + Ajouter une étape
+        </div>
+      )}
 
       <button type="button" onClick={add}
         className="w-full py-2 rounded-xl text-sm text-[var(--text3)] border border-dashed border-[var(--border)] hover:border-[var(--text4)] transition-colors"
