@@ -11,10 +11,10 @@ type CatalogItem = {
 }
 
 const STATUS_CLASSES: Record<string, string> = {
-  draft:     'bg-slate-800/60 text-slate-400',
   published: 'bg-green-900/20 text-green-400',
   archived:  'bg-red-900/20 text-red-400',
 }
+const STATUS_STYLE_DRAFT: React.CSSProperties = { background: 'var(--surface2)', color: 'var(--text3)' }
 const STATUS_LABELS: Record<string, string> = {
   draft: 'DRAFT', published: 'PUBLIÉ', archived: 'ARCHIVÉ',
 }
@@ -125,7 +125,10 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
                 <p className="text-sm font-medium text-[var(--text1)]">{item.name}</p>
                 {item.description && <p className="text-xs text-[var(--text4)] truncate">{item.description}</p>}
               </div>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status] ?? STATUS_CLASSES.draft}`}>
+              <span
+                className={`text-xs font-semibold px-2 py-0.5 rounded ${STATUS_CLASSES[item.status] ?? ''}`}
+                style={STATUS_CLASSES[item.status] ? undefined : STATUS_STYLE_DRAFT}
+              >
                 {STATUS_LABELS[item.status] ?? 'DRAFT'}
               </span>
               {item.is_mandatory && (

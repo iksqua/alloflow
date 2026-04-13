@@ -53,7 +53,10 @@ export async function POST(req: NextRequest) {
   if (itemErr || !item) return NextResponse.json({ error: itemErr?.message ?? 'Erreur' }, { status: 500 })
 
   const { error: dataErr } = await supabase.from('network_catalog_item_data').insert({ catalog_item_id: item.id, payload })
-  if (dataErr) return NextResponse.json({ error: dataErr.message }, { status: 500 })
+  if (dataErr) {
+    await supabase.from('network_catalog_items').delete().eq('id', item.id)
+    return NextResponse.json({ error: dataErr.message }, { status: 500 })
+  }
 
   return NextResponse.json({ item }, { status: 201 })
 }
