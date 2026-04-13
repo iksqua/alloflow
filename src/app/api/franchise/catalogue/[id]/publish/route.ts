@@ -49,7 +49,11 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
   if (item.type === 'ingredient') {
     const result = ingredientPayloadSchema.safeParse(payload)
-    if (!result.success) return NextResponse.json({ error: result.error.flatten().fieldErrors.unit?.[0] ?? 'Payload ingrédient invalide' }, { status: 422 })
+    if (!result.success) return NextResponse.json({
+      error: result.error.flatten().fieldErrors.unit?.[0]
+        ?? result.error.flatten().formErrors[0]
+        ?? 'Payload ingrédient invalide'
+    }, { status: 422 })
   }
 
   const { error: pubErr } = await supabase

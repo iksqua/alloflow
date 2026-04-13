@@ -33,9 +33,14 @@ export const sopPayloadSchema = z.object({
 })
 
 export const ingredientPayloadSchema = z.object({
-  unit:     z.enum(['g', 'kg', 'ml', 'cl', 'L', 'pièce']),
-  category: z.string().optional(),
-})
+  unit:                    z.enum(['g', 'kg', 'ml', 'cl', 'L', 'pièce']),
+  category:                z.string().optional(),
+  reference_package_price: z.number().positive().optional(),
+  reference_package_size:  z.number().positive().optional(),
+}).refine(
+  d => (d.reference_package_price == null) === (d.reference_package_size == null),
+  { message: 'reference_package_price et reference_package_size doivent être fournis ensemble ou pas du tout' }
+)
 
 export type CreateCatalogueItemInput  = z.infer<typeof createCatalogueItemSchema>
 export type UpdateCatalogueItemInput  = z.infer<typeof updateCatalogueItemSchema>
