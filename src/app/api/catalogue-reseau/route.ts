@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { isItemExpired } from '@/lib/catalogue-helpers'
+import { isItemExpired, isUpcoming } from '@/lib/catalogue-helpers'
 
 async function getAdminProfile() {
   const supabase = await createClient()
@@ -22,7 +22,7 @@ export async function GET() {
     .select(`
       *,
       network_catalog_items (
-        id, type, name, description, is_mandatory, is_seasonal, expires_at, status, version,
+        id, type, name, description, is_mandatory, is_seasonal, expires_at, available_from, status, version,
         network_catalog_item_data (payload, previous_payload)
       )
     `)
@@ -30,13 +30,19 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Check seasonal expiry at read time
   const result = (items ?? []).map((item) => {
-    const catalogItem = item.network_catalog_items as { is_seasonal?: boolean; expires_at?: string | null; status?: string } | null
-    if (catalogItem?.is_seasonal && isItemExpired(catalogItem.expires_at ?? null)) {
-      return { ...item, network_catalog_items: { ...catalogItem, status: 'archived' } }
+    const cat = item.network_catalog_items as {
+      is_seasonal?: boolean; expires_at?: string | null
+      available_from?: string | null; status?: string
+    } | null
+
+    // Seasonal expiry check at read time
+    if (cat?.is_seasonal && isItemExpired(cat.expires_at ?? null)) {
+      return { ...item, network_catalog_items: { ...cat, status: 'archived' }, is_upcoming: false }
     }
-    return item
+    // Upcoming check at read time
+    const upcoming = isUpcoming(cat?.available_from ?? null)
+    return { ...item, is_upcoming: upcoming }
   })
 
   return NextResponse.json({ items: result })
