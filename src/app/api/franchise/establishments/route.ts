@@ -212,18 +212,28 @@ export async function POST(req: NextRequest) {
       const stockRows = (networkIngredients as Array<{
         id: string
         name: string
-        network_catalog_item_data: { payload: { unit?: string } } | Array<{ payload: { unit?: string } }> | null
+        network_catalog_item_data: { payload: { unit?: string; reference_package_price?: number; reference_package_size?: number } } | Array<{ payload: { unit?: string; reference_package_price?: number; reference_package_size?: number } }> | null
       }>).map(ing => {
         const data = Array.isArray(ing.network_catalog_item_data)
           ? ing.network_catalog_item_data[0]
           : ing.network_catalog_item_data
+        const payload = data?.payload
+
+        const refPrice = payload?.reference_package_price
+        const refSize  = payload?.reference_package_size
+        const unit_price =
+          refPrice && refSize
+            ? Math.round(refPrice / refSize * 1e6) / 1e6
+            : undefined
+
         return {
           establishment_id: establishmentId,
           name:             ing.name,
-          unit:             data?.payload?.unit ?? 'pièce',
+          unit:             payload?.unit ?? 'pièce',
           quantity:         0,
           alert_threshold:  0,
           active:           true,
+          ...(unit_price !== undefined ? { unit_price } : {}),
         }
       })
       await supabaseAdmin
