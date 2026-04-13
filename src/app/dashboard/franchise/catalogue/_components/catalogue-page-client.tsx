@@ -28,7 +28,7 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
 
 export function CataloguePageClient({ initialItems }: { initialItems: unknown[] }) {
   const [items, setItems]       = useState<CatalogItem[]>(initialItems as CatalogItem[])
-  const [tab, setTab]           = useState<'product' | 'recipe' | 'sop'>('product')
+  const [tab, setTab]           = useState<'product' | 'recipe' | 'sop' | 'ingredient'>('product')
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<CatalogItem | null>(null)
 
@@ -42,6 +42,17 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
     } else {
       const d = await res.json()
       toast.error(d.error ?? 'Erreur')
+    }
+  }
+
+  async function handleDuplicate(id: string) {
+    const res = await fetch(`/api/franchise/catalogue/${id}/duplicate`, { method: 'POST' })
+    if (res.ok) {
+      const d = await res.json()
+      setItems(prev => [d.item, ...prev])
+      toast.success('Item dupliqué — modifiez-le avant de publier')
+    } else {
+      toast.error('Erreur lors de la duplication')
     }
   }
 
@@ -82,9 +93,9 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
       </div>
 
       <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
-        {(['product', 'recipe', 'sop'] as const).map(t => (
+        {(['product', 'recipe', 'sop', 'ingredient'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>
-            {t === 'product' ? '🛍 Produits' : t === 'recipe' ? '📋 Recettes' : '📖 SOPs'}
+            {t === 'product' ? '🛍 Produits' : t === 'recipe' ? '📋 Recettes' : t === 'sop' ? '📖 SOPs' : '🥕 Ingrédients'}
           </button>
         ))}
       </div>
@@ -123,6 +134,11 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
                 className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)]"
                 style={{ background: 'var(--surface2)' }}>
                 Éditer
+              </button>
+              <button onClick={() => handleDuplicate(item.id)}
+                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)]"
+                style={{ background: 'var(--surface2)' }}>
+                ⎘ Dupliquer
               </button>
               {item.status === 'draft' && (
                 <button onClick={() => handlePublish(item.id)}
