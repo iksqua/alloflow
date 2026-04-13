@@ -16,6 +16,9 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. Block direct client-side uploads (all writes go through service role API)
-CREATE POLICY IF NOT EXISTS "no_direct_client_uploads"
-  ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (bucket_id <> 'catalogue-images');
+DO $$ BEGIN
+  CREATE POLICY "no_direct_client_uploads"
+    ON storage.objects FOR INSERT TO authenticated
+    WITH CHECK (bucket_id <> 'catalogue-images');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
