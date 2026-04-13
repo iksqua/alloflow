@@ -27,7 +27,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const supabase = adminClient()
 
   const { data: item } = await supabase
-    .from('network_catalog_items').select('id, org_id, status, version').eq('id', id).single()
+    .from('network_catalog_items').select('id, org_id, status, version, available_from').eq('id', id).single()
   if (!item || item.org_id !== caller.orgId)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (item.status === 'published')
@@ -52,11 +52,17 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const estIds = (establishments ?? []).map((e: { id: string }) => e.id)
 
   if (estIds.length > 0) {
+    const isUpcomingItem = item.available_from
+      ? item.available_from > new Date().toISOString().split('T')[0]
+      : false
+
     const rows = estIds.map((estId: string) => ({
       establishment_id: estId,
       catalog_item_id:  id,
       is_active:        true,
       current_version:  item.version,
+      // Don't notify if item is PROCHAINEMENT — franchisees see it as upcoming, no urgent banner
+      notified_at:      isUpcomingItem ? null : new Date().toISOString(),
     }))
     await supabase.from('establishment_catalog_items').upsert(rows, { onConflict: 'establishment_id,catalog_item_id' })
   }
