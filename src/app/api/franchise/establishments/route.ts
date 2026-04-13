@@ -200,6 +200,38 @@ export async function POST(req: NextRequest) {
         .then(() => null, () => null) // non-blocking — onboarding proceeds even if catalog seed fails
     }
 
+    // Step 7: Seed stock_items from published network ingredients
+    const { data: networkIngredients } = await supabaseAdmin
+      .from('network_catalog_items')
+      .select('id, name, network_catalog_item_data(payload)')
+      .eq('org_id', caller.orgId)
+      .eq('type', 'ingredient')
+      .eq('status', 'published')
+
+    if (networkIngredients && networkIngredients.length > 0 && establishmentId) {
+      const stockRows = (networkIngredients as Array<{
+        id: string
+        name: string
+        network_catalog_item_data: { payload: { unit?: string } } | Array<{ payload: { unit?: string } }> | null
+      }>).map(ing => {
+        const data = Array.isArray(ing.network_catalog_item_data)
+          ? ing.network_catalog_item_data[0]
+          : ing.network_catalog_item_data
+        return {
+          establishment_id: establishmentId,
+          name:             ing.name,
+          unit:             data?.payload?.unit ?? 'pièce',
+          quantity:         0,
+          alert_threshold:  0,
+          active:           true,
+        }
+      })
+      await supabaseAdmin
+        .from('stock_items')
+        .upsert(stockRows, { onConflict: 'establishment_id,name', ignoreDuplicates: true })
+        .then(() => null, () => null) // non-blocking
+    }
+
     return NextResponse.json({ ok: true, establishment_id: establishmentId }, { status: 201 })
 
   } catch (err) {
