@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { SopStepsEditor, type SopStepDraft } from './sop-steps-editor'
 
@@ -51,6 +51,14 @@ export function CatalogueItemForm({
   const [imagePreview, setImagePreview] = useState<string | null>(item?.image_url ?? null)
   const [imageRemoved, setImageRemoved] = useState(false)
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview)
+      }
+    }
+  }, [imagePreview])
+
   function buildPayload(): Record<string, unknown> {
     if (form.type === 'sop')        return { steps: sopSteps }
     if (form.type === 'ingredient') return { unit: ingPayload.unit, ...(ingPayload.category ? { category: ingPayload.category } : {}) }
@@ -60,6 +68,9 @@ export function CatalogueItemForm({
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (imagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
     setImageFile(file)
     setImageRemoved(false)
     setImagePreview(URL.createObjectURL(file))
