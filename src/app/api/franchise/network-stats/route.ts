@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database'
+import { computeComplianceScore } from '@/lib/catalogue-helpers'
 
 export async function GET() {
   // 1. Auth + role check (anon client)
@@ -135,6 +136,28 @@ export async function GET() {
     (lowStockItems ?? []).map((s: { establishment_id: string }) => s.establishment_id)
   )
 
+  // Compliance score: mandatory items adoption per establishment
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- new tables not yet in generated types (post-migration)
+  const supabaseAdminAny = supabaseAdmin as any
+  const { count: totalMandatory } = await supabaseAdminAny
+    .from('network_catalog_items')
+    .select('*', { count: 'exact', head: true })
+    .eq('org_id', orgId)
+    .eq('is_mandatory', true)
+    .eq('status', 'published')
+
+  const { data: activePerEst } = await supabaseAdminAny
+    .from('establishment_catalog_items')
+    .select('establishment_id, network_catalog_items!inner(is_mandatory)')
+    .eq('network_catalog_items.is_mandatory', true)
+    .eq('is_active', true)
+    .in('establishment_id', (establishments ?? []).map((e: { id: string }) => e.id))
+
+  const activeMandatoryMap = new Map<string, number>()
+  for (const row of (activePerEst ?? []) as Array<{ establishment_id: string }>) {
+    activeMandatoryMap.set(row.establishment_id, (activeMandatoryMap.get(row.establishment_id) ?? 0) + 1)
+  }
+
   // 8. Build per-establishment response
   const orgsMap = new Map(networkOrgs.map((o: { id: string; type: string; name: string }) => [o.id, o]))
 
@@ -161,6 +184,10 @@ export async function GET() {
       royalty_amount:   Math.round(caMonth * royaltyRate) / 100,
       marketing_amount: Math.round(caMonth * marketingRate) / 100,
       alerts,
+      compliance_score: computeComplianceScore(
+        activeMandatoryMap.get(est.id) ?? 0,
+        totalMandatory ?? 0
+      ),
     }
   })
 

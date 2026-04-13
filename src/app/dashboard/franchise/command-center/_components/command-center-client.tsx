@@ -13,6 +13,7 @@ interface EstablishmentStat {
   royalty_amount:   number
   marketing_amount: number
   alerts:           string[]
+  compliance_score: number
 }
 
 interface NetworkStats {
@@ -174,7 +175,7 @@ export function CommandCenterClient({ initialData }: Props) {
         <div
           className="grid text-xs uppercase font-semibold px-4 py-2"
           style={{
-            gridTemplateColumns: '1.5fr 90px 100px 70px 80px 80px 100px',
+            gridTemplateColumns: '1.5fr 90px 100px 70px 80px 80px 90px 100px',
             gap: '8px',
             background: 'var(--surface2)',
             color: 'var(--text4)',
@@ -187,6 +188,7 @@ export function CommandCenterClient({ initialData }: Props) {
           <span>Roy.%</span>
           <span>Roy.€</span>
           <span>Mktg.€</span>
+          <span style={{ color: '#60a5fa' }}>Conf.</span>
           <span style={{ color: '#60a5fa' }}>→ Franchiseur</span>
         </div>
 
@@ -197,7 +199,7 @@ export function CommandCenterClient({ initialData }: Props) {
               key={est.id}
               className="grid items-center px-4 py-3"
               style={{
-                gridTemplateColumns: '1.5fr 90px 100px 70px 80px 80px 100px',
+                gridTemplateColumns: '1.5fr 90px 100px 70px 80px 80px 90px 100px',
                 gap: '8px',
                 borderTop: i > 0 ? '1px solid var(--border)' : undefined,
                 background: 'var(--surface)',
@@ -236,6 +238,14 @@ export function CommandCenterClient({ initialData }: Props) {
               {/* Mktg € */}
               <span className="text-sm" style={{ color: est.type === 'franchise' ? 'var(--green)' : 'var(--text4)' }}>
                 {est.type === 'franchise' ? fmt(est.marketing_amount) : '—'}
+              </span>
+
+              {/* Conformité catalogue */}
+              <span
+                className="text-sm font-semibold"
+                style={{ color: est.compliance_score >= 90 ? 'var(--green)' : est.compliance_score >= 70 ? 'var(--amber)' : 'var(--red)' }}
+              >
+                {est.compliance_score}%
               </span>
 
               {/* Total → franchiseur */}

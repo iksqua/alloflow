@@ -180,6 +180,26 @@ export async function POST(req: NextRequest) {
       )
     if (profileErr) throw new Error(profileErr.message)
 
+    // Step 6: Seed catalogue — insère tous les items publiés du siège dans le nouvel établissement
+    const { data: catalogItems } = await supabaseAdmin
+      .from('network_catalog_items')
+      .select('id, version')
+      .eq('org_id', caller.orgId)
+      .eq('status', 'published')
+
+    if (catalogItems && catalogItems.length > 0 && establishmentId) {
+      const catalogRows = (catalogItems as Array<{ id: string; version: number }>).map(item => ({
+        establishment_id: establishmentId,
+        catalog_item_id:  item.id,
+        is_active:        true,
+        current_version:  item.version,
+      }))
+      await supabaseAdmin
+        .from('establishment_catalog_items')
+        .upsert(catalogRows, { onConflict: 'establishment_id,catalog_item_id' })
+        .then(() => null, () => null) // non-blocking — onboarding proceeds even if catalog seed fails
+    }
+
     return NextResponse.json({ ok: true, establishment_id: establishmentId }, { status: 201 })
 
   } catch (err) {

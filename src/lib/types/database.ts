@@ -373,6 +373,60 @@ export type Database = {
           },
         ]
       }
+      establishment_catalog_items: {
+        Row: {
+          catalog_item_id: string
+          created_at: string
+          current_version: number
+          establishment_id: string
+          id: string
+          is_active: boolean
+          local_price: number | null
+          local_stock_threshold: number | null
+          notified_at: string | null
+          seen_at: string | null
+        }
+        Insert: {
+          catalog_item_id: string
+          created_at?: string
+          current_version?: number
+          establishment_id: string
+          id?: string
+          is_active?: boolean
+          local_price?: number | null
+          local_stock_threshold?: number | null
+          notified_at?: string | null
+          seen_at?: string | null
+        }
+        Update: {
+          catalog_item_id?: string
+          created_at?: string
+          current_version?: number
+          establishment_id?: string
+          id?: string
+          is_active?: boolean
+          local_price?: number | null
+          local_stock_threshold?: number | null
+          notified_at?: string | null
+          seen_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_catalog_items_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "network_catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_catalog_items_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       establishments: {
         Row: {
           address: string | null
@@ -716,6 +770,88 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_catalog_item_data: {
+        Row: {
+          catalog_item_id: string
+          id: string
+          payload: Json
+          previous_payload: Json | null
+        }
+        Insert: {
+          catalog_item_id: string
+          id?: string
+          payload?: Json
+          previous_payload?: Json | null
+        }
+        Update: {
+          catalog_item_id?: string
+          id?: string
+          payload?: Json
+          previous_payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_catalog_item_data_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: true
+            referencedRelation: "network_catalog_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_catalog_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_mandatory: boolean
+          is_seasonal: boolean
+          name: string
+          org_id: string
+          status: string
+          type: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_mandatory?: boolean
+          is_seasonal?: boolean
+          name: string
+          org_id: string
+          status?: string
+          type: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_mandatory?: boolean
+          is_seasonal?: boolean
+          name?: string
+          org_id?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_catalog_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1210,6 +1346,38 @@ export type Database = {
           },
         ]
       }
+      purchase_order_receptions: {
+        Row: {
+          id: string
+          lines: Json
+          notes: string | null
+          purchase_order_id: string
+          received_at: string
+        }
+        Insert: {
+          id?: string
+          lines?: Json
+          notes?: string | null
+          purchase_order_id: string
+          received_at?: string
+        }
+        Update: {
+          id?: string
+          lines?: Json
+          notes?: string | null
+          purchase_order_id?: string
+          received_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_receptions_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_orders: {
         Row: {
           created_at: string
@@ -1466,6 +1634,52 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sop_completions: {
+        Row: {
+          catalog_item_id: string
+          completed_at: string
+          establishment_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          catalog_item_id: string
+          completed_at?: string
+          establishment_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          catalog_item_id?: string
+          completed_at?: string
+          establishment_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_completions_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "network_catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_completions_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sop_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
