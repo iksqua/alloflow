@@ -18,7 +18,7 @@ const labelCls = 'block text-xs font-semibold text-[var(--text4)] uppercase trac
 
 function initSteps(payload: Record<string, unknown>): SopStepDraft[] {
   const raw = (payload?.steps ?? []) as SopStepDraft[]
-  return raw.length > 0 ? raw : []
+  return raw.length > 0 ? raw.map(s => ({ ...s, id: s.id ?? crypto.randomUUID() })) : []
 }
 
 function initIngredientPayload(payload: Record<string, unknown>) {
@@ -82,7 +82,8 @@ export function CatalogueItemForm({
     }
   }
 
-  const canSave = form.name.trim().length > 0 && (form.type !== 'sop' || sopSteps.length > 0)
+  const availableFromValid = form.available_from === null || form.available_from.length > 0
+  const canSave = form.name.trim().length > 0 && (form.type !== 'sop' || sopSteps.length > 0) && availableFromValid
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'var(--overlay-bg)' }}>
@@ -181,6 +182,9 @@ export function CatalogueItemForm({
                 <label className={labelCls}>Disponible à partir du</label>
                 <input type="date" style={inputStyle} value={form.available_from ?? ''}
                   onChange={e => setForm(p => ({ ...p, available_from: e.target.value }))} />
+                {form.available_from === '' && (
+                  <p className="text-xs text-amber-400 mt-1">Choisissez une date pour activer l'annonce</p>
+                )}
               </div>
             )}
           </div>
