@@ -56,6 +56,7 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
   }
 
   function formatDate(d: string) {
+    if (!d) return '?'
     return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
   }
 
@@ -90,8 +91,8 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
                   <div>
                     <p className="text-sm font-medium text-[var(--text1)]">{cat.name}</p>
-                    {cat.type === 'ingredient' && !!cat.network_catalog_item_data?.payload?.unit && (
-                      <p className="text-xs text-[var(--text4)]">{String(cat.network_catalog_item_data!.payload.unit)}{cat.network_catalog_item_data!.payload.category ? ` · ${String(cat.network_catalog_item_data!.payload.category)}` : ''}</p>
+                    {cat.type === 'ingredient' && cat.network_catalog_item_data?.payload?.unit && (
+                      <p className="text-xs text-[var(--text4)]">{String(cat.network_catalog_item_data.payload.unit)}{cat.network_catalog_item_data.payload.category ? ` · ${String(cat.network_catalog_item_data.payload.category)}` : ''}</p>
                     )}
                     {cat.description && cat.type !== 'ingredient' && <p className="text-xs text-[var(--text4)]">{cat.description}</p>}
                   </div>
