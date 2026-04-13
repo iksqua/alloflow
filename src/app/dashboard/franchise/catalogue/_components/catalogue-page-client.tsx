@@ -186,12 +186,12 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => commentsOpen === item.id ? setCommentsOpen(null) : loadComments(item.id)}
-                  className="text-xs px-2 py-1.5 rounded-lg flex items-center gap-1 flex-shrink-0"
-                  style={{
-                    background: (item.comment_count ?? 0) > 0 ? 'rgba(59,130,246,0.15)' : 'var(--surface2)',
-                    color: (item.comment_count ?? 0) > 0 ? '#60a5fa' : 'var(--text3)',
-                    border: '1px solid var(--border)',
-                  }}>
+                  className={`text-xs px-2 py-1.5 rounded-lg flex items-center gap-1 flex-shrink-0 border border-[var(--border)] ${
+                    (item.comment_count ?? 0) > 0
+                      ? 'bg-blue-900/20 text-blue-400'
+                      : 'text-[var(--text3)]'
+                  }`}
+                  style={(item.comment_count ?? 0) > 0 ? undefined : { background: 'var(--surface2)' }}>
                   💬 {item.comment_count ?? 0}
                 </button>
                 <button onClick={() => { setEditItem(item); setShowForm(true) }}
