@@ -7,7 +7,7 @@ export const createCatalogueItemSchema = z.object({
   is_mandatory: z.boolean().default(false),
   is_seasonal:  z.boolean().default(false),
   expires_at:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  payload:      z.record(z.unknown()).default({}),
+  payload:      z.record(z.string(), z.unknown()).default({}),
 })
 
 export const updateCatalogueItemSchema = createCatalogueItemSchema.partial()
