@@ -52,7 +52,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       status:         'draft',
       version:        1,
     })
-    .select()
+    .select('*, network_catalog_item_data(payload)')
     .single()
 
   if (copyErr || !copy) return NextResponse.json({ error: copyErr?.message ?? 'Failed to duplicate' }, { status: 500 })

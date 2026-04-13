@@ -31,6 +31,7 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
   const [tab, setTab]           = useState<'product' | 'recipe' | 'sop' | 'ingredient'>('product')
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<CatalogItem | null>(null)
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
   const filtered = items.filter(i => i.type === tab)
 
@@ -46,13 +47,20 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
   }
 
   async function handleDuplicate(id: string) {
-    const res = await fetch(`/api/franchise/catalogue/${id}/duplicate`, { method: 'POST' })
-    if (res.ok) {
-      const d = await res.json()
-      setItems(prev => [d.item, ...prev])
-      toast.success('Item dupliqué — modifiez-le avant de publier')
-    } else {
-      toast.error('Erreur lors de la duplication')
+    if (duplicatingId) return
+    setDuplicatingId(id)
+    try {
+      const res = await fetch(`/api/franchise/catalogue/${id}/duplicate`, { method: 'POST' })
+      if (res.ok) {
+        const d = await res.json()
+        setItems(prev => [d.item, ...prev])
+        toast.success('Item dupliqué — modifiez-le avant de publier')
+      } else {
+        const d = await res.json()
+        toast.error(d.error ?? 'Erreur lors de la duplication')
+      }
+    } finally {
+      setDuplicatingId(null)
     }
   }
 
@@ -135,10 +143,12 @@ export function CataloguePageClient({ initialItems }: { initialItems: unknown[] 
                 style={{ background: 'var(--surface2)' }}>
                 Éditer
               </button>
-              <button onClick={() => handleDuplicate(item.id)}
-                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)]"
+              <button
+                onClick={() => handleDuplicate(item.id)}
+                disabled={duplicatingId === item.id}
+                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text3)] disabled:opacity-50"
                 style={{ background: 'var(--surface2)' }}>
-                ⎘ Dupliquer
+                {duplicatingId === item.id ? '…' : '⎘ Dupliquer'}
               </button>
               {item.status === 'draft' && (
                 <button onClick={() => handlePublish(item.id)}
