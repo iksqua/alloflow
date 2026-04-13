@@ -42,7 +42,7 @@ Aucune autre table créée. Tout repose sur l'architecture v1.
 |------|---------|
 | `ingredient` | `{ unit: "g"\|"kg"\|"ml"\|"L"\|"pièce"\|"cl", category?: string }` |
 | `sop` | `{ steps: [{ sort_order: number, title: string, description: string, duration_seconds?: number, media_url?: string, note_type?: "warning"\|"tip"\|null, note_text?: string }] }` |
-| `recipe` | `{ ingredients: [{ catalog_item_id: string, name: string, quantity: number, unit: string }], steps: string, portions?: number }` |
+| `recipe` | `{ ingredients: [{ name: string, quantity: number, unit: string }], steps: string, portions?: number }` |
 | `product` | `{ price_ht: number, tva_rate: number, category?: string }` (inchangé) |
 
 ### 2.3 Logique `available_from`
@@ -52,7 +52,13 @@ Vérifiée **à la lecture** (même pattern que `expires_at` pour le saisonnier)
 - `available_from IS NULL OR available_from <= today` → comportement normal
 - `available_from > today` → item retourné avec flag `is_upcoming: true` dans la réponse API, badge **PROCHAINEMENT · JJ/MM** côté franchisé, toggle désactivé
 
-Aucune mutation DB — un job optionnel peut activer proprement les items en arrière-plan.
+**Comportement à la publication :**
+- Si `available_from > today` au moment du publish : batch upsert `establishment_catalog_items` normalement, mais `notified_at` reste NULL (pas de notification bandeau). Les franchisés voient l'item en PROCHAINEMENT sans notification urgente.
+- Si `available_from IS NULL OR available_from <= today` : comportement publish v1 inchangé (`notified_at = now()`).
+
+**Transition PROCHAINEMENT → disponible :** vérifiée à la lecture. Quand `available_from` passe, le franchisé voit l'item se déverrouiller automatiquement. Aucun `notified_at` n'est positionné lors de cette transition — hors scope pour cette itération. Un job de nettoyage peut optionnellement positionner `notified_at = now()` sur ces items en arrière-plan (v3).
+
+**Garde server-side sur PATCH franchisé :** la route `PATCH /api/catalogue-reseau/[id]` relit `available_from` depuis `network_catalog_items` et recalcule `is_upcoming` avant d'accepter une activation. Si `is_upcoming = true`, retourne 400 "Item non encore disponible".
 
 ---
 
@@ -74,6 +80,7 @@ Aucune mutation DB — un job optionnel peut activer proprement les items en arr
 **Franchisé (`/dashboard/catalogue-reseau` — tab "🥕 Ingrédients") :**
 - Liste avec nom · unité · badges (OBLIGATOIRE, NOUVEAU, MIS À JOUR, PROCHAINEMENT, SAISONNIER)
 - Pas de toggle actif/inactif sur les ingrédients (stock géré côté `stocks`)
+- Les ingrédients obligatoires ont `is_active = true` par défaut à la propagation et contribuent au compliance score automatiquement — aucune action requise du franchisé.
 
 ### 3.2 SOP viewer
 
@@ -134,7 +141,7 @@ function payloadToSopWithSteps(item: NetworkCatalogItem): SopWithSteps {
 - Retourne le nouvel item
 ```
 
-**UI siège :** bouton **⎘ Dupliquer** sur chaque item quel que soit son status.
+**UI siège :** bouton **⎘ Dupliquer** sur chaque item quel que soit son status (draft, published, archived). La duplication d'un item archivé est intentionnelle — permet de réactiver une variante sans modifier l'historique.
 
 ---
 
@@ -189,7 +196,7 @@ available_from: z.string().date().nullable().optional()
 // Payload ingredient
 z.object({ unit: z.enum(['g','kg','ml','cl','L','pièce']), category: z.string().optional() })
 
-// Payload SOP
+// Payload SOP — min 1 étape obligatoire
 z.object({ steps: z.array(z.object({
   sort_order: z.number(),
   title: z.string().min(1),
@@ -198,7 +205,7 @@ z.object({ steps: z.array(z.object({
   media_url: z.string().nullable().optional(),
   note_type: z.enum(['warning','tip']).nullable().optional(),
   note_text: z.string().nullable().optional(),
-})) })
+})).min(1, 'Un SOP doit avoir au moins une étape') })
 ```
 
 ---
@@ -229,6 +236,9 @@ if (ingredients?.length) {
     { onConflict: 'establishment_id,name', ignoreDuplicates: true }
   )
 }
+// Note : conflit sur (establishment_id, name) — si un stock_item homonyme existe déjà
+// avec une unité différente, la ligne existante est conservée (ignoreDuplicates: true).
+// Limitation acceptée pour cette itération — le franchisé ajuste l'unité manuellement si besoin.
 ```
 
 ---
@@ -244,7 +254,8 @@ if (ingredients?.length) {
 ## 9. Hors scope
 
 - Réordonnancement drag & drop des étapes SOP (boutons ↑↓ suffisent)
-- Lien ingrédients réseau ↔ recettes réseau (payload recipe référence par nom, pas par ID — v3)
+- Lien ingrédients réseau ↔ recettes réseau par ID (payload recipe référence par nom libre pour l'instant — v3)
+- Notification automatique quand `available_from` passe (job notified_at — v3)
 - Notifications push sur PROCHAINEMENT
 - Commentaires franchisé → siège (roadmap future)
 - Photos sur les items catalogue (roadmap future)
