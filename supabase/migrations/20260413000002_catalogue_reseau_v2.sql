@@ -2,7 +2,7 @@
 
 -- 1. Ajouter le type 'ingredient' au CHECK
 ALTER TABLE public.network_catalog_items
-  DROP CONSTRAINT network_catalog_items_type_check,
+  DROP CONSTRAINT IF EXISTS network_catalog_items_type_check,
   ADD CONSTRAINT network_catalog_items_type_check
     CHECK (type IN ('product', 'recipe', 'sop', 'ingredient'));
 
