@@ -44,7 +44,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (uploadErr) return NextResponse.json({ error: uploadErr.message }, { status: 500 })
 
   const { data: { publicUrl } } = supabase.storage.from('catalogue-images').getPublicUrl(path)
-  await supabase.from('network_catalog_items').update({ image_url: publicUrl }).eq('id', id)
+  const { error: updateErr } = await supabase.from('network_catalog_items').update({ image_url: publicUrl }).eq('id', id)
+  if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
   return NextResponse.json({ image_url: publicUrl })
 }
@@ -64,6 +65,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   await supabase.storage.from('catalogue-images')
     .remove([`${caller.orgId}/${id}.jpg`, `${caller.orgId}/${id}.png`, `${caller.orgId}/${id}.webp`])
 
-  await supabase.from('network_catalog_items').update({ image_url: null }).eq('id', id)
+  const { error: clearErr } = await supabase.from('network_catalog_items').update({ image_url: null }).eq('id', id)
+  if (clearErr) return NextResponse.json({ error: clearErr.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }

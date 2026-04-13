@@ -32,7 +32,9 @@ function mockService(itemOrgId = 'org-1') {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({ data: { id: 'item-1', org_id: itemOrgId }, error: null }),
-    update: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    }),
   }
   const storageFrom = {
     upload: vi.fn().mockResolvedValue({ error: null }),
@@ -46,8 +48,25 @@ function mockService(itemOrgId = 'org-1') {
   return { dbFrom, storageFrom }
 }
 
+function mockAuthUnauthenticated() {
+  ;(createServerClient as ReturnType<typeof vi.fn>).mockResolvedValue({
+    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
+    from: vi.fn(),
+  })
+}
+
 describe('POST /api/franchise/catalogue/[id]/image', () => {
   beforeEach(() => vi.clearAllMocks())
+
+  it('returns 401 when unauthenticated', async () => {
+    mockAuthUnauthenticated()
+    const file = new File(['x'], 'img.jpg', { type: 'image/jpeg' })
+    const req = new NextRequest('http://localhost/api/franchise/catalogue/item-1/image', {
+      method: 'POST', body: makeFormData(file),
+    })
+    const res = await POST(req, { params: Promise.resolve({ id: 'item-1' }) })
+    expect(res.status).toBe(401)
+  })
 
   it('returns 422 for non-image MIME type', async () => {
     mockAuth(); mockService()
@@ -97,10 +116,19 @@ describe('POST /api/franchise/catalogue/[id]/image', () => {
 describe('DELETE /api/franchise/catalogue/[id]/image', () => {
   beforeEach(() => vi.clearAllMocks())
 
+  it('returns 404 when item belongs to different org', async () => {
+    mockAuth('franchise_admin', 'org-1'); mockService('org-2')
+    const req = new NextRequest('http://localhost/api/franchise/catalogue/item-1/image', { method: 'DELETE' })
+    const res = await DELETE(req, { params: Promise.resolve({ id: 'item-1' }) })
+    expect(res.status).toBe(404)
+  })
+
   it('returns 200 and clears image_url', async () => {
     mockAuth(); mockService()
     const req = new NextRequest('http://localhost/api/franchise/catalogue/item-1/image', { method: 'DELETE' })
     const res = await DELETE(req, { params: Promise.resolve({ id: 'item-1' }) })
     expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.ok).toBe(true)
   })
 })
