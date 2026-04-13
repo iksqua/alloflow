@@ -238,7 +238,7 @@ export function CatalogueItemForm({
                 </div>
                 <div>
                   <label className={labelCls}>Contenance ({ingPayload.unit})</label>
-                  <input type="number" step="1" min="0" style={inputStyle}
+                  <input type="number" step="0.001" min="0" style={inputStyle}
                     value={ingPayload.reference_package_size}
                     onChange={e => setIngPayload(p => ({ ...p, reference_package_size: e.target.value === '' ? '' : Number(e.target.value) }))}
                     placeholder="Ex: 750" />
