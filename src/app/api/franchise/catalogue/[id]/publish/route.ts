@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { isUpcoming } from '@/lib/catalogue-helpers'
 
 async function getFranchiseAdmin() {
   const supabase = await createClient()
@@ -52,9 +53,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const estIds = (establishments ?? []).map((e: { id: string }) => e.id)
 
   if (estIds.length > 0) {
-    const isUpcomingItem = item.available_from
-      ? item.available_from > new Date().toISOString().split('T')[0]
-      : false
+    const isUpcomingItem = isUpcoming(item.available_from)
 
     const rows = estIds.map((estId: string) => ({
       establishment_id: estId,
