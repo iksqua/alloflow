@@ -9,6 +9,7 @@ type NetworkCatalogItem = {
   is_mandatory: boolean; is_seasonal: boolean; expires_at?: string | null
   available_from?: string | null; status: string; version: number
   network_catalog_item_data?: { payload: Record<string, unknown>; previous_payload: Record<string, unknown> | null } | null
+  image_url?: string | null
 }
 
 type EstablishmentCatalogItem = {
@@ -24,6 +25,22 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   color: active ? 'var(--text1)' : 'var(--text3)', border: 'none',
   boxShadow: active ? '0 1px 3px rgba(0,0,0,0.2)' : undefined,
 })
+
+function ItemThumbnail({ src }: { src?: string | null }) {
+  const [err, setErr] = useState(false)
+  if (src && !err) {
+    return (
+      <img src={src} alt="" onError={() => setErr(true)}
+        className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+    )
+  }
+  return (
+    <div className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-lg"
+      style={{ background: 'var(--surface2)', color: 'var(--text4)' }}>
+      📷
+    </div>
+  )
+}
 
 export function CatalogueReseauPageClient({ initialItems }: { initialItems: unknown[] }) {
   const [items, setItems] = useState<EstablishmentCatalogItem[]>(initialItems as EstablishmentCatalogItem[])
@@ -89,6 +106,7 @@ export function CatalogueReseauPageClient({ initialItems }: { initialItems: unkn
             <div key={eci.id} className="px-4 py-3" style={{ background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                  <ItemThumbnail src={cat.image_url} />
                   <div>
                     <p className="text-sm font-medium text-[var(--text1)]">{cat.name}</p>
                     {cat.type === 'ingredient' && cat.network_catalog_item_data?.payload?.unit != null && (
