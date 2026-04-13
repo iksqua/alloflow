@@ -29,7 +29,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!membership)
     return NextResponse.json({ error: 'Item non disponible dans votre catalogue' }, { status: 404 })
 
-  const { error } = await supabase.from('catalog_item_comments').insert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from('catalog_item_comments').insert({
     catalog_item_id:  id,
     establishment_id: profile.establishment_id,
     author_id:        user.id,

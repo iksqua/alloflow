@@ -20,7 +20,7 @@ function adminClient() {
   )
 }
 
-export async function GET() {
+export async function GET(_req?: NextRequest) {
   const caller = await getFranchiseAdmin()
   if ('error' in caller) return NextResponse.json({ error: caller.error === 401 ? 'Unauthorized' : 'Forbidden' }, { status: caller.error })
 
