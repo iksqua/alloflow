@@ -15,7 +15,7 @@ export default async function StocksPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
 
   const [stockRes, categoriesRes] = await Promise.all([
     supabase

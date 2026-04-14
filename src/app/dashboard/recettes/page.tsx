@@ -14,7 +14,7 @@ export default async function RecettesPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
 
   const { data: recipes } = await supabase
     .from('recipes')

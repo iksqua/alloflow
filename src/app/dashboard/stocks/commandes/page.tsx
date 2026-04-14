@@ -16,7 +16,7 @@ export default async function CommandesPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
   const estId = profile.establishment_id
 
   const [ordersRes, stockRes, categoriesRes] = await Promise.all([

@@ -20,7 +20,7 @@ export default async function ProgrammePage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
 
   const { data: config } = await supabase
     .from('loyalty_config')

@@ -14,7 +14,7 @@ export default async function FiscalPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
 
   const { data: entries } = await supabase
     .from('fiscal_journal_entries')

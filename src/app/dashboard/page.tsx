@@ -14,7 +14,9 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase
     .from('profiles').select('establishment_id, role').eq('id', user.id).single()
-  if (!profile?.establishment_id) redirect('/login')
+
+  if (profile?.role === 'franchise_admin') redirect('/dashboard/franchise/command-center')
+  if (!profile?.establishment_id) redirect('/dashboard/products')
 
   const { data: establishment } = await supabase
     .from('establishments').select('name').eq('id', profile.establishment_id).single()

@@ -18,7 +18,7 @@ export default async function CrmPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
   const establishmentId = profile.establishment_id
 
   // Fetch customers, stats and loyalty config in parallel

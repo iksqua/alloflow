@@ -14,7 +14,7 @@ export default async function SopsPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
 
   const [sopsRes, catsRes, recipesRes] = await Promise.all([
     supabase

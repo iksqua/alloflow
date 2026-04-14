@@ -14,7 +14,7 @@ export default async function NewCustomerPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.establishment_id) redirect('/onboarding')
+  if (!profile?.establishment_id) redirect('/dashboard')
 
   return (
     <div className="p-6 max-w-lg">
