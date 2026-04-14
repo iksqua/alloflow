@@ -285,6 +285,7 @@ export type Database = {
           last_order_at: string | null
           name: string
           network_customer_id: string | null
+          notes: string | null
           opt_in_at: string | null
           opt_in_email: boolean
           opt_in_sms: boolean
@@ -311,6 +312,7 @@ export type Database = {
           last_order_at?: string | null
           name: string
           network_customer_id?: string | null
+          notes?: string | null
           opt_in_at?: string | null
           opt_in_email?: boolean
           opt_in_sms?: boolean
@@ -337,6 +339,7 @@ export type Database = {
           last_order_at?: string | null
           name?: string
           network_customer_id?: string | null
+          notes?: string | null
           opt_in_at?: string | null
           opt_in_email?: boolean
           opt_in_sms?: boolean
