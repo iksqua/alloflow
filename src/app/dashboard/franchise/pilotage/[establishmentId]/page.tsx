@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { PilotageDetailClient } from './_components/pilotage-detail-client'
 import type { Product, Category } from '@/app/dashboard/products/_components/types'
-import type { StockItem, PurchaseOrder } from '@/app/dashboard/stocks/_components/types'
 import type { Recipe } from '@/app/dashboard/recettes/_components/types'
+import type { MarchandiseItem, RecipeRow } from '@/app/dashboard/marchandise/_components/types'
 
 export default async function PilotageDetailPage({
   params,
@@ -45,13 +45,63 @@ export default async function PilotageDetailPage({
     if (found) establishmentName = found.name
   }
 
-  const initialProducts:   Product[]       = productsRes?.products    ?? []
-  const initialCategories: Category[]      = productsRes?.categories  ?? []
-  const initialItems:      StockItem[]     = stocksRes?.items         ?? []
-  const initialOrders:     PurchaseOrder[] = stocksRes?.orders        ?? []
-  const stockCategories                    = stocksRes?.categories     ?? []
-  const initialRecipes:    Recipe[]        = recipesRes?.recipes      ?? []
-  const recipeCategories                   = recipesRes?.categories    ?? []
+  const initialProducts:   Product[]  = productsRes?.products   ?? []
+  const initialCategories: Category[] = productsRes?.categories ?? []
+  const initialRecipes:    Recipe[]   = recipesRes?.recipes     ?? []
+
+  // Map raw stock_items to MarchandiseItem[]
+  const rawItems: Record<string, unknown>[] = stocksRes?.items ?? []
+  const initialPosItems: MarchandiseItem[] = rawItems.map(i => ({
+    id: i.id as string,
+    establishment_id: i.establishment_id as string,
+    name: i.name as string,
+    category: (i.category as string | null) ?? null,
+    unit: i.unit as string,
+    purchase_price: (i.purchase_price as number) ?? 0,
+    purchase_qty: (i.purchase_qty as number) ?? 1,
+    supplier: (i.supplier as string | null) ?? null,
+    supplier_ref: (i.supplier_ref as string | null) ?? null,
+    is_pos: Boolean(i.is_pos),
+    pos_price: (i.pos_price as number | null) ?? null,
+    pos_tva_rate: (i.pos_tva_rate as number) ?? 10,
+    pos_category_id: (i.pos_category_id as string | null) ?? null,
+    product_id: (i.product_id as string | null) ?? null,
+    active: Boolean(i.active),
+    network_status: ((i.network_status as string) ?? 'not_shared') as MarchandiseItem['network_status'],
+  }))
+
+  // Map raw recipes to RecipeRow[]
+  const rawRecipes: Record<string, unknown>[] = recipesRes?.recipes ?? []
+  const initialPosRecipes: RecipeRow[] = rawRecipes.map(r => {
+    const ings = (r.ingredients as { id: string; name: string; quantity: number; unit: string; unit_cost: number; sort_order: number }[]) ?? []
+    const foodCostAmount = ings.reduce(
+      (sum: number, i) => sum + i.quantity * i.unit_cost, 0
+    )
+    const productArr = r.product as { id: string; name: string; price: number; tva_rate: number; category_id: string | null; is_active: boolean }[] | null
+    const product = productArr?.[0] ?? null
+    const foodCostPct = product?.price && product.price > 0
+      ? Math.round((foodCostAmount / product.price) * 1000) / 10
+      : null
+    const sopArr = r.sop as { id: string; title: string; recipe_id: string | null; active: boolean; steps: unknown[] }[] | null
+    const sopRaw = sopArr?.[0] ?? null
+
+    return {
+      id: r.id as string,
+      establishment_id: r.establishment_id as string,
+      title: r.title as string,
+      category: (r.category as string | null) ?? null,
+      portion: (r.portion as string | null) ?? null,
+      is_internal: Boolean(r.is_internal),
+      active: Boolean(r.active),
+      sop_required: Boolean((r as Record<string, unknown>).sop_required),
+      network_status: ((r.network_status as string) ?? 'not_shared') as RecipeRow['network_status'],
+      ingredients: ings,
+      product,
+      sop: sopRaw ? { ...sopRaw, steps: (sopRaw.steps as RecipeRow['sop'] extends { steps: infer S } ? S : never) ?? [] } : null,
+      food_cost_amount: foodCostAmount,
+      food_cost_pct: foodCostPct,
+    }
+  })
 
   return (
     <PilotageDetailClient
@@ -59,11 +109,9 @@ export default async function PilotageDetailPage({
       establishmentName={establishmentName}
       initialProducts={initialProducts}
       initialCategories={initialCategories}
-      initialItems={initialItems}
-      initialOrders={initialOrders}
-      stockCategories={stockCategories}
       initialRecipes={initialRecipes}
-      recipeCategories={recipeCategories}
+      initialPosItems={initialPosItems}
+      initialPosRecipes={initialPosRecipes}
     />
   )
 }

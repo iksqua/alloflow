@@ -2,23 +2,20 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { Product, Category } from '@/app/dashboard/products/_components/types'
-import type { StockItem, PurchaseOrder } from '@/app/dashboard/stocks/_components/types'
 import type { Recipe } from '@/app/dashboard/recettes/_components/types'
+import type { MarchandiseItem, RecipeRow, PosCategory } from '@/app/dashboard/marchandise/_components/types'
+import { TabApercuCaisse } from '@/app/dashboard/marchandise/_components/tab-apercu-caisse'
 
-type Tab = 'produits' | 'stocks' | 'recettes'
-
-interface NamedCategory { id: string; name: string; color_hex: string }
+type Tab = 'produits' | 'recettes' | 'apercu-caisse'
 
 interface Props {
   establishmentId: string
   establishmentName: string
   initialProducts: Product[]
   initialCategories: Category[]
-  initialItems: StockItem[]
-  initialOrders: PurchaseOrder[]
-  stockCategories: NamedCategory[]
   initialRecipes: Recipe[]
-  recipeCategories: (NamedCategory & { icon?: string | null })[]
+  initialPosItems: MarchandiseItem[]
+  initialPosRecipes: RecipeRow[]
 }
 
 export function PilotageDetailClient({
@@ -26,18 +23,16 @@ export function PilotageDetailClient({
   establishmentName,
   initialProducts,
   initialCategories,
-  initialItems,
-  initialOrders: _initialOrders,
-  stockCategories: _stockCategories,
   initialRecipes,
-  recipeCategories: _recipeCategories,
+  initialPosItems,
+  initialPosRecipes,
 }: Props) {
   const [tab, setTab] = useState<Tab>('produits')
 
-  const TABS: { id: Tab; label: string; count: number }[] = [
-    { id: 'produits',  label: 'Produits',  count: initialProducts.length },
-    { id: 'stocks',    label: 'Stocks',    count: initialItems.length },
-    { id: 'recettes',  label: 'Recettes',  count: initialRecipes.length },
+  const TABS: { id: Tab; label: string; count?: number }[] = [
+    { id: 'produits',      label: 'Produits',      count: initialProducts.length },
+    { id: 'recettes',      label: 'Recettes',      count: initialRecipes.length },
+    { id: 'apercu-caisse', label: '🖥️ Aperçu caisse' },
   ]
 
   const catMap = new Map(initialCategories.map(c => [c.id, c.name]))
@@ -71,7 +66,9 @@ export function PilotageDetailClient({
               : { color: 'var(--text3)' }}
           >
             {t.label}
-            <span className="ml-1.5 text-xs opacity-60">({t.count})</span>
+            {t.count !== undefined && (
+              <span className="ml-1.5 text-xs opacity-60">({t.count})</span>
+            )}
           </button>
         ))}
       </div>
@@ -108,37 +105,6 @@ export function PilotageDetailClient({
         </div>
       )}
 
-      {/* Stocks tab */}
-      {tab === 'stocks' && (
-        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-          <div className="grid px-4 py-2.5 text-xs font-semibold uppercase tracking-wider"
-            style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 80px', gap: '8px', background: 'var(--surface2)', color: 'var(--text4)' }}>
-            <span>Article</span><span>Catégorie</span><span>Quantité</span><span>Seuil alerte</span><span>Statut</span>
-          </div>
-          {initialItems.length === 0 && (
-            <div className="px-4 py-10 text-center text-sm text-[var(--text4)]" style={{ background: 'var(--surface)' }}>
-              Aucun article en stock
-            </div>
-          )}
-          {initialItems.map((item, i) => {
-            const alertColor = item.quantity <= 0 ? 'text-red-400 bg-red-900/20'
-              : item.quantity <= item.alert_threshold ? 'text-amber-400 bg-amber-900/20'
-              : 'text-green-400 bg-green-900/20'
-            const alertLabel = item.quantity <= 0 ? 'Rupture' : item.quantity <= item.alert_threshold ? 'Alerte' : 'OK'
-            return (
-              <div key={item.id} className="grid items-center px-4 py-3"
-                style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 80px', gap: '8px', background: 'var(--surface)', borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
-                <span className="text-sm font-medium text-[var(--text1)] truncate">{item.name}</span>
-                <span className="text-xs text-[var(--text3)]">{item.category ?? '—'}</span>
-                <span className="text-sm tabular-nums text-[var(--text1)]">{item.quantity} {item.unit}</span>
-                <span className="text-sm tabular-nums text-[var(--text3)]">{item.alert_threshold} {item.unit}</span>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${alertColor}`}>{alertLabel}</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       {/* Recettes tab */}
       {tab === 'recettes' && (
         <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
@@ -166,6 +132,15 @@ export function PilotageDetailClient({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Aperçu caisse tab */}
+      {tab === 'apercu-caisse' && (
+        <TabApercuCaisse
+          items={initialPosItems}
+          recipes={initialPosRecipes}
+          categories={initialCategories as PosCategory[]}
+        />
       )}
 
       <p className="text-xs text-[var(--text4)] mt-4 text-center">
