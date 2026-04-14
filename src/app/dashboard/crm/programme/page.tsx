@@ -56,7 +56,7 @@ export default async function ProgrammePage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl">
+    <div className="max-w-3xl">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-[var(--text1)]">Programme de fidélité</h1>
         <p className="text-sm text-[var(--text3)] mt-1">Configurez les règles de points, niveaux et récompenses</p>

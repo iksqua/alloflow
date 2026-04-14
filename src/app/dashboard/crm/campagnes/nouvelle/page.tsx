@@ -19,7 +19,7 @@ export default async function NouvelleCampagnePage() {
     .single()
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
+    <div className="max-w-2xl">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-[var(--text1)]">Nouvelle campagne</h1>
         <p className="text-sm text-[var(--text3)]">

@@ -119,7 +119,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const avgTicket = visitCount > 0 ? totalRevenue / visitCount : 0
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex gap-6 items-start">
         {/* Left column — 60% */}
         <div className="flex-[3] min-w-0 flex flex-col gap-5">

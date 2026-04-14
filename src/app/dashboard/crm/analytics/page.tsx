@@ -19,7 +19,7 @@ export default async function CrmAnalyticsPage() {
     .maybeSingle()
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
+    <div className="max-w-3xl">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-[var(--text1)]">Persona clients</h1>
         <p className="text-sm text-[var(--text3)]">Données calculées automatiquement depuis l&apos;historique des commandes.</p>

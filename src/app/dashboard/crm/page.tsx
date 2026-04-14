@@ -48,7 +48,7 @@ export default async function CrmPage() {
   }
 
   return (
-    <div className="p-6">
+    <div>
       <CrmTopbar />
       <CrmStatCards stats={stats} />
       <CustomerTable customers={customers} goldThreshold={goldThreshold} />

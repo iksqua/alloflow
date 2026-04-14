@@ -17,7 +17,7 @@ export default async function NewCustomerPage() {
   if (!profile?.establishment_id) redirect('/dashboard')
 
   return (
-    <div className="p-6 max-w-lg">
+    <div className="max-w-lg">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-[var(--text1)]">Nouveau client</h1>
         <p className="text-sm text-[var(--text3)] mt-1">Ajouter un client manuellement au CRM</p>

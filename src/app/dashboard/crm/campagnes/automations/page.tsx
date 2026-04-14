@@ -20,7 +20,7 @@ export default async function AutomationsPage() {
   const estab = estabResult.data
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
+    <div className="max-w-2xl">
       <h1 className="text-xl font-semibold text-[var(--text1)] mb-2">Automations</h1>
       <p className="text-sm text-[var(--text3)] mb-6">
         Ces messages partent automatiquement quand la condition est déclenchée.

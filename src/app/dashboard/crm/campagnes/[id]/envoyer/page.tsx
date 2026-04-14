@@ -28,7 +28,7 @@ export default async function EnvoyerCampagnePage({
   if (!campaign || campaign.status === 'sent') redirect('/dashboard/crm/campagnes')
 
   return (
-    <div className="max-w-lg mx-auto py-8 px-4">
+    <div className="max-w-lg">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-[var(--text1)]">Confirmer l&apos;envoi</h1>
         <p className="text-sm text-[var(--text3)] mt-1">Cette action est irréversible.</p>
