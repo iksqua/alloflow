@@ -1,8 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 
 interface NavItem {
   href: string
@@ -17,7 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', exact: true },
   { href: '/dashboard/products',         label: 'Produits',        icon: '🍽️' },
   { href: '/dashboard/catalogue-reseau', label: 'Catalogue réseau', icon: '📦' },
-  { href: '/dashboard/stocks',           label: 'Stocks',           icon: '🗄️' },
+  { href: '/dashboard/marchandise',       label: 'Marchandise',      icon: '📦' },
   { href: '/dashboard/orders', label: 'Historique des ventes', icon: '🧾' },
   {
     href: '/dashboard/analytics',
@@ -40,7 +39,6 @@ const NAV_ITEMS: NavItem[] = [
       { href: '/dashboard/crm/programme',              label: 'Programme' },
     ],
   },
-  { href: '/dashboard/recettes', label: 'Recettes', icon: '📖' },
   { href: '/dashboard/sops', label: 'Guides', icon: '📋' },
   { href: '/dashboard/fiscal', label: 'Journal fiscal', icon: '🗂️' },
 ]
@@ -57,35 +55,6 @@ interface SidebarProps {
 export function Sidebar({ userName, userRole, establishmentName, establishmentId }: SidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [stockAlerts, setStockAlerts] = useState(0)
-
-  useEffect(() => {
-    if (!establishmentId) return
-    const supabase = createClient()
-
-    async function fetchAlertCount() {
-      const { data } = await supabase
-        .from('stock_items')
-        .select('quantity, alert_threshold')
-        .eq('establishment_id', establishmentId!)
-      const alerts = (data ?? []).filter(item => item.quantity <= 0 || item.quantity < item.alert_threshold)
-      setStockAlerts(alerts.length)
-    }
-
-    fetchAlertCount()
-
-    const channel = supabase
-      .channel(`stock-alerts-${establishmentId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'stock_items', filter: `establishment_id=eq.${establishmentId}` },
-        () => { fetchAlertCount() }
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [establishmentId])
-
   return (
     <>
       {/* Hamburger — aligned with topbar height, visible only on mobile */}
@@ -222,9 +191,6 @@ export function Sidebar({ userName, userRole, establishmentName, establishmentId
               )
             }
 
-            const isStocks = item.href === '/dashboard/stocks'
-            const showBadge = isStocks && stockAlerts > 0
-
             return (
               <Link
                 key={item.href}
@@ -239,26 +205,8 @@ export function Sidebar({ userName, userRole, establishmentName, establishmentId
                 ].join(' ')}
                 style={isActive ? { background: 'var(--blue)' } : undefined}
               >
-                <span className="flex-shrink-0 relative">
-                  {item.icon}
-                  {showBadge && (
-                    <span
-                      className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center"
-                      style={{ background: 'var(--red)' }}
-                    >
-                      {stockAlerts > 9 ? '9+' : stockAlerts}
-                    </span>
-                  )}
-                </span>
+                <span className="flex-shrink-0">{item.icon}</span>
                 <span className="md:hidden lg:block">{item.label}</span>
-                {showBadge && (
-                  <span
-                    className="ml-auto text-[10px] font-semibold text-white px-1.5 py-0.5 rounded-full md:hidden lg:inline"
-                    style={{ background: 'var(--red)' }}
-                  >
-                    {stockAlerts}
-                  </span>
-                )}
               </Link>
             )
           })}
