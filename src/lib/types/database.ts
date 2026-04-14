@@ -1483,7 +1483,9 @@ export type Database = {
           id: string
           is_internal: boolean
           media_urls: string[] | null
+          network_status: 'active' | 'inactive' | 'coming_soon' | 'not_shared'
           portion: string | null
+          sop_required: boolean
           title: string
           version: number
         }
@@ -1497,7 +1499,9 @@ export type Database = {
           id?: string
           is_internal?: boolean
           media_urls?: string[] | null
+          network_status?: 'active' | 'inactive' | 'coming_soon' | 'not_shared'
           portion?: string | null
+          sop_required?: boolean
           title: string
           version?: number
         }
@@ -1511,7 +1515,9 @@ export type Database = {
           id?: string
           is_internal?: boolean
           media_urls?: string[] | null
+          network_status?: 'active' | 'inactive' | 'coming_soon' | 'not_shared'
           portion?: string | null
+          sop_required?: boolean
           title?: string
           version?: number
         }
@@ -1801,6 +1807,7 @@ export type Database = {
           id: string
           is_pos: boolean
           name: string
+          network_status: 'active' | 'inactive' | 'coming_soon' | 'not_shared'
           order_quantity: number
           pos_category_id: string | null
           pos_price: number | null
@@ -1822,6 +1829,7 @@ export type Database = {
           id?: string
           is_pos?: boolean
           name: string
+          network_status?: 'active' | 'inactive' | 'coming_soon' | 'not_shared'
           order_quantity?: number
           pos_category_id?: string | null
           pos_price?: number | null
@@ -1843,6 +1851,7 @@ export type Database = {
           id?: string
           is_pos?: boolean
           name?: string
+          network_status?: 'active' | 'inactive' | 'coming_soon' | 'not_shared'
           order_quantity?: number
           pos_category_id?: string | null
           pos_price?: number | null
