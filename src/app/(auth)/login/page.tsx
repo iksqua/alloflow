@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,6 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const unauthorized = searchParams.get('error') === 'unauthorized'
@@ -40,20 +39,16 @@ function LoginForm() {
       .single()
 
     if (profileError) {
-      // Fall back to products on profile fetch failure
-      setLoading(false)
-      router.push('/dashboard/products')
-      router.refresh()
+      window.location.href = '/dashboard/products'
       return
     }
 
-    setLoading(false)
+    // Full page reload so server SSR receives fresh session cookies
     if (profile?.role === 'franchise_admin') {
-      router.push('/dashboard/franchise/command-center')
+      window.location.href = '/dashboard/franchise/command-center'
     } else {
-      router.push('/dashboard/products')
+      window.location.href = '/dashboard/products'
     }
-    router.refresh()
   }
 
   return (
@@ -87,7 +82,12 @@ function LoginForm() {
           </div>
 
           <div>
-            <Label htmlFor="password">Mot de passe</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label htmlFor="password">Mot de passe</Label>
+              <a href="/auth/forgot-password" className="text-xs" style={{ color: 'var(--blue)' }}>
+                Mot de passe oublié ?
+              </a>
+            </div>
             <Input
               id="password"
               type="password"

@@ -7,6 +7,7 @@ const links = [
   { href: '/dashboard/settings/equipe',        label: '👥 Équipe' },
   { href: '/dashboard/settings/caisse',        label: '🖥 Caisse' },
   { href: '/dashboard/settings/crm',           label: '📱 CRM' },
+  { href: '/dashboard/settings/compte',        label: '👤 Mon compte' },
 ]
 
 export function SettingsSidebar() {

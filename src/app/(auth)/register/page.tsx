@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +13,6 @@ export default function RegisterPage() {
   const [error,       setError]       = useState<string | null>(null)
   const [loading,     setLoading]     = useState(false)
   const [signInFailed, setSignInFailed] = useState(false)
-  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -61,10 +59,8 @@ export default function RegisterPage() {
       return
     }
 
-    // 3. Redirect
-    setLoading(false)
-    router.push('/dashboard/franchise/command-center')
-    router.refresh()
+    // 3. Full page reload so server SSR receives fresh session cookies
+    window.location.href = '/dashboard/franchise/command-center'
   }
 
   return (
