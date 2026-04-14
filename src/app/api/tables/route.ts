@@ -19,3 +19,27 @@ export async function GET(_req: NextRequest) {
 
   return NextResponse.json({ tables: data ?? [] })
 }
+
+export async function POST(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase
+    .from('profiles').select('establishment_id, role').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  if (!['admin', 'super_admin'].includes(profile.role as string)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const body = await req.json()
+  const { name, seats } = body
+  if (!name?.trim()) return NextResponse.json({ error: 'Name required' }, { status: 400 })
+
+  const { data, error } = await supabase
+    .from('restaurant_tables')
+    .insert({ establishment_id: profile.establishment_id, name: name.trim(), seats: seats ?? 4 })
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ table: data }, { status: 201 })
+}
