@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const orderIds = (orders ?? []).map(o => o.id)
   const { data: payments } = orderIds.length > 0
     ? await supabase
-        .from('order_payments')
+        .from('payments')
         .select('method, amount, order_id')
         .in('order_id', orderIds)
     : { data: [] }

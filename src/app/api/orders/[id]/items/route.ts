@@ -19,16 +19,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { id } = await params
   const body = await req.json()
   const parsed = addItemSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  // Vérifier que la commande existe et est ouverte
+  // Vérifier que la commande existe, est ouverte, et appartient à cet établissement
   const { data: order } = await supabase
     .from('orders')
-    .select('id, status, subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc')
+    .select('id, status, subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, establishment_id')
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .single()
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
@@ -85,6 +90,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const { id } = await params
   const { searchParams } = new URL(req.url)
   const itemId = searchParams.get('item_id')
@@ -101,11 +110,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 })
 
-  // Vérifier que la commande est ouverte
+  // Vérifier que la commande est ouverte et appartient à cet établissement
   const { data: order } = await supabase
     .from('orders')
     .select('status, subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc')
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .single()
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })

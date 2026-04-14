@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import type { CashSession } from '../types'
 
@@ -88,6 +88,7 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
   const [loading, setLoading] = useState(false)
   const [duration, setDuration] = useState(() => session ? formatDuration(session.opened_at) : '')
   const [zReport, setZReport] = useState<{ session: CashSession; summary: ZReportSummary } | null>(null)
+  const printRef = useRef(false)
   const isManager = userRole !== 'caissier'
   const hasOpenSession = !!session
 
