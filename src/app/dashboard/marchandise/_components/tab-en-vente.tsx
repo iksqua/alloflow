@@ -1,6 +1,6 @@
 // src/app/dashboard/marchandise/_components/tab-en-vente.tsx
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { MarchandiseItem, RecipeRow, EnVenteItem, PosCategory } from './types'
 import { NetworkStatusSelect } from './network-status-select'
 import { EnVenteEditModal } from './en-vente-edit-modal'
@@ -69,7 +69,7 @@ export function TabEnVente({ items, recipes, categories }: Props) {
   const [editItem, setEditItem] = useState<EnVenteItem | null>(null)
 
   // Sync when parent items/recipes change
-  useMemo(() => {
+  useEffect(() => {
     setLocalEnVente(buildEnVenteList(items, recipes, categories))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, recipes])

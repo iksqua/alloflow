@@ -57,8 +57,9 @@ export function TabRecettes({ recipes, categories, establishmentId, onRecipesCha
       const ings = r.ingredients ?? []
       const foodCostAmount = ings.reduce((s: number, i: { quantity: number; unit_cost: number }) => s + i.quantity * i.unit_cost, 0)
       const product = r.product?.[0] ?? null
-      const foodCostPct = product?.price && product.price > 0
-        ? Math.round((foodCostAmount / product.price) * 1000) / 10
+      const priceTTC = product ? product.price * (1 + product.tva_rate / 100) : 0
+      const foodCostPct = priceTTC > 0
+        ? Math.round((foodCostAmount / priceTTC) * 1000) / 10
         : null
       const existing = recipes.find(ex => ex.id === r.id)
       return {
