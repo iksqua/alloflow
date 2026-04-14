@@ -62,3 +62,18 @@ npx supabase db push # Appliquer migrations
 - Pas de feature flags ni shims de compatibilité.
 - Pas de padding/margin compensant la sidebar dans les pages.
 - Pas d'estimation de temps.
+
+## 9. Architecture Marchandise
+
+Page `/dashboard/marchandise` (4 onglets) remplace `/dashboard/stocks` + `/dashboard/recettes`.
+
+| Onglet | Composant | Table(s) principale(s) |
+|--------|-----------|------------------------|
+| 📦 Marchandise | `tab-marchandise.tsx` | `stock_items` |
+| 🍳 Recettes | `tab-recettes.tsx` | `recipes`, `recipe_ingredients`, `sops` |
+| 🛒 En vente | `tab-en-vente.tsx` | `stock_items (is_pos)`, `products` |
+| 🖥️ Aperçu caisse | `tab-apercu-caisse.tsx` | partagé avec pilotage franchise |
+
+Colonnes ajoutées : `network_status` (enum: active/inactive/coming_soon/not_shared, défaut not_shared) sur `stock_items` et `recipes`. Colonne `sop_required` (boolean, défaut false) sur `recipes`.
+
+Routes `/dashboard/stocks` et `/dashboard/recettes` redirigent vers `/dashboard/marchandise`.
