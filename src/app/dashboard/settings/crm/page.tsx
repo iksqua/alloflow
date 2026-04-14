@@ -13,7 +13,7 @@ export default async function CrmSettingsPage() {
 
   const { data: estab } = await supabase
     .from('establishments')
-    .select('google_review_url, sms_credits')
+    .select('google_review_url, sms_credits, brevo_sender_name')
     .eq('id', profile.establishment_id)
     .single()
 
@@ -26,6 +26,7 @@ export default async function CrmSettingsPage() {
       >
         <CrmSettingsForm
           initialReviewUrl={estab?.google_review_url ?? ''}
+          initialSenderName={estab?.brevo_sender_name ?? ''}
           smsCredits={estab?.sms_credits ?? 0}
         />
       </div>

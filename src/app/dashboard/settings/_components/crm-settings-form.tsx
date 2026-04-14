@@ -3,14 +3,16 @@ import { useState } from 'react'
 
 interface Props {
   initialReviewUrl: string
+  initialSenderName: string
   smsCredits: number
 }
 
-export function CrmSettingsForm({ initialReviewUrl, smsCredits }: Props) {
-  const [reviewUrl, setReviewUrl] = useState(initialReviewUrl)
-  const [saving,    setSaving]    = useState(false)
-  const [error,     setError]     = useState<string | null>(null)
-  const [saved,     setSaved]     = useState(false)
+export function CrmSettingsForm({ initialReviewUrl, initialSenderName, smsCredits }: Props) {
+  const [reviewUrl,   setReviewUrl]   = useState(initialReviewUrl)
+  const [senderName,  setSenderName]  = useState(initialSenderName)
+  const [saving,      setSaving]      = useState(false)
+  const [error,       setError]       = useState<string | null>(null)
+  const [saved,       setSaved]       = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -20,7 +22,7 @@ export function CrmSettingsForm({ initialReviewUrl, smsCredits }: Props) {
       const res = await fetch('/api/settings/crm', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ google_review_url: reviewUrl || '' }),
+        body: JSON.stringify({ google_review_url: reviewUrl || '', brevo_sender_name: senderName || '' }),
       })
       if (!res.ok) {
         const data = await res.json() as { error?: string }
@@ -47,6 +49,33 @@ export function CrmSettingsForm({ initialReviewUrl, smsCredits }: Props) {
         <div className="text-2xl font-bold text-[var(--text1)]">{smsCredits} SMS</div>
         <p className="text-xs mt-1" style={{ color: 'var(--text4)' }}>
           Contactez Alloflow pour recharger vos crédits.
+        </p>
+      </div>
+
+      <div>
+        <label
+          htmlFor="sender-name"
+          className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
+          style={{ color: 'var(--text4)' }}
+        >
+          Nom expéditeur SMS
+        </label>
+        <input
+          id="sender-name"
+          type="text"
+          value={senderName}
+          onChange={e => setSenderName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))}
+          maxLength={11}
+          placeholder="AlloFlow"
+          className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--blue)]"
+          style={{
+            background: 'var(--surface2)',
+            border: '1px solid var(--border)',
+            color: 'var(--text1)',
+          }}
+        />
+        <p className="text-xs mt-1" style={{ color: 'var(--text4)' }}>
+          11 caractères max, lettres et chiffres uniquement. Apparaît comme expéditeur de vos SMS.
         </p>
       </div>
 
