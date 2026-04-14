@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SetPasswordPage() {
@@ -9,7 +8,6 @@ export default function SetPasswordPage() {
   const [confirm,   setConfirm]   = useState('')
   const [error,     setError]     = useState<string | null>(null)
   const [loading,   setLoading]   = useState(false)
-  const router = useRouter()
 
   const inputStyle: React.CSSProperties = {
     background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)',
@@ -39,17 +37,17 @@ export default function SetPasswordPage() {
       return
     }
 
-    // Role-aware redirect
+    // Role-aware redirect — use full reload so server picks up fresh session cookies
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', user.id).single()
       if (profile?.role === 'franchise_admin') {
-        router.push('/dashboard/franchise/command-center')
+        window.location.href = '/dashboard/franchise/command-center'
         return
       }
     }
-    router.push('/dashboard/products')
+    window.location.href = '/dashboard/products'
   }
 
   return (

@@ -1,5 +1,5 @@
+import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -10,22 +10,36 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=invalid_link', req.url))
   }
 
-  const supabase = await createClient()
+  // Determine destination before verifyOtp so we can wire cookies to the response
+  const isPasswordFlow = type === 'invite' || type === 'recovery'
+  const destination = isPasswordFlow
+    ? new URL('/auth/set-password', req.url)
+    : new URL('/dashboard/products', req.url)
+
+  const response = NextResponse.redirect(destination)
+
+  // Build the Supabase client so it writes session cookies directly onto `response`
+  // rather than using cookies() from next/headers, which may not forward to NextResponse.redirect
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => req.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
   const { error } = await supabase.auth.verifyOtp({ token_hash, type })
 
   if (error) {
     return NextResponse.redirect(new URL('/login?error=invalid_link', req.url))
   }
 
-  // Invite flow → user must set a password
-  if (type === 'invite') {
-    return NextResponse.redirect(new URL('/auth/set-password', req.url))
-  }
-
-  // Recovery flow → same
-  if (type === 'recovery') {
-    return NextResponse.redirect(new URL('/auth/set-password', req.url))
-  }
-
-  return NextResponse.redirect(new URL('/dashboard/products', req.url))
+  return response
 }
