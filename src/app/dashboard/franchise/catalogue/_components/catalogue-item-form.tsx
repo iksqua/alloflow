@@ -38,6 +38,29 @@ function initIngredientPayload(payload: Record<string, unknown>): IngPayload {
   }
 }
 
+type NetworkIngDraft = {
+  catalog_item_id: string
+  name: string
+  quantity: string
+  unit: string
+}
+
+type NetworkIngOption = {
+  id: string
+  name: string
+  unit: string
+}
+
+function initRecipeIngredients(payload: Record<string, unknown>): NetworkIngDraft[] {
+  const raw = (payload?.ingredients ?? []) as Array<{ catalog_item_id?: string; name?: string; quantity?: number; unit?: string }>
+  return raw.map(i => ({
+    catalog_item_id: i.catalog_item_id ?? '',
+    name:            i.name ?? '',
+    quantity:        String(i.quantity ?? ''),
+    unit:            i.unit ?? 'g',
+  }))
+}
+
 export function CatalogueItemForm({
   item, defaultType, onClose, onSaved,
 }: {
@@ -56,8 +79,11 @@ export function CatalogueItemForm({
     available_from: item?.available_from ?? null as string | null,
     payload:        item?.network_catalog_item_data?.payload ?? {},
   })
-  const [sopSteps,  setSopSteps]  = useState<SopStepDraft[]>(() => initSteps(form.payload))
-  const [ingPayload, setIngPayload] = useState<IngPayload>(() => initIngredientPayload(form.payload))
+  const [sopSteps,          setSopSteps]          = useState<SopStepDraft[]>(() => initSteps(form.payload))
+  const [ingPayload,        setIngPayload]        = useState<IngPayload>(() => initIngredientPayload(form.payload))
+  const [recipeIngredients, setRecipeIngredients] = useState<NetworkIngDraft[]>(() => initRecipeIngredients(form.payload))
+  const [recipePortion,     setRecipePortion]     = useState<string>((form.payload?.portion as string) ?? '')
+  const [networkIngOptions, setNetworkIngOptions] = useState<NetworkIngOption[]>([])
   const [saving, setSaving] = useState(false)
   const [imageFile,    setImageFile]    = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(item?.image_url ?? null)
@@ -71,6 +97,24 @@ export function CatalogueItemForm({
     }
   }, [imagePreview])
 
+  // Load network ingredient options when type is recipe
+  useEffect(() => {
+    if (form.type !== 'recipe') return
+    fetch('/api/franchise/catalogue')
+      .then(r => r.json())
+      .then((d: { items?: Array<{ id: string; name: string; type: string; status: string; network_catalog_item_data?: { payload: Record<string, unknown> } | null }> }) => {
+        const opts = (d.items ?? [])
+          .filter(i => i.type === 'ingredient' && i.status === 'published')
+          .map(i => ({
+            id:   i.id,
+            name: i.name,
+            unit: (i.network_catalog_item_data?.payload?.unit as string) ?? 'g',
+          }))
+        setNetworkIngOptions(opts)
+      })
+      .catch(() => { /* non-blocking */ })
+  }, [form.type])
+
   function buildPayload(): Record<string, unknown> {
     if (form.type === 'sop')        return { steps: sopSteps }
     if (form.type === 'ingredient') {
@@ -81,6 +125,19 @@ export function CatalogueItemForm({
         unit: ingPayload.unit,
         ...(ingPayload.category ? { category: ingPayload.category } : {}),
         ...(hasRef ? { reference_package_price: refPrice, reference_package_size: refSize } : {}),
+      }
+    }
+    if (form.type === 'recipe') {
+      return {
+        ...(recipePortion.trim() ? { portion: recipePortion.trim() } : {}),
+        ingredients: recipeIngredients
+          .filter(i => i.catalog_item_id && parseFloat(i.quantity) > 0)
+          .map(i => ({
+            catalog_item_id: i.catalog_item_id,
+            name:            i.name,
+            quantity:        parseFloat(i.quantity),
+            unit:            i.unit,
+          })),
       }
     }
     return form.payload
@@ -250,6 +307,90 @@ export function CatalogueItemForm({
                 </p>
               )}
             </>
+          )}
+
+          {/* Recipe ingredient editor */}
+          {form.type === 'recipe' && (
+            <div>
+              <div>
+                <label className={labelCls}>Portion</label>
+                <input
+                  style={inputStyle}
+                  value={recipePortion}
+                  onChange={e => setRecipePortion(e.target.value)}
+                  placeholder="Ex: 8 cookies"
+                />
+              </div>
+
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className={labelCls}>Ingrédients réseau</label>
+                  <button
+                    type="button"
+                    onClick={() => setRecipeIngredients(prev => [...prev, { catalog_item_id: '', name: '', quantity: '', unit: 'g' }])}
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--blue)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    + Ajouter
+                  </button>
+                </div>
+
+                {networkIngOptions.length === 0 && (
+                  <p className="text-xs text-[var(--text4)] mb-2">
+                    Aucun ingrédient publié dans le catalogue réseau — publiez d&apos;abord des ingrédients.
+                  </p>
+                )}
+
+                {recipeIngredients.length === 0 && networkIngOptions.length > 0 && (
+                  <p className="text-xs text-[var(--text4)] py-2 text-center border border-dashed rounded-lg mb-2"
+                    style={{ borderColor: 'var(--border)' }}>
+                    Aucun ingrédient — cliquez sur + Ajouter
+                  </p>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  {recipeIngredients.map((ing, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_80px_70px_auto] gap-2 items-center">
+                      <select
+                        style={{ ...inputStyle, padding: '6px 10px', fontSize: '13px' }}
+                        value={ing.catalog_item_id}
+                        onChange={e => {
+                          const opt = networkIngOptions.find(o => o.id === e.target.value)
+                          setRecipeIngredients(prev => prev.map((r, i) => i === idx
+                            ? { ...r, catalog_item_id: e.target.value, name: opt?.name ?? '', unit: opt?.unit ?? 'g' }
+                            : r))
+                        }}
+                      >
+                        <option value="">— Choisir —</option>
+                        {networkIngOptions.map(o => (
+                          <option key={o.id} value={o.id}>{o.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number" step="0.001" min="0"
+                        placeholder="Qté"
+                        style={{ ...inputStyle, padding: '6px 8px', fontSize: '13px', textAlign: 'right' }}
+                        value={ing.quantity}
+                        onChange={e => setRecipeIngredients(prev => prev.map((r, i) => i === idx ? { ...r, quantity: e.target.value } : r))}
+                      />
+                      <select
+                        style={{ ...inputStyle, padding: '6px 8px', fontSize: '13px' }}
+                        value={ing.unit}
+                        onChange={e => setRecipeIngredients(prev => prev.map((r, i) => i === idx ? { ...r, unit: e.target.value } : r))}
+                      >
+                        {['g', 'kg', 'ml', 'cl', 'L', 'pièce'].map(u => <option key={u}>{u}</option>)}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setRecipeIngredients(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-base font-bold"
+                        style={{ color: 'var(--red, #ef4444)', background: 'none', border: 'none', cursor: 'pointer' }}
+                      >×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
 
           {/* SOP step editor */}
