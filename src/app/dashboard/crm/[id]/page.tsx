@@ -58,7 +58,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   ] = await Promise.all([
     supabase
       .from('customers')
-      .select('id, first_name, last_name, tier, points, phone, email, last_order_at, gender, birthdate, opt_in_sms, opt_in_email, opt_in_whatsapp, tags, rfm_segment, avg_basket, order_count, network_customer_id')
+      .select('id, first_name, last_name, tier, points, phone, email, notes, last_order_at, gender, birthdate, opt_in_sms, opt_in_email, opt_in_whatsapp, tags, rfm_segment, avg_basket, order_count, network_customer_id')
       .eq('id', id)
       .eq('establishment_id', establishmentId)
       .single(),
@@ -134,7 +134,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
         {/* Right column — 40% */}
         <div className="flex-[2] min-w-0 flex flex-col gap-5">
-          <CustomerNotes customerId={id} initialNotes={''} />
+          <CustomerNotes customerId={id} initialNotes={customer.notes ?? ''} />
           <CustomerLoyaltyPanel
             customer={customerNormalized}
             transactions={transactions}
