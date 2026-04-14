@@ -49,6 +49,8 @@ function LoginForm() {
     // Full page reload so server SSR receives fresh session cookies
     if (profile?.role === 'franchise_admin') {
       window.location.href = '/dashboard/franchise/command-center'
+    } else if (profile?.role === 'caissier') {
+      window.location.href = '/caisse/pos'
     } else {
       window.location.href = '/dashboard/products'
     }
