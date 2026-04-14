@@ -160,7 +160,10 @@ export async function POST(req: NextRequest) {
     // Step 4: Invite manager
     const { data: { user: invitedUser }, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       manager_email,
-      { data: { role: 'admin', establishment_id: establishmentId, org_id: franchiseeOrgId, first_name: manager_first_name } }
+      {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+        data: { role: 'admin', establishment_id: establishmentId, org_id: franchiseeOrgId, first_name: manager_first_name },
+      }
     )
     if (inviteErr || !invitedUser) throw new Error(inviteErr?.message ?? 'Failed to invite user')
     invitedUserId = invitedUser.id

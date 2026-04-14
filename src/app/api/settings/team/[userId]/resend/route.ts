@@ -32,7 +32,9 @@ export async function POST(
   if (fetchError || !targetUser) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
 
   // inviteUserByEmail is idempotent — resends the magic link
-  const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(targetUser.email!)
+  const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(targetUser.email!, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+  })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
