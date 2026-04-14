@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   // inviteUserByEmail sends a magic link email.
   // raw_user_meta_data is read by the handle_new_user trigger to create the profile.
   const { data: { user: invitedUser }, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(body.data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm`,
     data: {
       first_name:       body.data.first_name,
       role:             body.data.role,

@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
     const { data: { user: invitedUser }, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       manager_email,
       {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm`,
         data: { role: 'admin', establishment_id: establishmentId, org_id: franchiseeOrgId, first_name: manager_first_name },
       }
     )

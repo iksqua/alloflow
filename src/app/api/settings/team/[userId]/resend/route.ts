@@ -33,7 +33,7 @@ export async function POST(
 
   // inviteUserByEmail is idempotent — resends the magic link
   const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(targetUser.email!, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/confirm`,
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
