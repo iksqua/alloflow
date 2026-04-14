@@ -46,6 +46,7 @@ export default async function DashboardLayout({
         userName={user.email?.split('@')[0] ?? 'Utilisateur'}
         userRole={profile.role}
         establishmentName={establishment?.name}
+        establishmentId={profile.establishment_id ?? undefined}
       />
       {/* Main area — responsive offset matching sidebar width */}
       <div className="md:ml-[60px] lg:ml-[220px]" style={{ paddingTop: '48px' }}>
