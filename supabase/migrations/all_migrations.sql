@@ -226,3 +226,8 @@ alter table public.orders
 alter table public.customers enable row level security;
 alter table public.loyalty_rewards enable row level security;
 alter table public.loyalty_transactions enable row level security;
+
+-- Migration 20260414000003_customers_notes
+-- Add notes column to customers table for cashier internal notes
+ALTER TABLE public.customers
+  ADD COLUMN IF NOT EXISTS notes text;
