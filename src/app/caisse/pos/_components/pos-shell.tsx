@@ -69,6 +69,7 @@ export function PosShell({
   const [session, setSession] = useState<CashSession | null>(initialSession)
   const [ticket, setTicket] = useState<LocalTicket>(EMPTY_TICKET)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null)
   const [mobileView, setMobileView] = useState<'menu' | 'ticket'>('menu')
 
@@ -130,9 +131,16 @@ export function PosShell({
     setLoyaltyDone(false)
   }
 
-  const filteredProducts = selectedCategoryId
-    ? initialProducts.filter((p) => p.category_id === selectedCategoryId)
-    : initialProducts
+  const filteredProducts = (() => {
+    let base = selectedCategoryId
+      ? initialProducts.filter((p) => p.category_id === selectedCategoryId)
+      : initialProducts
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      base = base.filter((p) => p.name.toLowerCase().includes(q))
+    }
+    return base
+  })()
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -225,11 +233,28 @@ export function PosShell({
         </div>
 
         {/* Colonne centre — Produits flex — masquée sur mobile si vue ticket */}
-        <div className={`flex-1 min-w-0 overflow-y-auto flex flex-col ${mobileView === 'ticket' ? 'hidden lg:flex' : 'flex'}`}>
-          <ProductsPanel
-            products={filteredProducts}
-            onAdd={(product) => { addItem(product); setMobileView('ticket') }}
-          />
+        <div className={`flex-1 min-w-0 flex flex-col ${mobileView === 'ticket' ? 'hidden lg:flex' : 'flex'}`}>
+          {/* Barre de recherche */}
+          <div className="flex-shrink-0 px-3 py-2 border-b border-[var(--border)]" style={{ background: 'var(--bg-caisse)' }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="🔍 Rechercher un produit…"
+              className="w-full h-8 px-3 rounded-lg text-sm outline-none"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text1)',
+              }}
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <ProductsPanel
+              products={filteredProducts}
+              onAdd={(product) => { addItem(product); setMobileView('ticket'); setSearchQuery('') }}
+            />
+          </div>
         </div>
 
         {/* Colonne droite — Ticket — plein écran mobile si vue ticket, sidebar desktop */}
