@@ -226,6 +226,71 @@ export async function fetchOrdersForReport(
   return { rows, total: count ?? 0 }
 }
 
+export async function fetchNetworkSnapshot(
+  range: PeriodRange,
+  orgId: string
+): Promise<import('./types').SiteSnapshot[]> {
+  const supabase = await createClient()
+
+  // Get all establishments in this org network (own + franchisees)
+  const { data: orgs } = await supabase
+    .from('organizations')
+    .select('id')
+    .or(`id.eq.${orgId},parent_org_id.eq.${orgId}`)
+
+  if (!orgs || orgs.length === 0) return []
+  const orgIds = orgs.map((o: { id: string }) => o.id)
+
+  const { data: establishments } = await supabase
+    .from('establishments')
+    .select('id, name')
+    .in('org_id', orgIds)
+    .order('name')
+
+  if (!establishments || establishments.length === 0) return []
+  const estIds = establishments.map((e: { id: string }) => e.id)
+
+  // Orders for current period
+  const { data: currentOrders } = await supabase
+    .from('orders')
+    .select('establishment_id, total_ttc')
+    .in('establishment_id', estIds)
+    .eq('status', 'paid')
+    .gte('created_at', range.from.toISOString())
+    .lte('created_at', range.to.toISOString())
+
+  // Orders for previous period (same duration)
+  const duration = range.to.getTime() - range.from.getTime()
+  const prevFrom = new Date(range.from.getTime() - duration)
+  const prevTo   = new Date(range.from.getTime() - 1)
+
+  const { data: prevOrders } = await supabase
+    .from('orders')
+    .select('establishment_id, total_ttc')
+    .in('establishment_id', estIds)
+    .eq('status', 'paid')
+    .gte('created_at', prevFrom.toISOString())
+    .lte('created_at', prevTo.toISOString())
+
+  function sumByEst(orders: Array<{ establishment_id: string; total_ttc: number }> | null) {
+    const map = new Map<string, number>()
+    for (const o of orders ?? []) {
+      map.set(o.establishment_id, (map.get(o.establishment_id) ?? 0) + (o.total_ttc ?? 0))
+    }
+    return map
+  }
+
+  const current = sumByEst(currentOrders)
+  const prev    = sumByEst(prevOrders)
+
+  return establishments.map((est: { id: string; name: string }) => {
+    const caTtc    = current.get(est.id) ?? 0
+    const prevCa   = prev.get(est.id) ?? 0
+    const deltaPercent = prevCa > 0 ? Math.round(((caTtc - prevCa) / prevCa) * 100) : null
+    return { establishmentId: est.id, name: est.name, caTtc, txCount: 0, deltaPercent }
+  })
+}
+
 export async function fetchTvaBreakdown(
   range: PeriodRange,
   establishmentId?: string

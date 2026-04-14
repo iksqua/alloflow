@@ -8,6 +8,7 @@ const links = [
   { href: '/dashboard/franchise/pilotage',       label: '🎛 Pilotage' },
   { href: '/dashboard/franchise/catalogue',      label: '📦 Catalogue réseau' },
   { href: '/dashboard/franchise/loyalty',        label: '🎁 Fidélité' },
+  { href: '/dashboard/franchise/analytics',      label: '📈 Analytiques' },
   { href: '/dashboard/settings/compte',          label: '👤 Mon compte' },
 ]
 

@@ -14,8 +14,9 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', exact: true },
-  { href: '/dashboard/products', label: 'Produits', icon: '🍽️' },
-  { href: '/dashboard/stocks', label: 'Stocks', icon: '📦' },
+  { href: '/dashboard/products',         label: 'Produits',        icon: '🍽️' },
+  { href: '/dashboard/catalogue-reseau', label: 'Catalogue réseau', icon: '📦' },
+  { href: '/dashboard/stocks',           label: 'Stocks',           icon: '🗄️' },
   { href: '/dashboard/orders', label: 'Historique des ventes', icon: '🧾' },
   {
     href: '/dashboard/analytics',
