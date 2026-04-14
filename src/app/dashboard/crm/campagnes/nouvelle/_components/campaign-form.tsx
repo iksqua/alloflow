@@ -2,6 +2,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { renderTemplate } from '@/lib/template'  // client-safe module (not brevo.ts which is server-only)
 
 const SEGMENTS = [
@@ -82,7 +83,7 @@ export function CampaignForm({ establishmentName }: Props) {
         return
       }
       const result = await sendRes.json() as { sent: number; failed: number }
-      alert(`Campagne envoyée ! ${result.sent} envoyés, ${result.failed} erreurs.`)
+      toast.success(`Campagne envoyée — ${result.sent} envoyé${result.sent > 1 ? 's' : ''}${result.failed > 0 ? `, ${result.failed} erreur${result.failed > 1 ? 's' : ''}` : ''}`)
       router.push('/dashboard/crm/campagnes')
     } else {
       router.push('/dashboard/crm/campagnes')

@@ -33,12 +33,23 @@ const EVENT_CLASSES: Record<string, string> = {
   z_close: 'bg-blue-900/20 text-blue-400',
 }
 
+function checkChainIntegrity(entries: FiscalEntry[]): boolean {
+  if (entries.length === 0) return true
+  const sorted = [...entries].sort((a, b) => a.sequence_no - b.sequence_no)
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].previous_hash !== sorted[i - 1].entry_hash) return false
+  }
+  return true
+}
+
 export function FiscalPageClient({ initialEntries }: Props) {
   const [entries] = useState(initialEntries)
 
   const totalSales = entries
     .filter(e => e.event_type === 'sale')
     .reduce((s, e) => s + e.amount_ttc, 0)
+
+  const chainIntact = checkChainIntegrity(entries)
 
   return (
     <div>
@@ -49,10 +60,17 @@ export function FiscalPageClient({ initialEntries }: Props) {
             <h1 className="text-xl font-bold text-[var(--text1)]">Journal fiscal</h1>
             <p className="text-xs text-[var(--text4)] mt-0.5">Registre immuable NF525 — lecture seule</p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold self-start sm:self-auto"
-            style={{ background: 'rgba(16,185,129,.1)', color: '#10b981', border: '1px solid rgba(16,185,129,.2)' }}>
-            🔒 Chaîne de hash intacte
-          </div>
+          {chainIntact ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold self-start sm:self-auto"
+              style={{ background: 'rgba(16,185,129,.1)', color: '#10b981', border: '1px solid rgba(16,185,129,.2)' }}>
+              🔒 Chaîne de hash intacte
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold self-start sm:self-auto"
+              style={{ background: 'rgba(239,68,68,.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,.2)' }}>
+              ⚠️ Chaîne de hash brisée
+            </div>
+          )}
         </div>
 
         {/* KPIs */}

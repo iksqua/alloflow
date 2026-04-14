@@ -82,7 +82,7 @@ export function AutomationRulesForm({ initialRules, googleReviewUrl, senderName,
       )}
       {(!senderName || !googleReviewUrl) && (
         <div className="p-3 rounded-lg text-sm text-blue-300" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
-          📡 Configurez votre <a href="/dashboard/settings" className="underline">nom expéditeur SMS et lien Google</a> pour activer les automations.
+          📡 Configurez votre <a href="/dashboard/settings/crm" className="underline">nom expéditeur SMS et lien Google</a> pour activer les automations.
         </div>
       )}
 
