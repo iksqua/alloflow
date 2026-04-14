@@ -51,6 +51,10 @@ function SetPasswordForm() {
         window.location.href = '/dashboard/franchise/command-center'
         return
       }
+      if (profile?.role === 'caissier') {
+        window.location.href = '/caisse/pos'
+        return
+      }
     }
     window.location.href = '/dashboard/products'
   }
