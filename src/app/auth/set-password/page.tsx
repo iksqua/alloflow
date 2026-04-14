@@ -1,9 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Suspense } from 'react'
 
-export default function SetPasswordPage() {
+function SetPasswordForm() {
+  const searchParams = useSearchParams()
+  const isReset = searchParams.get('flow') === 'recovery'
+
   const [password,  setPassword]  = useState('')
   const [confirm,   setConfirm]   = useState('')
   const [error,     setError]     = useState<string | null>(null)
@@ -54,7 +59,11 @@ export default function SetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-md mx-4 p-8 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <h1 className="text-2xl font-bold mb-2 text-center text-[var(--text1)]">Alloflow</h1>
-        <p className="text-sm text-center text-[var(--text4)] mb-6">Choisissez votre mot de passe pour activer votre compte</p>
+        <p className="text-sm text-center text-[var(--text4)] mb-6">
+          {isReset
+            ? 'Choisissez votre nouveau mot de passe'
+            : 'Choisissez votre mot de passe pour activer votre compte'}
+        </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
@@ -95,10 +104,20 @@ export default function SetPasswordPage() {
             className="w-full py-2.5 rounded-lg text-sm font-medium text-white mt-2"
             style={{ background: 'var(--blue)', opacity: (loading || !password || !confirm) ? 0.5 : 1 }}
           >
-            {loading ? 'Activation…' : 'Activer mon compte'}
+            {loading
+              ? (isReset ? 'Réinitialisation…' : 'Activation…')
+              : (isReset ? 'Réinitialiser mon mot de passe' : 'Activer mon compte')}
           </button>
         </form>
       </div>
     </div>
+  )
+}
+
+export default function SetPasswordPage() {
+  return (
+    <Suspense>
+      <SetPasswordForm />
+    </Suspense>
   )
 }

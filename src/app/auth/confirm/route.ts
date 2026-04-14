@@ -12,8 +12,10 @@ export async function GET(req: NextRequest) {
 
   // Determine destination before verifyOtp so we can wire cookies to the response
   const isPasswordFlow = type === 'invite' || type === 'recovery'
+  const setPasswordUrl = new URL('/auth/set-password', req.url)
+  if (type) setPasswordUrl.searchParams.set('flow', type)
   const destination = isPasswordFlow
-    ? new URL('/auth/set-password', req.url)
+    ? setPasswordUrl
     : new URL('/dashboard/products', req.url)
 
   const response = NextResponse.redirect(destination)

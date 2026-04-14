@@ -14,8 +14,11 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const searchParams = useSearchParams()
 
-  const unauthorized = searchParams.get('error') === 'unauthorized'
-  const noEstablishment = searchParams.get('error') === 'no_establishment'
+  const errorCode = searchParams.get('error')
+  const unauthorized     = errorCode === 'unauthorized'
+  const noEstablishment  = errorCode === 'no_establishment'
+  const invalidLink      = errorCode === 'invalid_link'
+  const profileNotFound  = errorCode === 'profile_not_found'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -65,6 +68,18 @@ function LoginForm() {
         {noEstablishment && (
           <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'var(--red-bg)', border: '1px solid var(--red)', color: 'var(--red)' }}>
             Votre compte n&apos;est pas rattaché à un établissement. Contactez votre administrateur.
+          </div>
+        )}
+
+        {invalidLink && (
+          <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'var(--red-bg)', border: '1px solid var(--red)', color: 'var(--red)' }}>
+            Le lien est invalide ou a expiré. Demandez un nouveau lien à votre administrateur.
+          </div>
+        )}
+
+        {profileNotFound && (
+          <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'var(--red-bg)', border: '1px solid var(--red)', color: 'var(--red)' }}>
+            Profil introuvable. Contactez votre administrateur.
           </div>
         )}
 
