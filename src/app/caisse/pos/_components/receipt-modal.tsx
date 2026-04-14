@@ -20,8 +20,8 @@ interface ReceiptModalProps {
 }
 
 export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose, onNewOrder }: ReceiptModalProps) {
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState(linkedCustomer?.email ?? '')
+  const [phone, setPhone] = useState(linkedCustomer?.phone ?? '')
   const [sending, setSending] = useState<'email' | 'sms' | null>(null)
 
   const handlePrint = () => window.print()
