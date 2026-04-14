@@ -43,6 +43,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
   if (!estab) return NextResponse.json({ error: 'establishment_not_found' }, { status: 500 })
 
+  if (!process.env.BREVO_API_KEY) {
+    return NextResponse.json({ unavailable: true }, { status: 503 })
+  }
+
   const content = `${estab.name} — Votre reçu : https://alloflow.fr/receipt/${orderId} — Total : ${order.total_ttc.toFixed(2).replace('.', ',')} €`
   const sender = estab.brevo_sender_name ?? 'Alloflow'
 

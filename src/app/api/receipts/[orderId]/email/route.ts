@@ -84,6 +84,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
   if (!estab) return NextResponse.json({ error: 'establishment_not_found' }, { status: 500 })
 
+  if (!process.env.BREVO_API_KEY) {
+    return NextResponse.json({ unavailable: true }, { status: 503 })
+  }
+
   try {
     const items = (order.order_items ?? []) as Array<{ product_name: string; emoji: string | null; quantity: number; unit_price: number; tva_rate: number; line_total: number }>
     const htmlContent = buildReceiptHtml(

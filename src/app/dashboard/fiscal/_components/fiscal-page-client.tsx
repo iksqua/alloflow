@@ -128,7 +128,7 @@ export function FiscalPageClient({ initialEntries }: Props) {
                       : 'text-[var(--text1)]'
                   }`}>
                     {entry.event_type === 'void' || entry.event_type === 'refund' ? '-' : ''}
-                    {entry.amount_ttc.toFixed(2)} €
+                    {Math.abs(entry.amount_ttc).toFixed(2)} €
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <span className="font-mono text-xs text-[var(--text4)] bg-[var(--bg)] px-2 py-1 rounded">
