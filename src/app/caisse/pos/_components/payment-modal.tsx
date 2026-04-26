@@ -96,11 +96,15 @@ async function createOrder(
   const { order } = await orderRes.json()
 
   if (ticket.discount) {
-    await fetch(`/api/orders/${order.id}/discounts`, {
+    const discountRes = await fetch(`/api/orders/${order.id}/discounts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ticket.discount),
     })
+    if (!discountRes.ok) {
+      const err = await discountRes.json().catch(() => ({}))
+      throw new Error(`Erreur application remise (${discountRes.status}): ${JSON.stringify(err)}`)
+    }
   }
   return order
 }

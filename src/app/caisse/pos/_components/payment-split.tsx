@@ -14,19 +14,13 @@ export function computeSplitAmounts(
   loyaltyDiscount: number,
   assignments: Map<string, string | null>,
   personLabels: string[],
-  personMethods: Map<string, 'card' | 'cash' | 'mixed'>
+  personMethods: Map<string, 'card' | 'cash' | 'mixed'>,
+  precomputedTotal: number
 ): SplitPerson[] {
   if (personLabels.length === 0) return []
 
   const totalBrut = items.reduce((s, i) => s + lineTtc(i), 0)
-
-  let discountEur = 0
-  if (discount) {
-    discountEur = discount.type === 'percent'
-      ? totalBrut * (discount.value / 100)
-      : discount.value
-  }
-  const totalFinal = Math.max(0, totalBrut - discountEur - loyaltyDiscount)
+  const totalFinal = precomputedTotal
 
   const personBrut = new Map<string, number>()
   for (const label of personLabels) personBrut.set(label, 0)
@@ -116,7 +110,7 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
     })
   }
 
-  const splitPersons = computeSplitAmounts(items, discount, loyaltyDiscount, assignments, persons, methods)
+  const splitPersons = computeSplitAmounts(items, discount, loyaltyDiscount, assignments, persons, methods, totalFinal)
 
   return (
     <div className="flex flex-col gap-4">
