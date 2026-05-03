@@ -69,9 +69,14 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
 
   async function selectCustomer(c: LoyaltyCustomer) {
     setSelected(c)
-    const res = await fetch(`/api/customers/${c.id}/rewards`)
-    const json = await res.json()
-    setRewards(json.rewards ?? [])
+    try {
+      const res = await fetch(`/api/customers/${c.id}/rewards`)
+      if (!res.ok) throw new Error()
+      const json = await res.json()
+      setRewards(json.rewards ?? [])
+    } catch {
+      setRewards([])
+    }
     setState('found')
   }
 
@@ -169,7 +174,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
                         className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-[var(--border)] hover:border-[var(--blue)]/50 transition-colors text-left"
                         style={{ background: 'var(--bg)' }}>
                         <div className="w-9 h-9 rounded-full bg-[var(--blue)] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                          {c.first_name[0].toUpperCase()}
+                          {(c.first_name?.[0] ?? '?').toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold text-[var(--text1)]">{c.first_name} {c.last_name ?? ''}</div>
@@ -190,7 +195,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
               {/* Client card */}
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--border)]" style={{ background: 'var(--bg)' }}>
                 <div className="w-10 h-10 rounded-full bg-[var(--blue)] flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                  {selected.first_name[0].toUpperCase()}
+                  {(selected.first_name?.[0] ?? '?').toUpperCase()}
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-[var(--text1)]">{selected.first_name} {selected.last_name ?? ''}</div>

@@ -44,10 +44,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // 1. Remise commerciale sur sous-total HT
   // 2. TVA recalculée proportionnellement
   // 3. Remise fidélité (si reward_id) appliquée en dernier sur le TTC remisé
+  const r2 = (x: number) => Math.round(x * 100) / 100
   const subtotalHt = order.subtotal_ht
-  const discountAmount = type === 'percent'
-    ? subtotalHt * (value / 100)
-    : Math.min(value, subtotalHt)
 
   if (type === 'percent' && value > 100) {
     return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
@@ -56,14 +54,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
   }
 
-  const discountedHt = subtotalHt - discountAmount
+  const discountAmount = r2(type === 'percent'
+    ? subtotalHt * (value / 100)
+    : Math.min(value, subtotalHt))
+
+  const discountedHt = r2(subtotalHt - discountAmount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1  // facteur de réduction
-  const newTax55 = order.tax_5_5 * ratio
-  const newTax10 = order.tax_10 * ratio
-  const newTax20 = order.tax_20 * ratio
+  const newTax55 = r2(order.tax_5_5 * ratio)
+  const newTax10 = r2(order.tax_10 * ratio)
+  const newTax20 = r2(order.tax_20 * ratio)
   // Loyalty reward discount applies AFTER commercial discount (on the already-discounted total)
   const rewardDiscount = order.reward_discount_amount ?? 0
-  const newTotal = Math.max(0, discountedHt + newTax55 + newTax10 + newTax20 - rewardDiscount)
+  const newTotal = r2(Math.max(0, discountedHt + newTax55 + newTax10 + newTax20 - rewardDiscount))
 
   const { data, error } = await supabase
     .from('orders')

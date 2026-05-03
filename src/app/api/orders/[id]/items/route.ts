@@ -39,10 +39,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 400 })
 
+  const r2 = (x: number) => Math.round(x * 100) / 100
   const { product_id, product_name, emoji, unit_price, tva_rate, quantity, note } = parsed.data
-  const lineHt = unit_price * quantity
-  const lineTax = lineHt * (tva_rate / 100)
-  const lineTtc = lineHt + lineTax
+  const lineHt  = r2(unit_price * quantity)
+  const lineTax = r2(lineHt * (tva_rate / 100))
+  const lineTtc = r2(lineHt + lineTax)
 
   // Insérer la ligne
   const { data: item, error: itemError } = await supabase
@@ -64,13 +65,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (itemError) return NextResponse.json({ error: itemError.message }, { status: 500 })
 
   // Recalculer les totaux de la commande
-  const newSubtotalHt = order.subtotal_ht + lineHt
-  const newTax55 = tva_rate === 5.5 ? order.tax_5_5 + lineTax : order.tax_5_5
-  const newTax10 = tva_rate === 10 ? order.tax_10 + lineTax : order.tax_10
-  const newTax20 = tva_rate === 20 ? order.tax_20 + lineTax : order.tax_20
-  const newTotal = newSubtotalHt + newTax55 + newTax10 + newTax20
+  const newSubtotalHt = r2(order.subtotal_ht + lineHt)
+  const newTax55 = tva_rate === 5.5 ? r2(order.tax_5_5 + lineTax) : order.tax_5_5
+  const newTax10 = tva_rate === 10  ? r2(order.tax_10 + lineTax) : order.tax_10
+  const newTax20 = tva_rate === 20  ? r2(order.tax_20 + lineTax) : order.tax_20
+  const newTotal = r2(newSubtotalHt + newTax55 + newTax10 + newTax20)
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('orders')
     .update({
       subtotal_ht: newSubtotalHt,
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
     .eq('id', id)
 
+  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
   return NextResponse.json({ item }, { status: 201 })
 }
 
@@ -130,15 +132,16 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
 
   // Recalculer les totaux
-  const lineHt = item.unit_price * item.quantity
-  const lineTax = lineHt * (item.tva_rate / 100)
-  const newSubtotalHt = Math.max(0, order.subtotal_ht - lineHt)
-  const newTax55 = item.tva_rate === 5.5 ? Math.max(0, order.tax_5_5 - lineTax) : order.tax_5_5
-  const newTax10 = item.tva_rate === 10 ? Math.max(0, order.tax_10 - lineTax) : order.tax_10
-  const newTax20 = item.tva_rate === 20 ? Math.max(0, order.tax_20 - lineTax) : order.tax_20
-  const newTotal = newSubtotalHt + newTax55 + newTax10 + newTax20
+  const r2 = (x: number) => Math.round(x * 100) / 100
+  const lineHt  = r2(item.unit_price * item.quantity)
+  const lineTax = r2(lineHt * (item.tva_rate / 100))
+  const newSubtotalHt = r2(Math.max(0, order.subtotal_ht - lineHt))
+  const newTax55 = item.tva_rate === 5.5 ? r2(Math.max(0, order.tax_5_5 - lineTax)) : order.tax_5_5
+  const newTax10 = item.tva_rate === 10  ? r2(Math.max(0, order.tax_10 - lineTax)) : order.tax_10
+  const newTax20 = item.tva_rate === 20  ? r2(Math.max(0, order.tax_20 - lineTax)) : order.tax_20
+  const newTotal = r2(newSubtotalHt + newTax55 + newTax10 + newTax20)
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('orders')
     .update({
       subtotal_ht: newSubtotalHt,
@@ -150,5 +153,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     })
     .eq('id', id)
 
+  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

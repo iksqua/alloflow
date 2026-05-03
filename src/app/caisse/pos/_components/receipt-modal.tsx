@@ -159,7 +159,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
             <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4"
               style={{ background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.2)' }}>
               <div className="w-9 h-9 rounded-full bg-[var(--green)] flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                {linkedCustomer.first_name[0].toUpperCase()}
+                {(linkedCustomer.first_name?.[0] ?? '?').toUpperCase()}
               </div>
               <div>
                 <div className="text-sm font-bold text-[var(--green)]">
