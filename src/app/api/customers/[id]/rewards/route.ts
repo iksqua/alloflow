@@ -21,11 +21,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     .single()
   if (cErr || !customer) return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 })
 
-  // Return rewards the customer can afford
+  // Return active rewards the customer can afford
   const { data, error } = await supabase
     .from('loyalty_rewards')
     .select('id, name, points_required, type, value, active')
     .eq('establishment_id', profile.establishment_id)
+    .eq('active', true)
     .lte('points_required', customer.points)
     .order('points_required')
 

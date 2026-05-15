@@ -112,7 +112,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 })
 
-  // Vérifier que la commande est ouverte et appartient à cet établissement
+  // Vérifier que la commande est ouverte et appartient à cet établissement AVANT de supprimer
   const { data: order } = await supabase
     .from('orders')
     .select('status, subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc')

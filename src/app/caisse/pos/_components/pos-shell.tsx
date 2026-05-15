@@ -319,7 +319,8 @@ export function PosShell({
             setCompletedOrder(order)
             setShowPayment(false)
             setShowReceipt(true)
-            clearTicket()
+            // clearTicket is deferred to receipt modal dismissal so linkedCustomer
+            // remains available for pre-filling email/phone and showing loyalty info
           }}
         />
       )}
@@ -329,8 +330,8 @@ export function PosShell({
           order={completedOrder}
           linkedCustomer={linkedCustomer}
           establishmentInfo={establishmentInfo}
-          onClose={() => { setShowReceipt(false); setCompletedOrder(null) }}
-          onNewOrder={() => { setShowReceipt(false); setCompletedOrder(null) }}
+          onClose={() => { setShowReceipt(false); setCompletedOrder(null); clearTicket() }}
+          onNewOrder={() => { setShowReceipt(false); setCompletedOrder(null); clearTicket() }}
         />
       )}
 
