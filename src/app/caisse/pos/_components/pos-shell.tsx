@@ -5,7 +5,7 @@ import { useOnlineStatus } from '@/lib/hooks/use-online-status'
 import { CategoriesPanel } from './categories-panel'
 import { ProductsPanel } from './products-panel'
 import { TicketPanel } from './ticket-panel'
-import { PaymentModal } from './payment-modal'
+import { PaymentModal, computeTotalBeforeLoyalty } from './payment-modal'
 import { ReceiptModal } from './receipt-modal'
 import { DiscountModal } from './discount-modal'
 import { FloorPlanModal } from './floor-plan-modal'
@@ -370,25 +370,7 @@ export function PosShell({
       {showLoyalty && (
         <LoyaltyModal
           open={showLoyalty}
-          orderTotal={(() => {
-            // Compute total after any commercial discount (before loyalty)
-            let subtotalHt = 0
-            let totalTax = 0
-            for (const item of ticket.items) {
-              const lineHt = item.unitPriceHt * item.quantity
-              subtotalHt += lineHt
-              totalTax += lineHt * (item.tvaRate / 100)
-            }
-            let discount = 0
-            if (ticket.discount) {
-              discount = ticket.discount.type === 'percent'
-                ? subtotalHt * (ticket.discount.value / 100)
-                : ticket.discount.value
-            }
-            const discountedHt = subtotalHt - discount
-            const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-            return discountedHt + totalTax * ratio
-          })()}
+          orderTotal={computeTotalBeforeLoyalty(ticket)}
           onClose={() => setShowLoyalty(false)}
           onConfirm={(customer, reward) => {
             setLinkedCustomer(customer)
