@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
     .from('profiles').select('establishment_id, role').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  if (profile?.role === 'caissier') {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
   }
 
   const body = await req.json()

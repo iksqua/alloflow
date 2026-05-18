@@ -5,13 +5,16 @@ import { createHash } from 'crypto'
 
 function computeEntryHash(
   previousHash: string,
+  establishmentId: string,
   sequenceNo: number,
+  eventType: string,
   orderId: string,
+  cashierId: string,
   amountTtc: number,
   occurredAt: string
 ): string {
   return createHash('sha256')
-    .update(`${previousHash}|${sequenceNo}|${orderId}|${amountTtc}|${occurredAt}`)
+    .update(`${previousHash}|${establishmentId}|${sequenceNo}|${eventType}|${orderId}|${cashierId}|${amountTtc}|${occurredAt}`)
     .digest('hex')
 }
 
@@ -79,7 +82,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     const nextSeq    = prevSeq + 1
     const occurredAt = new Date().toISOString()
     const refundAmount = -Math.abs(order.total_ttc)
-    const entryHash  = computeEntryHash(prevHash, nextSeq, id, refundAmount, occurredAt)
+    const entryHash  = computeEntryHash(prevHash, profile.establishment_id, nextSeq, 'refund', id, user.id, refundAmount, occurredAt)
 
     await supabase.from('fiscal_journal_entries').insert({
       establishment_id: profile.establishment_id,

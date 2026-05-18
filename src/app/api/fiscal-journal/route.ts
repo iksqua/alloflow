@@ -20,11 +20,14 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(100, parseInt(searchParams.get('limit') ?? '50'))
   const offset = (page - 1) * limit
 
+  const sortParam = searchParams.get('sort') ?? 'desc'
+  const ascending = sortParam === 'asc'
+
   const { data, error, count } = await supabase
     .from('fiscal_journal_entries')
     .select('*, order:orders(id, status)', { count: 'exact' })
     .eq('establishment_id', profile.establishment_id)
-    .order('sequence_no', { ascending: false })
+    .order('sequence_no', { ascending })
     .range(offset, offset + limit - 1)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

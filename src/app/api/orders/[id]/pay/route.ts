@@ -17,13 +17,16 @@ const paySchema = z.object({
 
 function computeEntryHash(
   previousHash: string,
+  establishmentId: string,
   sequenceNo: number,
+  eventType: string,
   orderId: string,
+  cashierId: string,
   amountTtc: number,
   occurredAt: string
 ): string {
   return createHash('sha256')
-    .update(`${previousHash}|${sequenceNo}|${orderId}|${amountTtc}|${occurredAt}`)
+    .update(`${previousHash}|${establishmentId}|${sequenceNo}|${eventType}|${orderId}|${cashierId}|${amountTtc}|${occurredAt}`)
     .digest('hex')
 }
 
@@ -60,6 +63,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (order.status !== 'open' && order.status !== 'paying') {
     return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })
+  }
+
+  // Guard: order total must be positive
+  if (order.total_ttc <= 0) {
+    return NextResponse.json({ error: 'invalid_order_total' }, { status: 400 })
+  }
+
+  // Guard: if this order is linked to a session, ensure it is still open
+  if (order.session_id) {
+    const { data: cashSession } = await supabase
+      .from('cash_sessions')
+      .select('status')
+      .eq('id', order.session_id)
+      .single()
+    if (!cashSession || cashSession.status !== 'open') {
+      return NextResponse.json({ error: 'cash_session_closed' }, { status: 409 })
+    }
   }
 
   const { method, cash_given, split_payments } = parsed.data
@@ -144,7 +164,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const prevHash   = lastEntry?.entry_hash  ?? ''
       const nextSeq    = prevSeq + 1
       const occurredAt = new Date().toISOString()
-      const entryHash  = computeEntryHash(prevHash, nextSeq, id, authorizedTotal, occurredAt)
+      const entryHash  = computeEntryHash(prevHash, profile.establishment_id, nextSeq, 'sale', id, user.id, authorizedTotal, occurredAt)
 
       await supabase.from('fiscal_journal_entries').insert({
         establishment_id: profile!.establishment_id,

@@ -8,7 +8,7 @@ async function getAdminProfile() {
   if (!user) return { error: 401 as const }
   const { data: profile } = await supabase
     .from('profiles').select('role, establishment_id').eq('id', user.id).single()
-  if (!profile || !['admin', 'caissier'].includes(profile.role) || !profile.establishment_id) return { error: 403 as const }
+  if (!profile || !['admin', 'super_admin', 'franchise_admin'].includes(profile.role) || !profile.establishment_id) return { error: 403 as const }
   return { userId: user.id, establishmentId: profile.establishment_id }
 }
 
