@@ -69,7 +69,7 @@ async function createOrder(
   linkedCustomer: LoyaltyCustomer | null,
   linkedReward: LoyaltyReward | null,
   loyaltyAmt: number,
-): Promise<{ id: string; total_ttc: number }> {
+): Promise<{ id: string; total_ttc: number; items: unknown[] }> {
   const orderRes = await fetch('/api/orders', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -105,6 +105,9 @@ async function createOrder(
       const err = await discountRes.json().catch(() => ({}))
       throw new Error(`Erreur application remise (${discountRes.status}): ${JSON.stringify(err)}`)
     }
+    const { order: discountedOrder } = await discountRes.json()
+    // Return updated totals (post-discount) merged with original items
+    return { ...discountedOrder, items: order.items }
   }
   return order
 }
@@ -157,7 +160,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         body: JSON.stringify({ method: 'card', amount: order.total_ttc }),
       })
       if (!payRes.ok) throw new Error(`Erreur paiement CB (${payRes.status})`)
-      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setCompletedOrder(order as unknown as Order)
       setStep('confirm')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
@@ -181,7 +184,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         body: JSON.stringify({ method: 'cash', amount: order.total_ttc, cash_given: given }),
       })
       if (!payRes.ok) throw new Error(`Erreur paiement espèces (${payRes.status})`)
-      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setCompletedOrder(order as unknown as Order)
       setStep('confirm')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
@@ -213,7 +216,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         }),
       })
       if (!payRes.ok) throw new Error(`Erreur paiement mixte (${payRes.status})`)
-      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setCompletedOrder(order as unknown as Order)
       setStep('confirm')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
@@ -234,7 +237,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
       setSplitOrderId(order.id)
       setSplitOrderTotal(order.total_ttc)
-      setCompletedOrder({ ...order, items: [] } as unknown as Order)
+      setCompletedOrder(order as unknown as Order)
       setStep('split-person')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur création commande')
