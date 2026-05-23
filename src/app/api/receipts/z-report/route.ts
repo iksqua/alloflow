@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
   const paidOrders = (orders ?? []).filter(o => o.status === 'paid')
   const refundedOrders = (orders ?? []).filter(o => o.status === 'refunded')
 
-  const totalTtc = paidOrders.reduce((s, o) => s + o.total_ttc, 0)
-  const totalRefunds = refundedOrders.reduce((s, o) => s + o.total_ttc, 0)
+  const totalTtc = paidOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
+  const totalRefunds = refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
   const netTtc = totalTtc - totalRefunds
 
   const totalHt = paidOrders.reduce((s, o) => s + (o.subtotal_ht ?? 0), 0)
