@@ -171,7 +171,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
   const handleCashConfirm = useCallback(async () => {
     const given = parseFloat(cashGiven.replace(',', '.'))
-    if (isNaN(given) || given < total - 0.005) {
+    if (isNaN(given) || given < total - 0.01) {
       toast.error(`Montant insuffisant (minimum ${total.toFixed(2)} €)`)
       return
     }

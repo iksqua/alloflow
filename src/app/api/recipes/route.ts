@@ -39,9 +39,10 @@ export async function GET(_req: NextRequest) {
       (sum: number, i: { quantity: number; unit_cost: number }) => sum + i.quantity * i.unit_cost,
       0
     )
-    const price = r.product?.[0]?.price ?? null
-    const foodCostPct = price && price > 0
-      ? Math.round((foodCostAmount / price) * 1000) / 10  // one decimal
+    const prod = r.product?.[0] ?? null
+    const priceTTC = prod ? prod.price * (1 + prod.tva_rate / 100) : 0
+    const foodCostPct = priceTTC > 0
+      ? Math.round((foodCostAmount / priceTTC) * 1000) / 10
       : null
 
     return { ...r, food_cost_amount: foodCostAmount, food_cost_pct: foodCostPct }

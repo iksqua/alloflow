@@ -58,8 +58,11 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/customers/search?q=${encodeURIComponent(query)}`)
+        if (!res.ok) { setCustomers([]); return }
         const json = await res.json()
         setCustomers(json.customers ?? [])
+      } catch {
+        setCustomers([])
       } finally {
         setSearching(false)
       }

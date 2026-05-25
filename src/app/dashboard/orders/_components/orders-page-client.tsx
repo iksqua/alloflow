@@ -98,12 +98,13 @@ function OrderDetailPanel({
 }) {
   const items = order.items ?? []
 
-  const subtotalHT = items.reduce((sum, item) => {
-    const ht = item.unit_price * item.quantity
-    return sum + ht
-  }, 0)
-
-  const totalTVA = order.total_ttc - subtotalHT
+  const grossHT = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0)
+  const grossTTC = items.reduce((sum, item) =>
+    sum + Math.round(item.unit_price * item.quantity * (1 + item.tva_rate / 100) * 100) / 100, 0)
+  // Apply discount ratio so breakdown stays correct when a reward/discount was applied
+  const ratio = grossTTC > 0 ? order.total_ttc / grossTTC : 1
+  const subtotalHT = Math.round(grossHT * ratio * 100) / 100
+  const totalTVA = Math.round((order.total_ttc - subtotalHT) * 100) / 100
 
   const groupedPayments = (order.payments ?? []).reduce<Record<string, number>>((acc, p) => {
     acc[p.method] = (acc[p.method] ?? 0) + p.amount
