@@ -58,6 +58,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const body = await req.json()
   const { status, note } = body as { status?: string; note?: string }
+
+  // Only 'paying'↔'open' transitions are allowed via PATCH.
+  // 'paid' is set exclusively by /pay, 'refunded' exclusively by /refund,
+  // so that NF525 journal entries and role checks are never bypassed.
+  const PATCH_ALLOWED_STATUSES = ['open', 'paying'] as const
+  if (status !== undefined && !(PATCH_ALLOWED_STATUSES as readonly string[]).includes(status)) {
+    return NextResponse.json({ error: 'invalid_status_transition' }, { status: 400 })
+  }
+
   const allowedUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (status !== undefined) allowedUpdate.status = status
   if (note !== undefined) allowedUpdate.note = note

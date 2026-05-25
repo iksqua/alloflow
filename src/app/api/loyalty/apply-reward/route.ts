@@ -22,11 +22,12 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
 
-  // Fetch reward
+  // Fetch reward — scoped to the cashier's establishment to prevent cross-tenant reward abuse
   const { data: reward, error: rErr } = await supabase
     .from('loyalty_rewards')
     .select('type, value')
     .eq('id', reward_id)
+    .eq('establishment_id', profile.establishment_id)
     .single()
   if (rErr || !reward) return NextResponse.json({ error: 'Récompense non trouvée' }, { status: 404 })
 
