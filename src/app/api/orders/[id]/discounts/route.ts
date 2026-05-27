@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from('orders')
-    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status, establishment_id, reward_discount_amount')
+    .select('subtotal_ht, tax_5_5, tax_10, tax_20, total_ttc, status, establishment_id, reward_discount_amount, reward_id')
     .eq('id', id)
     .single()
 
@@ -50,7 +50,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (type === 'percent' && value > 100) {
     return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
   }
-  if (type === 'amount' && value > order.total_ttc) {
+  // Compare against subtotalHt (the actual base for amount discounts), not total_ttc
+  // which may be reduced by a loyalty discount
+  if (type === 'amount' && value > subtotalHt) {
     return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
   }
 
@@ -63,9 +65,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const newTax55 = r2(order.tax_5_5 * ratio)
   const newTax10 = r2(order.tax_10 * ratio)
   const newTax20 = r2(order.tax_20 * ratio)
-  // Loyalty reward discount applies AFTER commercial discount (on the already-discounted total)
-  const rewardDiscount = order.reward_discount_amount ?? 0
-  const newTotal = r2(Math.max(0, discountedHt + newTax55 + newTax10 + newTax20 - rewardDiscount))
+  const newBaseTtc = r2(discountedHt + newTax55 + newTax10 + newTax20)
+
+  // Recompute percent-based loyalty discount on the new (post-commercial-discount) TTC.
+  // Fixed-amount rewards keep their original amount unchanged.
+  let newRewardDiscountAmount = order.reward_discount_amount ?? 0
+  if (order.reward_id && newRewardDiscountAmount > 0) {
+    const { data: reward } = await supabase
+      .from('loyalty_rewards')
+      .select('type, value')
+      .eq('id', order.reward_id)
+      .single()
+    if (reward && (reward.type === 'percent' || reward.type === 'reduction_pct')) {
+      newRewardDiscountAmount = r2(newBaseTtc * (reward.value / 100))
+    }
+  }
+
+  const newTotal = r2(Math.max(0, newBaseTtc - newRewardDiscountAmount))
 
   const { data, error } = await supabase
     .from('orders')
@@ -77,6 +93,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       tax_10: newTax10,
       tax_20: newTax20,
       total_ttc: newTotal,
+      reward_discount_amount: newRewardDiscountAmount,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

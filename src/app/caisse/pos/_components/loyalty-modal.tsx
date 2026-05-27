@@ -114,11 +114,11 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
 
   if (!open) return null
 
-  const pointsToEarn = Math.round(orderTotal - (chosenReward
+  const pointsToEarn = Math.max(0, Math.round(orderTotal - (chosenReward
     ? (chosenReward.type === 'percent' || chosenReward.type === 'reduction_pct')
       ? Math.round(orderTotal * (chosenReward.value / 100) * 100) / 100
       : chosenReward.value
-    : 0))
+    : 0)))
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70">
