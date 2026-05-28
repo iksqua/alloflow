@@ -134,10 +134,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         change_due: cash_given != null ? cash_given - authorizedTotal : null,
       }]
 
-  const { data: payments } = await supabase
+  const { data: payments, error: paymentsError } = await supabase
     .from('payments')
     .insert(paymentsToInsert as { order_id: string; method: 'card' | 'cash' | 'ticket_resto'; amount: number; cash_given: number | null; change_due: number | null }[])
     .select()
+
+  if (paymentsError) {
+    console.error('[pay] Failed to insert payments:', paymentsError)
+    // Best-effort revert: try to re-open the order so it can be retried
+    await supabase
+      .from('orders')
+      .update({ status: 'open', updated_at: new Date().toISOString() })
+      .eq('id', id)
+    return NextResponse.json({ error: 'payment_record_failed', detail: paymentsError.message }, { status: 500 })
+  }
 
   // Libérer la table
   if (order.table_id) {

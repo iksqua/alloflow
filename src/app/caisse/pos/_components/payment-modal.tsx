@@ -283,7 +283,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method: 'split',
-            amount: splitOrderTotal || total,
+            amount: splitOrderTotal ?? total,
             split_payments: splitPayments,
           }),
         })
