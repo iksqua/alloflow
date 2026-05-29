@@ -1,6 +1,6 @@
 'use client'
 // src/app/caisse/pos/_components/payment-modal.tsx
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { PaymentSplit } from './payment-split'
 import type { LocalTicket, CashSession, Order, LoyaltyCustomer, LoyaltyReward, SplitPerson } from '../types'
@@ -139,11 +139,13 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   // Confirm state
   const [completedOrder, setCompletedOrder]   = useState<Order | null>(null)
   const [receiptChoice, setReceiptChoice]     = useState<'none' | 'email' | 'sms' | 'invoice'>('none')
-  const [receiptContact, setReceiptContact]   = useState(linkedCustomer?.email ?? '')
+  const [receiptEmail, setReceiptEmail]       = useState(linkedCustomer?.email ?? '')
+  const [receiptPhone, setReceiptPhone]       = useState(linkedCustomer?.phone ?? '')
   const [companyName, setCompanyName]         = useState('')
   const [companySiret, setCompanySiret]       = useState('')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const terminatingRef = useRef(false)
 
   const cashChange = cashGiven ? parseFloat(cashGiven.replace(',', '.')) - total : 0
   const currentPerson = splitPersons[splitIndex]
@@ -298,21 +300,23 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitMixedParts, splitOrderTotal, total])
 
   async function handleTerminate() {
+    if (terminatingRef.current) return
+    terminatingRef.current = true
     if (!completedOrder) { onClose(); return }
 
     // Send receipt (non-blocking)
-    if (receiptChoice === 'email' && receiptContact) {
+    if (receiptChoice === 'email' && receiptEmail) {
       fetch(`/api/receipts/${completedOrder.id}/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: receiptContact }),
+        body: JSON.stringify({ email: receiptEmail }),
       }).then(r => r.ok ? toast.success('Reçu envoyé par email') : toast.error('Échec envoi email'))
         .catch(() => toast.error('Échec envoi email'))
-    } else if (receiptChoice === 'sms' && receiptContact) {
+    } else if (receiptChoice === 'sms' && receiptPhone) {
       fetch(`/api/receipts/${completedOrder.id}/sms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: receiptContact }),
+        body: JSON.stringify({ phone: receiptPhone }),
       }).then(r => r.ok ? toast.success('Reçu envoyé par SMS') : toast.error('Échec envoi SMS'))
         .catch(() => toast.error('Échec envoi SMS'))
     } else if (receiptChoice === 'invoice' && companyName) {
@@ -775,12 +779,22 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                 )
               })}
 
-              {(receiptChoice === 'email' || receiptChoice === 'sms') && (
+              {receiptChoice === 'email' && (
                 <input
-                  type={receiptChoice === 'email' ? 'email' : 'tel'}
-                  value={receiptContact}
-                  onChange={e => setReceiptContact(e.target.value)}
-                  placeholder={receiptChoice === 'email' ? 'email@client.fr' : '+33 6 12 34 56 78'}
+                  type="email"
+                  value={receiptEmail}
+                  onChange={e => setReceiptEmail(e.target.value)}
+                  placeholder="email@client.fr"
+                  className="w-full px-4 py-3 rounded-xl text-sm"
+                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
+                />
+              )}
+              {receiptChoice === 'sms' && (
+                <input
+                  type="tel"
+                  value={receiptPhone}
+                  onChange={e => setReceiptPhone(e.target.value)}
+                  placeholder="+33 6 12 34 56 78"
                   className="w-full px-4 py-3 rounded-xl text-sm"
                   style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
                 />

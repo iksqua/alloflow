@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   const establishmentId = await getEstablishmentId(supabase, user.id)
   if (!establishmentId) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
 
-  const q = new URL(req.url).searchParams.get('q') ?? ''
+  const raw = new URL(req.url).searchParams.get('q') ?? ''
+  // Strip characters that are meaningful in PostgREST filter syntax to prevent filter injection
+  const q = raw.replace(/[,()'"\\]/g, '').trim()
   if (q.length < 3) return NextResponse.json({ customers: [] })
 
   // Search by email if query contains @, otherwise search phone AND name
