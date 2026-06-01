@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { createProductSchema } from '@/lib/validations/product'
+import { createProductSchema, updateProductSchema } from '@/lib/validations/product'
 
 async function getFranchiseAdminContext() {
   const supabase = await createClient()
@@ -115,12 +115,16 @@ export async function PATCH(
   const allowed = ctx.role === 'super_admin' || await verifyEstablishmentInNetwork(supabaseAdmin, ctx.orgId, establishmentId)
   if (!allowed) return NextResponse.json({ error: 'Établissement hors réseau' }, { status: 403 })
 
-  const { productId, ...updates } = await req.json()
+  const body = await req.json()
+  const { productId, ...rawUpdates } = body
   if (!productId) return NextResponse.json({ error: 'productId requis' }, { status: 400 })
+
+  const parsed = updateProductSchema.safeParse(rawUpdates)
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { data, error } = await supabaseAdmin
     .from('products')
-    .update(updates)
+    .update(parsed.data)
     .eq('id', productId)
     .eq('establishment_id', establishmentId)
     .select('*, category:categories(id, name, color_hex, icon)')

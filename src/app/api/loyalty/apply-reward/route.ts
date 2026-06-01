@@ -34,12 +34,15 @@ export async function POST(req: NextRequest) {
   // Fetch order total
   const { data: order, error: oErr } = await supabase
     .from('orders')
-    .select('total_ttc, establishment_id')
+    .select('total_ttc, establishment_id, status')
     .eq('id', order_id)
     .single()
   if (oErr || !order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
   if (order.establishment_id !== profile.establishment_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (order.status !== 'open') {
+    return NextResponse.json({ error: 'order_closed' }, { status: 409 })
   }
 
   const discountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
@@ -53,10 +56,11 @@ export async function POST(req: NextRequest) {
     .update({
       customer_id,
       reward_id,
-      discount_amount: discountAmount,
-      total_ttc:       newTotal,
+      reward_discount_amount: discountAmount,
+      total_ttc:              newTotal,
     })
     .eq('id', order_id)
+    .in('status', ['open'])
 
   if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 })
   return NextResponse.json({ order_id, discount_amount: discountAmount, new_total: newTotal })

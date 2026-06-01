@@ -4,15 +4,25 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { createHash } from 'crypto'
 
+const splitPaymentSchema = z.object({
+  method: z.enum(['card', 'cash']),
+  amount: z.number().positive(),
+  cash_given: z.number().optional(),
+}).superRefine((p, ctx) => {
+  if (p.method === 'cash' && p.cash_given != null && p.cash_given < p.amount) {
+    ctx.addIssue({ code: 'custom', message: 'cash_given must be >= amount', path: ['cash_given'] })
+  }
+})
+
 const paySchema = z.object({
   method: z.enum(['card', 'cash', 'split']),
   amount: z.number().positive(),
   cash_given: z.number().optional(),    // pour espèces
-  split_payments: z.array(z.object({   // pour split
-    method: z.enum(['card', 'cash']),
-    amount: z.number().positive(),
-    cash_given: z.number().optional(),
-  })).optional(),
+  split_payments: z.array(splitPaymentSchema).optional(),
+}).superRefine((p, ctx) => {
+  if (p.method === 'cash' && p.cash_given != null && p.cash_given < p.amount) {
+    ctx.addIssue({ code: 'custom', message: 'cash_given must be >= amount', path: ['cash_given'] })
+  }
 })
 
 function computeEntryHash(
