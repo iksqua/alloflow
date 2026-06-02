@@ -14,18 +14,18 @@ export function DiscountModal({ ticket, onApply, onClose }: DiscountModalProps) 
   const [type, setType] = useState<'percent' | 'amount'>('percent')
   const [value, setValue] = useState('')
 
-  // Calcul du total TTC du ticket pour valider la remise en €
-  const orderTotal = ticket.items.reduce((sum, item) => {
-    const lineHt = item.unitPriceHt * item.quantity
-    return sum + lineHt + lineHt * (item.tvaRate / 100)
+  // The server validates amount discounts against subtotal_ht (not TTC), so cap here too
+  // to avoid a 400 error that would leave an orphaned unpaid order in the DB.
+  const subtotalHt = ticket.items.reduce((sum, item) => {
+    return sum + Math.round(item.unitPriceHt * item.quantity * 100) / 100
   }, 0)
 
   const handleApply = () => {
     const v = parseFloat(value.replace(',', '.'))
     if (!v || v <= 0) return
     if (type === 'amount') {
-      // Plafonner la remise : minimum 0,01 € restant
-      const capped = Math.min(v, Math.max(0, orderTotal - 0.01))
+      // Cap against HT (matches server validation in /api/orders/[id]/discounts)
+      const capped = Math.min(v, Math.max(0, subtotalHt - 0.01))
       if (capped <= 0) return
       onApply({ type, value: Math.round(capped * 100) / 100 })
       return
