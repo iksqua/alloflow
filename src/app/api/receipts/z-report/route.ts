@@ -50,7 +50,9 @@ export async function POST(req: NextRequest) {
   const totalRefunds = refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
   const netTtc = totalTtc - totalRefunds
 
-  const totalHt = paidOrders.reduce((s, o) => s + (o.subtotal_ht ?? 0), 0)
+  // Use subtotal_ht - discount_amount to get the post-commercial-discount HT base,
+  // which aligns with the post-discount tax amounts (tax_5_5/10/20) stored in the DB.
+  const totalHt = paidOrders.reduce((s, o) => s + ((o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)), 0)
   const totalTax55 = paidOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
   const totalTax10 = paidOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
   const totalTax20 = paidOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)

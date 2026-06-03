@@ -18,8 +18,12 @@ export async function GET(req: NextRequest) {
   const q = new URL(req.url).searchParams.get('q') ?? ''
   if (q.length < 3) return NextResponse.json({ customers: [] })
 
+  // Commas and parentheses break PostgREST's .or() filter string parser — strip them.
+  const safeQ = q.replace(/[,()]/g, '')
+  if (safeQ.length < 3) return NextResponse.json({ customers: [] })
+
   // Search by email if query contains @, otherwise search phone AND name
-  const isEmail = q.includes('@')
+  const isEmail = safeQ.includes('@')
 
   let query = supabase
     .from('customers')
@@ -28,11 +32,11 @@ export async function GET(req: NextRequest) {
     .limit(5)
 
   if (isEmail) {
-    query = query.ilike('email', `%${q}%`)
+    query = query.ilike('email', `%${safeQ}%`)
   } else {
     // Search by phone OR first_name OR last_name
     query = query.or(
-      `phone.ilike.%${q}%,first_name.ilike.%${q}%,last_name.ilike.%${q}%`
+      `phone.ilike.%${safeQ}%,first_name.ilike.%${safeQ}%,last_name.ilike.%${safeQ}%`
     )
   }
 
