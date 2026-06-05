@@ -355,7 +355,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           {step === 'confirm' && (
             <button onClick={handleTerminate} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
           )}
-          {step !== 'method' && step !== 'confirm' && (
+          {step !== 'method' && step !== 'confirm' && step !== 'split-person' && (
             <button
               onClick={() => setStep('method')}
               className="text-sm"
@@ -388,7 +388,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                   return (
                     <button
                       key={m}
-                      onClick={() => { if (!disabled) { setMixedCash(''); setStep(nextStep[m]) } }}
+                      onClick={() => { if (!disabled) { setMixedCash(''); setCashGiven(''); setStep(nextStep[m]) } }}
                       disabled={disabled}
                       className="flex flex-col items-center gap-1 py-4 rounded-2xl border-2 font-semibold transition-all"
                       style={disabled

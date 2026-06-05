@@ -56,7 +56,7 @@ export function DiscountModal({ ticket, onApply, onClose }: DiscountModalProps) 
           {(['percent', 'amount'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setType(t)}
+              onClick={() => { setType(t); setValue('') }}
               className={[
                 'flex-1 h-10 rounded-lg text-sm font-medium border transition-colors',
                 type === t
