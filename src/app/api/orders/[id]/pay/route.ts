@@ -168,14 +168,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // --- Fiscal journal entry (NF525 chain hash) ---
-  // profile.establishment_id was already resolved at the top of this handler
+  // Retry up to 3 times on unique-constraint conflict (concurrent payments racing on sequence_no).
   try {
-    if (profile.establishment_id) {
-      // Get last entry for this establishment to chain hash
+    const estId = profile.establishment_id
+    let written = false
+    for (let attempt = 0; attempt < 3 && !written; attempt++) {
       const { data: lastEntry } = await supabase
         .from('fiscal_journal_entries')
         .select('sequence_no, entry_hash')
-        .eq('establishment_id', profile.establishment_id)
+        .eq('establishment_id', estId)
         .order('sequence_no', { ascending: false })
         .limit(1)
         .single()
@@ -184,10 +185,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const prevHash   = lastEntry?.entry_hash  ?? ''
       const nextSeq    = prevSeq + 1
       const occurredAt = new Date().toISOString()
-      const entryHash  = computeEntryHash(prevHash, profile.establishment_id, nextSeq, 'sale', id, user.id, authorizedTotal, occurredAt)
+      const entryHash  = computeEntryHash(prevHash, estId, nextSeq, 'sale', id, user.id, authorizedTotal, occurredAt)
 
-      await supabase.from('fiscal_journal_entries').insert({
-        establishment_id: profile!.establishment_id,
+      const { error: journalError } = await supabase.from('fiscal_journal_entries').insert({
+        establishment_id: estId,
         sequence_no:      nextSeq,
         event_type:       'sale',
         order_id:         id,
@@ -198,6 +199,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         entry_hash:       entryHash,
         meta:             { method: parsed.data.method, session_id: order.session_id ?? null },
       })
+
+      if (!journalError) {
+        written = true
+      } else if (journalError.code !== '23505') {
+        // Not a unique-constraint conflict — no point retrying
+        console.error('[fiscal-journal] Failed to write journal entry:', journalError)
+        break
+      }
+      // code '23505': another concurrent payment claimed this sequence_no first;
+      // re-read lastEntry on the next iteration with a fresh prevSeq/prevHash
     }
   } catch {
     // Journal write failure must not block the payment success response
