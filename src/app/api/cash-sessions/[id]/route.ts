@@ -1,6 +1,22 @@
 // src/app/api/cash-sessions/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createHash } from 'crypto'
+
+function computeEntryHash(
+  previousHash: string,
+  establishmentId: string,
+  sequenceNo: number,
+  eventType: string,
+  orderId: string,
+  cashierId: string,
+  amountTtc: number,
+  occurredAt: string
+): string {
+  return createHash('sha256')
+    .update(`${previousHash}|${establishmentId}|${sequenceNo}|${eventType}|${orderId}|${cashierId}|${amountTtc}|${occurredAt}`)
+    .digest('hex')
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -69,5 +85,51 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Write NF525 z_close journal entry — marks the end of this fiscal session.
+  // Failure must not block the close response (non-blocking).
+  try {
+    const estId = profile.establishment_id
+    const totalSales = totalCash + totalCard
+    let written = false
+    for (let attempt = 0; attempt < 3 && !written; attempt++) {
+      const { data: lastEntry } = await supabase
+        .from('fiscal_journal_entries')
+        .select('sequence_no, entry_hash')
+        .eq('establishment_id', estId)
+        .order('sequence_no', { ascending: false })
+        .limit(1)
+        .single()
+
+      const prevSeq    = lastEntry?.sequence_no ?? 0
+      const prevHash   = lastEntry?.entry_hash  ?? ''
+      const nextSeq    = prevSeq + 1
+      const occurredAt = new Date().toISOString()
+      const entryHash  = computeEntryHash(prevHash, estId, nextSeq, 'z_close', id, user.id, totalSales, occurredAt)
+
+      const { error: journalError } = await supabase.from('fiscal_journal_entries').insert({
+        establishment_id: estId,
+        sequence_no:      nextSeq,
+        event_type:       'z_close',
+        order_id:         null,
+        amount_ttc:       totalSales,
+        cashier_id:       user.id,
+        occurred_at:      occurredAt,
+        previous_hash:    prevHash,
+        entry_hash:       entryHash,
+        meta:             { session_id: id, total_cash: totalCash, total_card: totalCard },
+      })
+
+      if (!journalError) {
+        written = true
+      } else if (journalError.code !== '23505') {
+        console.error('[fiscal-journal] Failed to write z_close entry:', journalError)
+        break
+      }
+    }
+  } catch {
+    console.error('[fiscal-journal] Failed to write z_close journal entry')
+  }
+
   return NextResponse.json({ session: data })
 }

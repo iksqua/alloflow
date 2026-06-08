@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     ? Math.round(order.total_ttc * (reward.value / 100) * 100) / 100
     : reward.value
 
-  const newTotal = Math.max(0, order.total_ttc - discountAmount)
+  const newTotal = Math.round(Math.max(0, order.total_ttc - discountAmount) * 100) / 100
 
   const { error: uErr } = await supabase
     .from('orders')

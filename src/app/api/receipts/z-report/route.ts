@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   // Fetch all paid orders for this session
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, total_ttc, subtotal_ht, tax_5_5, tax_10, tax_20, discount_amount, status')
+    .select('id, total_ttc, subtotal_ht, tax_5_5, tax_10, tax_20, discount_amount, reward_discount_amount, status')
     .eq('session_id', session_id)
     .in('status', ['paid', 'refunded'])
 
@@ -50,9 +50,17 @@ export async function POST(req: NextRequest) {
   const totalRefunds = refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
   const netTtc = totalTtc - totalRefunds
 
-  // Use subtotal_ht - discount_amount to get the post-commercial-discount HT base,
-  // which aligns with the post-discount tax amounts (tax_5_5/10/20) stored in the DB.
-  const totalHt = paidOrders.reduce((s, o) => s + ((o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)), 0)
+  // Compute post-all-discounts HT base: subtract both commercial and loyalty reward discounts.
+  // tax_5_5/10/20 stored in DB are post-commercial-discount; reward discount is applied on TTC,
+  // so we convert it back to its HT equivalent by dividing by the blended TTC/HT ratio.
+  const totalHt = paidOrders.reduce((s, o) => {
+    const htBase = (o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)
+    const ttcBase = htBase + (o.tax_5_5 ?? 0) + (o.tax_10 ?? 0) + (o.tax_20 ?? 0)
+    const rewardTtc = o.reward_discount_amount ?? 0
+    // Proportionally allocate the reward discount to the HT portion
+    const rewardHt = ttcBase > 0 ? rewardTtc * (htBase / ttcBase) : 0
+    return s + htBase - rewardHt
+  }, 0)
   const totalTax55 = paidOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
   const totalTax10 = paidOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
   const totalTax20 = paidOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
