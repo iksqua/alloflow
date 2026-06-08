@@ -5,10 +5,12 @@ import { z } from 'zod'
 import { uuidStr } from '@/lib/validations/uuid'
 
 const createOrderSchema = z.object({
-  session_id:  uuidStr.optional(),
-  table_id:    uuidStr.optional(),
-  customer_id: uuidStr.optional(),
-  reward_id:   uuidStr.optional(),
+  session_id:     uuidStr.optional(),
+  table_id:       uuidStr.optional(),
+  customer_id:    uuidStr.optional(),
+  reward_id:      uuidStr.optional(),
+  discount_type:  z.enum(['percent', 'amount']).optional(),
+  discount_value: z.number().positive().optional(),
   items: z.array(z.object({
     product_id:   uuidStr,
     product_name: z.string(),
@@ -21,6 +23,9 @@ const createOrderSchema = z.object({
 }).refine(
   data => !(data.reward_id && !data.customer_id),
   { message: 'customer_id requis si reward_id est fourni', path: ['customer_id'] }
+).refine(
+  data => !(data.discount_type && data.discount_value == null),
+  { message: 'discount_value requis si discount_type est fourni', path: ['discount_value'] }
 )
 
 function r2(x: number) { return Math.round(x * 100) / 100 }
@@ -64,7 +69,34 @@ export async function POST(req: NextRequest) {
   const { items, session_id, table_id } = parsed.data
   const { processedItems, subtotalHt, tax55, tax10, tax20, totalTtc } = computeOrderTotals(items)
 
-  // If a reward is provided, compute its discount amount server-side.
+  // Apply commercial discount atomically if provided (avoids orphaned orders on separate discount API failure).
+  let discountAmount = 0
+  let storedTax55 = tax55
+  let storedTax10 = tax10
+  let storedTax20 = tax20
+  let baseTtcForReward = totalTtc
+
+  if (parsed.data.discount_type && parsed.data.discount_value != null) {
+    const dtype = parsed.data.discount_type
+    const dvalue = parsed.data.discount_value
+    if (dtype === 'percent' && dvalue > 100) {
+      return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
+    }
+    if (dtype === 'amount' && dvalue > subtotalHt) {
+      return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
+    }
+    discountAmount = r2(dtype === 'percent'
+      ? subtotalHt * (dvalue / 100)
+      : Math.min(dvalue, subtotalHt))
+    const discountedHt = r2(subtotalHt - discountAmount)
+    const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
+    storedTax55 = r2(tax55 * ratio)
+    storedTax10 = r2(tax10 * ratio)
+    storedTax20 = r2(tax20 * ratio)
+    baseTtcForReward = r2(discountedHt + storedTax55 + storedTax10 + storedTax20)
+  }
+
+  // Compute reward discount on the post-commercial-discount base.
   // Never trust a client-supplied discount value.
   let rewardDiscountAmount = 0
   if (parsed.data.reward_id) {
@@ -76,7 +108,7 @@ export async function POST(req: NextRequest) {
       .single()
     if (!reward) return NextResponse.json({ error: 'Reward not found or access denied' }, { status: 404 })
     rewardDiscountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
-      ? r2(totalTtc * (reward.value / 100))
+      ? r2(baseTtcForReward * (reward.value / 100))
       : reward.value
   }
 
@@ -92,10 +124,13 @@ export async function POST(req: NextRequest) {
       reward_id:                parsed.data.reward_id ?? null,
       reward_discount_amount:   rewardDiscountAmount,
       subtotal_ht:              subtotalHt,
-      tax_5_5:                  tax55,
-      tax_10:                   tax10,
-      tax_20:                   tax20,
-      total_ttc:                r2(Math.max(0, totalTtc - rewardDiscountAmount)),
+      discount_type:            parsed.data.discount_type ?? undefined,
+      discount_value:           parsed.data.discount_value ?? undefined,
+      discount_amount:          discountAmount > 0 ? discountAmount : undefined,
+      tax_5_5:                  storedTax55,
+      tax_10:                   storedTax10,
+      tax_20:                   storedTax20,
+      total_ttc:                r2(Math.max(0, baseTtcForReward - rewardDiscountAmount)),
     })
     .select()
     .single()

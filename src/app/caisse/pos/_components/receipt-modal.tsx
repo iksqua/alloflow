@@ -163,10 +163,10 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
               </div>
               <div>
                 <div className="text-sm font-bold text-[var(--green)]">
-                  Points fidélité crédités
+                  Points fidélité enregistrés
                 </div>
                 <div className="text-xs text-[var(--text4)]">
-                  {linkedCustomer.first_name} · {linkedCustomer.points} pts actuels
+                  {linkedCustomer.first_name}
                 </div>
               </div>
             </div>

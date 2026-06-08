@@ -74,11 +74,13 @@ async function createOrder(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      session_id:             session?.id ?? undefined,
-      table_id:               ticket.tableId ?? undefined,
-      customer_id:            linkedCustomer?.id ?? undefined,
-      reward_id:              linkedReward?.id ?? undefined,
-      reward_discount_amount: loyaltyAmt > 0 ? loyaltyAmt : undefined,
+      session_id:    session?.id ?? undefined,
+      table_id:      ticket.tableId ?? undefined,
+      customer_id:   linkedCustomer?.id ?? undefined,
+      reward_id:     linkedReward?.id ?? undefined,
+      // Discount sent atomically with order creation to avoid orphaned orders on network failures
+      discount_type:  ticket.discount?.type ?? undefined,
+      discount_value: ticket.discount?.value ?? undefined,
       items: ticket.items.map(i => ({
         product_id:   i.productId,
         product_name: i.productName,
@@ -94,21 +96,6 @@ async function createOrder(
     throw new Error(`Erreur création commande (${orderRes.status}): ${JSON.stringify(err)}`)
   }
   const { order } = await orderRes.json()
-
-  if (ticket.discount) {
-    const discountRes = await fetch(`/api/orders/${order.id}/discounts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(ticket.discount),
-    })
-    if (!discountRes.ok) {
-      const err = await discountRes.json().catch(() => ({}))
-      throw new Error(`Erreur application remise (${discountRes.status}): ${JSON.stringify(err)}`)
-    }
-    const { order: discountedOrder } = await discountRes.json()
-    // Return updated totals (post-discount) merged with original items
-    return { ...discountedOrder, items: order.items }
-  }
   return order
 }
 
