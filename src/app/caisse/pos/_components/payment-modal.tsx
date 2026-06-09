@@ -342,7 +342,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           {step === 'confirm' && (
             <button onClick={handleTerminate} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
           )}
-          {step !== 'method' && step !== 'confirm' && (
+          {step !== 'method' && step !== 'confirm' && !(step === 'split-person' && splitOrderId !== null) && (
             <button
               onClick={() => setStep('method')}
               className="text-sm"
