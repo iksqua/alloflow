@@ -1,6 +1,6 @@
 'use client'
 // src/app/caisse/pos/_components/payment-modal.tsx
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { PaymentSplit } from './payment-split'
 import type { LocalTicket, CashSession, Order, LoyaltyCustomer, LoyaltyReward, SplitPerson } from '../types'
@@ -131,6 +131,9 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   const [companySiret, setCompanySiret]       = useState('')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Synchronous guard against double-tap: useState updates are async so the button
+  // could be clicked twice before the first render makes it disabled.
+  const inFlightRef = useRef(false)
 
   const cashChange = cashGiven ? parseFloat(cashGiven.replace(',', '.')) - total : 0
   const currentPerson = splitPersons[splitIndex]
@@ -138,6 +141,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   // ── Payment handlers ──────────────────────────────────────────────────────
 
   const handleCardConfirm = useCallback(async () => {
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setIsSubmitting(true)
     try {
       const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
@@ -152,6 +157,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
     } finally {
+      inFlightRef.current = false
       setIsSubmitting(false)
     }
   }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
@@ -162,6 +168,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       toast.error(`Montant insuffisant (minimum ${total.toFixed(2)} €)`)
       return
     }
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setIsSubmitting(true)
     try {
       const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
@@ -176,6 +184,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
     } finally {
+      inFlightRef.current = false
       setIsSubmitting(false)
     }
   }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt, cashGiven, total])
@@ -186,6 +195,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       toast.error('La part espèces doit être inférieure au total')
       return
     }
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     const cardPart = Math.round((total - cashPart) * 100) / 100
     setIsSubmitting(true)
     try {
@@ -208,11 +219,14 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur de paiement')
     } finally {
+      inFlightRef.current = false
       setIsSubmitting(false)
     }
   }, [mixedCash, total, ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
 
   const handleSplitAssignConfirm = useCallback(async (persons: SplitPerson[]) => {
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setSplitPersons(persons)
     setSplitIndex(0)
     setSplitCash('')
@@ -229,6 +243,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur création commande')
     } finally {
+      inFlightRef.current = false
       setIsSubmitting(false)
     }
   }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
@@ -248,6 +263,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       setSplitCash('')
     } else {
       if (!splitOrderId) { toast.error('Erreur interne — réessayez'); return }
+      if (inFlightRef.current) return
+      inFlightRef.current = true
       setIsSubmitting(true)
       try {
         // Flatten all persons into individual payments (mixed = 2 entries)
@@ -279,6 +296,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Erreur — réessayez')
       } finally {
+        inFlightRef.current = false
         setIsSubmitting(false)
       }
     }
@@ -286,6 +304,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
   async function handleTerminate() {
     if (!completedOrder) { onClose(); return }
+    if (inFlightRef.current) return
+    inFlightRef.current = true  // one-way latch: prevent duplicate receipts on double-tap
 
     // Send receipt (non-blocking)
     if (receiptChoice === 'email' && receiptContact) {
