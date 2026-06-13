@@ -36,6 +36,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
   }
 
+  // Guard: reject if a session is already open for this establishment (prevents double-open on concurrent requests)
+  const { data: existing } = await supabase
+    .from('cash_sessions')
+    .select('id')
+    .eq('establishment_id', profile.establishment_id)
+    .eq('status', 'open')
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json({ error: 'Une session est déjà ouverte' }, { status: 409 })
+  }
+
   const body = await req.json()
   const { opening_float = 0 } = body
 
