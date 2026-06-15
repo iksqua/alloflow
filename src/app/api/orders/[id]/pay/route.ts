@@ -134,14 +134,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         method: p.method,
         amount: p.amount,
         cash_given: p.cash_given ?? null,
-        change_due: p.cash_given != null ? p.cash_given - p.amount : null,
+        change_due: p.cash_given != null ? Math.round((p.cash_given - p.amount) * 100) / 100 : null,
       }))
     : [{
         order_id: id,
         method,
         amount: authorizedTotal,
         cash_given: cash_given ?? null,
-        change_due: cash_given != null ? cash_given - authorizedTotal : null,
+        change_due: cash_given != null ? Math.round((cash_given - authorizedTotal) * 100) / 100 : null,
       }]
 
   const { data: payments, error: paymentsError } = await supabase
