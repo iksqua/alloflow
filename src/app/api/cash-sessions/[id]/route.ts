@@ -25,9 +25,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params
 
-  // Verify session belongs to user's establishment
-  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  // Verify session belongs to user's establishment — admin-only (matches POST rule for session creation)
+  const { data: profile } = await supabase.from('profiles').select('establishment_id, role').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Establishment not found' }, { status: 400 })
+
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
+  }
 
   const { data: sessionCheck } = await supabase
     .from('cash_sessions').select('establishment_id, status').eq('id', id).single()

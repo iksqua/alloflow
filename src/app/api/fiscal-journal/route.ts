@@ -9,11 +9,15 @@ export async function GET(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('establishment_id')
+    .select('establishment_id, role')
     .eq('id', user.id)
     .single()
 
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
+
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
+  }
 
   const { searchParams } = new URL(req.url)
   const page  = Math.max(1, parseInt(searchParams.get('page')  ?? '1'))
