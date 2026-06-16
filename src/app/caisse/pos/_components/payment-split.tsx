@@ -87,10 +87,14 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
   )
 
   function addPerson() {
-    if (persons.length >= 10) return
-    const label = `P${persons.length + 1}`
-    setPersons(prev => [...prev, label])
-    setMethods(prev => new Map([...prev, [label, 'card' as const]]))
+    // Use functional updates so label is derived from the latest state,
+    // not the stale closure value — prevents duplicate labels on rapid clicks.
+    setPersons(prev => {
+      if (prev.length >= 10) return prev
+      const label = `P${prev.length + 1}`
+      setMethods(m => new Map([...m, [label, 'card' as const]]))
+      return [...prev, label]
+    })
   }
 
   function cycleAssignment(productId: string) {

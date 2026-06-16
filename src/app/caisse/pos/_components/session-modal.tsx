@@ -130,8 +130,9 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
       if (!res.ok) throw new Error()
       const { session: closedSession } = await res.json()
       toast.success('Session clôturée')
-      onClose(closedSession)
-      // Fetch Z-report data then print
+      // Fetch Z-report BEFORE calling onClose — onClose triggers setShowSession(false) which
+      // unmounts this modal, so setZReport would land on an unmounted component and the
+      // ZReportPrint template would not be in the DOM when window.print() fires.
       try {
         const zRes = await fetch('/api/receipts/z-report', {
           method: 'POST',
@@ -141,15 +142,16 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
         if (zRes.ok) {
           const zData = await zRes.json()
           setZReport({ session: closedSession, summary: zData.summary })
-          printRef.current = true
-          // Give React time to render the print template
-          setTimeout(() => { window.print(); printRef.current = false }, 300)
+          // Give React time to render the print template before printing
+          await new Promise<void>(resolve => setTimeout(resolve, 300))
+          window.print()
         } else {
           toast.warning('Rapport Z non généré — réessayez depuis les paramètres')
         }
       } catch {
         toast.warning('Rapport Z non généré — réessayez depuis les paramètres')
       }
+      onClose(closedSession)
     } catch {
       toast.error('Erreur clôture session')
     } finally {
