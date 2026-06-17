@@ -165,6 +165,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .from('restaurant_tables')
       .update({ status: 'free', current_order_id: null })
       .eq('id', order.table_id)
+      .eq('establishment_id', profile.establishment_id)
   }
 
   // --- Fiscal journal entry (NF525 chain hash) ---

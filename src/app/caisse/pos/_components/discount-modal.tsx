@@ -30,13 +30,9 @@ export function DiscountModal({ ticket, onApply, onClose }: DiscountModalProps) 
       onApply({ type, value: Math.round(capped * 100) / 100 })
       return
     }
-    if (type === 'percent') {
-      // Limiter à 100 %
-      const capped = Math.min(v, 100)
-      onApply({ type, value: capped })
-      return
-    }
-    onApply({ type, value: v })
+    // type === 'percent' — limiter à 100 %
+    const capped = Math.min(v, 100)
+    onApply({ type, value: capped })
   }
 
   return (

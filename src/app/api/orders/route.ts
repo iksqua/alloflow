@@ -163,6 +163,7 @@ export async function POST(req: NextRequest) {
       .from('restaurant_tables')
       .update({ status: 'occupied', current_order_id: order.id })
       .eq('id', table_id)
+      .eq('establishment_id', profile.establishment_id)
   }
 
   return NextResponse.json({ order: { ...order, items: processedItems } }, { status: 201 })
