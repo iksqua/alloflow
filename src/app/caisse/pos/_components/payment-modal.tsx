@@ -41,7 +41,7 @@ export function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   }
   const discountedHt = r2(subtotalHt - discount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-  return r2(discountedHt + totalTax * ratio)
+  return r2(discountedHt + r2(totalTax * ratio))
 }
 
 export function computeTotal(ticket: LocalTicket, reward: LoyaltyReward | null): number {
@@ -362,7 +362,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           {step === 'confirm' && (
             <button onClick={handleTerminate} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
           )}
-          {step !== 'method' && step !== 'confirm' && (
+          {step !== 'method' && step !== 'confirm' && !(step === 'split-person' && splitOrderId !== null) && (
             <button
               onClick={() => setStep('method')}
               className="text-sm"
