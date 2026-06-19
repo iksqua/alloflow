@@ -112,6 +112,12 @@ export async function POST(req: NextRequest) {
       : reward.value
   }
 
+  // Guard: combined discounts must leave a positive total (prevents an unpayable order)
+  const finalTotalTtc = r2(Math.max(0, baseTtcForReward - rewardDiscountAmount))
+  if (finalTotalTtc <= 0) {
+    return NextResponse.json({ error: 'discount_exceeds_total' }, { status: 400 })
+  }
+
   // Créer la commande
   const { data: order, error: orderError } = await supabase
     .from('orders')
@@ -130,7 +136,7 @@ export async function POST(req: NextRequest) {
       tax_5_5:                  storedTax55,
       tax_10:                   storedTax10,
       tax_20:                   storedTax20,
-      total_ttc:                r2(Math.max(0, baseTtcForReward - rewardDiscountAmount)),
+      total_ttc:                finalTotalTtc,
     })
     .select()
     .single()
