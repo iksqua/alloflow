@@ -191,7 +191,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
   const handleMixedConfirm = useCallback(async () => {
     const cashPart = parseFloat(mixedCash.replace(',', '.'))
-    if (isNaN(cashPart) || cashPart <= 0 || cashPart >= total - 0.01) {
+    if (isNaN(cashPart) || cashPart <= 0 || cashPart >= total) {
       toast.error('La part espèces doit être inférieure au total')
       return
     }
@@ -507,7 +507,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           {/* ── Step 2c: Mixed (espèces + CB) ── */}
           {step === 'mixed' && (() => {
             const cashVal  = parseFloat(mixedCash.replace(',', '.'))
-            const cashOk   = !isNaN(cashVal) && cashVal > 0 && cashVal < total - 0.01
+            const cashOk   = !isNaN(cashVal) && cashVal > 0 && cashVal < total
             const cardPart = cashOk ? Math.round((total - cashVal) * 100) / 100 : null
             return (
               <>
@@ -672,7 +672,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
               {currentPerson.method === 'mixed' && (() => {
                 const cashVal  = parseFloat(splitCash.replace(',', '.'))
-                const cashOk   = !isNaN(cashVal) && cashVal > 0 && cashVal < currentPerson.amount - 0.01
+                const cashOk   = !isNaN(cashVal) && cashVal > 0 && cashVal < currentPerson.amount
                 const cardPart = cashOk ? Math.round((currentPerson.amount - cashVal) * 100) / 100 : null
                 return (
                   <>
