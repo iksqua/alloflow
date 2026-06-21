@@ -25,14 +25,19 @@ function r2(x: number) { return Math.round(x * 100) / 100 }
 
 export function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   let subtotalHt = 0
-  let totalTax = 0
+  let tax55 = 0
+  let tax10 = 0
+  let tax20 = 0
   for (const item of ticket.items) {
     const lineHt = r2(item.unitPriceHt * item.quantity)
+    const lineTax = r2(lineHt * (item.tvaRate / 100))
     subtotalHt += lineHt
-    totalTax += r2(lineHt * (item.tvaRate / 100))
+    if (item.tvaRate === 5.5) tax55 += lineTax
+    else if (item.tvaRate === 10) tax10 += lineTax
+    else tax20 += lineTax
   }
   subtotalHt = r2(subtotalHt)
-  totalTax = r2(totalTax)
+  tax55 = r2(tax55); tax10 = r2(tax10); tax20 = r2(tax20)
   let discount = 0
   if (ticket.discount) {
     discount = ticket.discount.type === 'percent'
@@ -41,7 +46,8 @@ export function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   }
   const discountedHt = r2(subtotalHt - discount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-  return r2(discountedHt + r2(totalTax * ratio))
+  // Apply ratio per TVA rate (mirrors back-end) to avoid 1-cent divergence
+  return r2(discountedHt + r2(tax55 * ratio) + r2(tax10 * ratio) + r2(tax20 * ratio))
 }
 
 export function computeTotal(ticket: LocalTicket, reward: LoyaltyReward | null): number {

@@ -20,17 +20,21 @@ function r2(x: number) { return Math.round(x * 100) / 100 }
 
 function computeTicketTotals(ticket: LocalTicket) {
   let subtotalHt = 0
-  let totalTax = 0
+  let tax55 = 0
+  let tax10 = 0
+  let tax20 = 0
 
   for (const item of ticket.items) {
     const lineHt = r2(item.unitPriceHt * item.quantity)
     const lineTax = r2(lineHt * (item.tvaRate / 100))
     subtotalHt += lineHt
-    totalTax += lineTax
+    if (item.tvaRate === 5.5) tax55 += lineTax
+    else if (item.tvaRate === 10) tax10 += lineTax
+    else tax20 += lineTax
   }
 
   subtotalHt = r2(subtotalHt)
-  totalTax = r2(totalTax)
+  tax55 = r2(tax55); tax10 = r2(tax10); tax20 = r2(tax20)
 
   let discountAmount = 0
   if (ticket.discount) {
@@ -41,8 +45,8 @@ function computeTicketTotals(ticket: LocalTicket) {
 
   const discountedHt = r2(subtotalHt - discountAmount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
-  const adjustedTax = r2(totalTax * ratio)
-  const total = r2(discountedHt + adjustedTax)
+  // Apply ratio per TVA rate (mirrors back-end) to avoid 1-cent divergence
+  const total = r2(discountedHt + r2(tax55 * ratio) + r2(tax10 * ratio) + r2(tax20 * ratio))
 
   return { subtotalHt, discountAmount, total }
 }
