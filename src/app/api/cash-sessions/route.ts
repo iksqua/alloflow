@@ -1,6 +1,11 @@
 // src/app/api/cash-sessions/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
+
+const openSessionSchema = z.object({
+  opening_float: z.number().min(0).default(0),
+})
 
 export async function GET(_req: NextRequest) {
   const supabase = await createClient()
@@ -36,8 +41,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
   }
 
-  const body = await req.json()
-  const { opening_float = 0 } = body
+  const parsed = openSessionSchema.safeParse(await req.json().catch(() => ({})))
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  const { opening_float } = parsed.data
 
   const { data, error } = await supabase
     .from('cash_sessions')

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
-import { createHash } from 'crypto'
+import { writeFiscalJournalEntry } from '@/lib/fiscal/journal'
 
 const splitPaymentSchema = z.object({
   method: z.enum(['card', 'cash']),
@@ -25,20 +25,6 @@ const paySchema = z.object({
   }
 })
 
-function computeEntryHash(
-  previousHash: string,
-  establishmentId: string,
-  sequenceNo: number,
-  eventType: string,
-  orderId: string,
-  cashierId: string,
-  amountTtc: number,
-  occurredAt: string
-): string {
-  return createHash('sha256')
-    .update(`${previousHash}|${establishmentId}|${sequenceNo}|${eventType}|${orderId}|${cashierId}|${amountTtc}|${occurredAt}`)
-    .digest('hex')
-}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -169,52 +155,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // --- Fiscal journal entry (NF525 chain hash) ---
-  // Retry up to 3 times on unique-constraint conflict (concurrent payments racing on sequence_no).
-  try {
-    const estId = profile.establishment_id
-    let written = false
-    for (let attempt = 0; attempt < 3 && !written; attempt++) {
-      const { data: lastEntry } = await supabase
-        .from('fiscal_journal_entries')
-        .select('sequence_no, entry_hash')
-        .eq('establishment_id', estId)
-        .order('sequence_no', { ascending: false })
-        .limit(1)
-        .single()
-
-      const prevSeq    = lastEntry?.sequence_no ?? 0
-      const prevHash   = lastEntry?.entry_hash  ?? ''
-      const nextSeq    = prevSeq + 1
-      const occurredAt = new Date().toISOString()
-      const entryHash  = computeEntryHash(prevHash, estId, nextSeq, 'sale', id, user.id, authorizedTotal, occurredAt)
-
-      const { error: journalError } = await supabase.from('fiscal_journal_entries').insert({
-        establishment_id: estId,
-        sequence_no:      nextSeq,
-        event_type:       'sale',
-        order_id:         id,
-        amount_ttc:       authorizedTotal,
-        cashier_id:       user.id,
-        occurred_at:      occurredAt,
-        previous_hash:    prevHash,
-        entry_hash:       entryHash,
-        meta:             { method: parsed.data.method, session_id: order.session_id ?? null },
-      })
-
-      if (!journalError) {
-        written = true
-      } else if (journalError.code !== '23505') {
-        // Not a unique-constraint conflict — no point retrying
-        console.error('[fiscal-journal] Failed to write journal entry:', journalError)
-        break
-      }
-      // code '23505': another concurrent payment claimed this sequence_no first;
-      // re-read lastEntry on the next iteration with a fresh prevSeq/prevHash
-    }
-  } catch {
-    // Journal write failure must not block the payment success response
-    console.error('[fiscal-journal] Failed to write journal entry')
-  }
+  await writeFiscalJournalEntry({
+    supabase,
+    establishmentId: profile.establishment_id,
+    eventType:       'sale',
+    orderId:         id,
+    amountTtc:       authorizedTotal,
+    cashierId:       user.id,
+    meta:            { method: parsed.data.method, session_id: order.session_id ?? null },
+  })
 
   return NextResponse.json({ success: true, payments })
 }

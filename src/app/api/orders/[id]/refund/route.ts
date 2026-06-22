@@ -1,22 +1,7 @@
 // src/app/api/orders/[id]/refund/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createHash } from 'crypto'
-
-function computeEntryHash(
-  previousHash: string,
-  establishmentId: string,
-  sequenceNo: number,
-  eventType: string,
-  orderId: string,
-  cashierId: string,
-  amountTtc: number,
-  occurredAt: string
-): string {
-  return createHash('sha256')
-    .update(`${previousHash}|${establishmentId}|${sequenceNo}|${eventType}|${orderId}|${cashierId}|${amountTtc}|${occurredAt}`)
-    .digest('hex')
-}
+import { writeFiscalJournalEntry } from '@/lib/fiscal/journal'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -68,51 +53,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // Write a fiscal journal entry (refund with negative amount).
-  // Retry up to 3 times on unique-constraint conflict (concurrent refunds racing on sequence_no).
-  try {
-    const estId = profile.establishment_id
-    const refundAmount = -Math.abs(order.total_ttc)
-    let written = false
-    for (let attempt = 0; attempt < 3 && !written; attempt++) {
-      const { data: lastEntry } = await supabase
-        .from('fiscal_journal_entries')
-        .select('sequence_no, entry_hash')
-        .eq('establishment_id', estId)
-        .order('sequence_no', { ascending: false })
-        .limit(1)
-        .single()
-
-      const prevSeq    = lastEntry?.sequence_no ?? 0
-      const prevHash   = lastEntry?.entry_hash  ?? ''
-      const nextSeq    = prevSeq + 1
-      const occurredAt = new Date().toISOString()
-      const entryHash  = computeEntryHash(prevHash, estId, nextSeq, 'refund', id, user.id, refundAmount, occurredAt)
-
-      const { error: journalError } = await supabase.from('fiscal_journal_entries').insert({
-        establishment_id: estId,
-        sequence_no:      nextSeq,
-        event_type:       'refund',
-        order_id:         id,
-        amount_ttc:       refundAmount,
-        cashier_id:       user.id,
-        occurred_at:      occurredAt,
-        previous_hash:    prevHash,
-        entry_hash:       entryHash,
-        meta:             { session_id: order.session_id ?? null },
-      })
-
-      if (!journalError) {
-        written = true
-      } else if (journalError.code !== '23505') {
-        console.error('[fiscal-journal] Failed to write refund journal entry:', journalError)
-        break
-      }
-      // code '23505': concurrent operation claimed this sequence_no first — retry with fresh seq
-    }
-  } catch {
-    // Journal write failure must not block the refund response
-    console.error('[fiscal-journal] Failed to write refund journal entry')
-  }
+  await writeFiscalJournalEntry({
+    supabase,
+    establishmentId: profile.establishment_id,
+    eventType:       'refund',
+    orderId:         id,
+    amountTtc:       -Math.abs(order.total_ttc),
+    cashierId:       user.id,
+    meta:            { session_id: order.session_id ?? null },
+  })
 
   return NextResponse.json({ success: true, order_id: id, status: 'refunded' })
 }

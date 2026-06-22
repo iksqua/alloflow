@@ -1,6 +1,11 @@
 // src/app/api/receipts/z-report/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
+
+const zReportSchema = z.object({
+  session_id: z.string().uuid(),
+})
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -16,7 +21,9 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
 
-  const { session_id } = await req.json()
+  const body = zReportSchema.safeParse(await req.json())
+  if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 400 })
+  const { session_id } = body.data
 
   const { data: session } = await supabase
     .from('cash_sessions')
