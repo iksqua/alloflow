@@ -26,6 +26,9 @@ const createOrderSchema = z.object({
 ).refine(
   data => !(data.discount_type && data.discount_value == null),
   { message: 'discount_value requis si discount_type est fourni', path: ['discount_value'] }
+).refine(
+  data => !(data.discount_value != null && !data.discount_type),
+  { message: 'discount_type requis si discount_value est fourni', path: ['discount_type'] }
 )
 
 function r2(x: number) { return Math.round(x * 100) / 100 }

@@ -60,7 +60,7 @@ function generateInvoicePdf(params: {
     let y = tableTop + 25
     doc.font('Helvetica').fontSize(10)
     for (const item of params.items) {
-      const ttc = item.unit_price * (1 + item.tva_rate / 100) * item.quantity
+      const ttc = Math.round(item.unit_price * (1 + item.tva_rate / 100) * item.quantity * 100) / 100
       doc.text(item.product_name, 50, y)
       doc.text(String(item.quantity), 320, y, { width: 60, align: 'right' })
       doc.text(`${ttc.toFixed(2)} €`, 390, y, { width: 80, align: 'right' })

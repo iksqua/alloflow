@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
 
   // 2. Insert ingredients
   if (ingredients.length > 0) {
-    await supabase.from('recipe_ingredients').insert(
+    const { error: ingError } = await supabase.from('recipe_ingredients').insert(
       ingredients.map((ing, idx) => ({
         recipe_id:  recipe.id,
         name:       ing.name,
@@ -93,6 +93,10 @@ export async function POST(req: NextRequest) {
         sort_order: ing.sort_order ?? idx,
       }))
     )
+    if (ingError) {
+      await supabase.from('recipes').update({ active: false }).eq('id', recipe.id)
+      return NextResponse.json({ error: 'Erreur insertion ingrédients: ' + ingError.message }, { status: 500 })
+    }
   }
 
   // 3. If POS, create linked product (manual rollback on failure)

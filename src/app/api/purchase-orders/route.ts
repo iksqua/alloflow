@@ -89,7 +89,10 @@ export async function POST(req: NextRequest) {
       sort_order:        idx,
     })))
 
-  if (itemsError) return NextResponse.json({ error: itemsError.message }, { status: 500 })
+  if (itemsError) {
+    await supabase.from('purchase_orders').delete().eq('id', order.id)
+    return NextResponse.json({ error: itemsError.message }, { status: 500 })
+  }
 
   return NextResponse.json(order, { status: 201 })
 }
