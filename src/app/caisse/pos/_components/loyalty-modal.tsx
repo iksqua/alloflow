@@ -114,7 +114,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
 
   if (!open) return null
 
-  const pointsToEarn = Math.max(0, Math.round(orderTotal - (chosenReward
+  const pointsToEarn = Math.max(0, Math.floor(orderTotal - (chosenReward
     ? (chosenReward.type === 'percent' || chosenReward.type === 'reduction_pct')
       ? Math.round(orderTotal * (chosenReward.value / 100) * 100) / 100
       : chosenReward.value
@@ -153,7 +153,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
               {!searching && query.length >= 3 && customers.length === 0 && (
                 <div className="text-center py-4">
                   <p className="text-sm text-[var(--text3)] mb-3">Aucun compte trouvé</p>
-                  <p className="text-xs text-[var(--text4)] mb-4">Inscrire en 10 secondes — le client gagne +{Math.round(orderTotal)} pts dès aujourd&#39;hui</p>
+                  <p className="text-xs text-[var(--text4)] mb-4">Inscrire en 10 secondes — le client gagne +{Math.floor(orderTotal)} pts dès aujourd&#39;hui</p>
                   <button
                     onClick={() => {
                       if (query.includes('@')) setNewEmail(query)
@@ -252,7 +252,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
           {state === 'new-customer' && (
             <>
               <p className="text-xs text-[var(--text4)]">
-                Inscrire en 10 secondes — le client gagne +{Math.round(orderTotal)} pts dès aujourd&#39;hui
+                Inscrire en 10 secondes — le client gagne +{Math.floor(orderTotal)} pts dès aujourd&#39;hui
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <div>
