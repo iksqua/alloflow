@@ -49,25 +49,31 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
     }
   }, [open])
 
-  // Debounced search
+  // Debounced search with AbortController to discard stale responses
   useEffect(() => {
     if (state !== 'searching') return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (query.length < 3) { setCustomers([]); setSearching(false); return }
     setSearching(true)
+    const controller = new AbortController()
+    let canceled = false
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/customers/search?q=${encodeURIComponent(query)}`)
-        if (!res.ok) { setCustomers([]); return }
+        const res = await fetch(`/api/customers/search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
+        if (!res.ok) { if (!canceled) setCustomers([]); return }
         const json = await res.json()
-        setCustomers(json.customers ?? [])
-      } catch {
-        setCustomers([])
+        if (!canceled) setCustomers(json.customers ?? [])
+      } catch (err) {
+        if (!canceled && !(err instanceof Error && err.name === 'AbortError')) setCustomers([])
       } finally {
-        setSearching(false)
+        if (!canceled) setSearching(false)
       }
     }, 500)
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    return () => {
+      canceled = true
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      controller.abort()
+    }
   }, [query, state])
 
   async function selectCustomer(c: LoyaltyCustomer) {

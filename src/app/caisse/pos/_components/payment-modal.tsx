@@ -140,6 +140,9 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   // Synchronous guard against double-tap: useState updates are async so the button
   // could be clicked twice before the first render makes it disabled.
   const inFlightRef = useRef(false)
+  // Stores an order that was created but whose payment call failed, so retries
+  // reuse the same order instead of creating a duplicate orphaned order.
+  const pendingOrderRef = useRef<{ id: string; total_ttc: number; items: unknown[] } | null>(null)
 
   const cashChange = cashGiven ? parseFloat(cashGiven.replace(',', '.')) - total : 0
   const currentPerson = splitPersons[splitIndex]
@@ -151,13 +154,15 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     inFlightRef.current = true
     setIsSubmitting(true)
     try {
-      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      pendingOrderRef.current = order
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ method: 'card', amount: order.total_ttc }),
       })
       if (!payRes.ok) throw new Error(`Erreur paiement CB (${payRes.status})`)
+      pendingOrderRef.current = null
       setCompletedOrder(order as unknown as Order)
       setStep('confirm')
     } catch (err) {
@@ -178,13 +183,15 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     inFlightRef.current = true
     setIsSubmitting(true)
     try {
-      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      pendingOrderRef.current = order
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ method: 'cash', amount: order.total_ttc, cash_given: given }),
       })
       if (!payRes.ok) throw new Error(`Erreur paiement espèces (${payRes.status})`)
+      pendingOrderRef.current = null
       setCompletedOrder(order as unknown as Order)
       setStep('confirm')
     } catch (err) {
@@ -206,7 +213,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     const cardPart = Math.round((total - cashPart) * 100) / 100
     setIsSubmitting(true)
     try {
-      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      pendingOrderRef.current = order
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -220,6 +228,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         }),
       })
       if (!payRes.ok) throw new Error(`Erreur paiement mixte (${payRes.status})`)
+      pendingOrderRef.current = null
       setCompletedOrder(order as unknown as Order)
       setStep('confirm')
     } catch (err) {
