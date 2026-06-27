@@ -102,7 +102,7 @@ export function DiscountModal({ ticket, onApply, onClose }: DiscountModalProps) 
           </button>
           <button
             onClick={handleApply}
-            disabled={!value || parseFloat(value) <= 0}
+            disabled={!value || parseFloat(value.replace(',', '.')) <= 0}
             className="flex-1 h-10 rounded-lg text-sm font-semibold text-white disabled:opacity-40 hover:opacity-90"
             style={{ background: 'var(--blue)' }}
           >
