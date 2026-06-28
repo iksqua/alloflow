@@ -27,7 +27,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   // Fetch the order — must be 'paid' to refund
   const { data: order } = await supabase
     .from('orders')
-    .select('id, total_ttc, status, establishment_id, session_id')
+    .select('id, total_ttc, status, establishment_id, session_id, customer_id, reward_id')
     .eq('id', id)
     .eq('establishment_id', profile.establishment_id)
     .single()
@@ -62,6 +62,56 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     cashierId:       user.id,
     meta:            { session_id: order.session_id ?? null },
   })
+
+  // Reverse loyalty points — the DB trigger only fires on paid transitions, not refunds.
+  // Net earned on original order = floor(total_ttc) - points_required for reward used.
+  // On refund: deduct those earned points and re-credit any reward points spent.
+  if (order.customer_id) {
+    try {
+      const earnedPts = Math.max(0, Math.floor(order.total_ttc))
+      let redeemedPts = 0
+      if (order.reward_id) {
+        const { data: rewardData } = await supabase
+          .from('loyalty_rewards')
+          .select('points_required')
+          .eq('id', order.reward_id)
+          .single()
+        redeemedPts = rewardData?.points_required ?? 0
+      }
+      const netEarned = earnedPts - redeemedPts
+      if (netEarned !== 0) {
+        const { data: cust } = await supabase
+          .from('customers')
+          .select('points')
+          .eq('id', order.customer_id)
+          .single()
+        if (cust) {
+          const newPoints = Math.max(0, cust.points - netEarned)
+          const newTier = newPoints >= 2000 ? 'gold' : newPoints >= 500 ? 'silver' : 'standard'
+          await supabase
+            .from('customers')
+            .update({ points: newPoints, tier: newTier })
+            .eq('id', order.customer_id)
+          // Audit trail: use existing 'redeem' type to record the deduction of earned pts,
+          // and 'earn' type to record re-crediting of reward pts spent. Schema only allows
+          // 'earn' | 'redeem', so we repurpose them for the reversal.
+          if (earnedPts > 0) {
+            await supabase.from('loyalty_transactions').insert({
+              customer_id: order.customer_id, order_id: id, points: earnedPts, type: 'redeem',
+            })
+          }
+          if (redeemedPts > 0) {
+            await supabase.from('loyalty_transactions').insert({
+              customer_id: order.customer_id, order_id: id, points: redeemedPts, type: 'earn',
+            })
+          }
+        }
+      }
+    } catch {
+      // Non-blocking — refund is already recorded; points reversal failure is logged separately
+      console.error('[refund] Failed to reverse loyalty points for order', id)
+    }
+  }
 
   return NextResponse.json({ success: true, order_id: id, status: 'refunded' })
 }

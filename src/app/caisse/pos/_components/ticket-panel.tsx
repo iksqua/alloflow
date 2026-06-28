@@ -106,7 +106,8 @@ export function TicketPanel({
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {ticket.items.map((item) => {
-              const lineTtc = r2(item.unitPriceHt * item.quantity * (1 + item.tvaRate / 100))
+              const lineHt = r2(item.unitPriceHt * item.quantity)
+              const lineTtc = r2(lineHt + r2(lineHt * (item.tvaRate / 100)))
               return (
                 <div key={item.productId} className="flex items-center gap-3 px-4 py-3">
                   {item.emoji && <span className="text-lg flex-shrink-0">{item.emoji}</span>}
