@@ -88,6 +88,16 @@ export function PosShell({
   const [showLoyalty,    setShowLoyalty]    = useState(false)
   const [showSops,       setShowSops]       = useState(false)
 
+  // Reset loyalty state when the cashier empties the ticket by removing items one by one,
+  // so the next transaction doesn't silently inherit the previous customer's discount.
+  useEffect(() => {
+    if (ticket.items.length === 0) {
+      setLinkedCustomer(null)
+      setLinkedReward(null)
+      setLoyaltyDone(false)
+    }
+  }, [ticket.items.length])
+
   const addItem = (product: typeof initialProducts[0]) => {
     setTicket((prev) => {
       const existing = prev.items.find((i) => i.productId === product.id)

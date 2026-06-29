@@ -108,7 +108,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
           opt_in_email: newOptInEmail,
         }),
       })
-      if (!res.ok) { const j = await res.json(); throw new Error(j.error ?? 'Erreur') }
+      if (!res.ok) { const j = await res.json(); throw new Error(typeof j.error === 'string' ? j.error : 'Données invalides') }
       const customer: LoyaltyCustomer = await res.json()
       onConfirm(customer, null)
     } catch (err) {
