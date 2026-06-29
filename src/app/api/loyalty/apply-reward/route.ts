@@ -25,11 +25,25 @@ export async function POST(req: NextRequest) {
   // Fetch reward — scoped to the cashier's establishment to prevent cross-tenant reward abuse
   const { data: reward, error: rErr } = await supabase
     .from('loyalty_rewards')
-    .select('type, value')
+    .select('type, value, points_required')
     .eq('id', reward_id)
     .eq('establishment_id', profile.establishment_id)
     .single()
   if (rErr || !reward) return NextResponse.json({ error: 'Récompense non trouvée' }, { status: 404 })
+
+  // Verify customer belongs to the same establishment (prevents cross-tenant points deduction)
+  const { data: customer, error: cErr } = await supabase
+    .from('customers')
+    .select('points')
+    .eq('id', customer_id)
+    .eq('establishment_id', profile.establishment_id)
+    .single()
+  if (cErr || !customer) return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 })
+
+  // Verify customer has enough points to redeem this reward
+  if (customer.points < (reward.points_required ?? 0)) {
+    return NextResponse.json({ error: 'insufficient_points', required: reward.points_required, current: customer.points }, { status: 400 })
+  }
 
   // Fetch order total
   const { data: order, error: oErr } = await supabase

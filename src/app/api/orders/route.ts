@@ -99,6 +99,30 @@ export async function POST(req: NextRequest) {
     baseTtcForReward = r2(discountedHt + storedTax55 + storedTax10 + storedTax20)
   }
 
+  // Validate customer belongs to this establishment (cross-tenant IDOR guard)
+  if (parsed.data.customer_id) {
+    const { data: cust } = await supabase
+      .from('customers')
+      .select('points')
+      .eq('id', parsed.data.customer_id)
+      .eq('establishment_id', profile.establishment_id)
+      .single()
+    if (!cust) return NextResponse.json({ error: 'Customer not found or access denied' }, { status: 404 })
+
+    // Validate customer has enough points for the requested reward
+    if (parsed.data.reward_id) {
+      const { data: rewardCheck } = await supabase
+        .from('loyalty_rewards')
+        .select('points_required')
+        .eq('id', parsed.data.reward_id)
+        .eq('establishment_id', profile.establishment_id)
+        .single()
+      if (rewardCheck && cust.points < (rewardCheck.points_required ?? 0)) {
+        return NextResponse.json({ error: 'insufficient_points', required: rewardCheck.points_required, current: cust.points }, { status: 400 })
+      }
+    }
+  }
+
   // Compute reward discount on the post-commercial-discount base.
   // Never trust a client-supplied discount value.
   let rewardDiscountAmount = 0
