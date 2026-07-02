@@ -40,7 +40,7 @@ function computeTicketTotals(ticket: LocalTicket) {
   if (ticket.discount) {
     discountAmount = ticket.discount.type === 'percent'
       ? r2(subtotalHt * (ticket.discount.value / 100))
-      : ticket.discount.value
+      : Math.min(ticket.discount.value, subtotalHt) // cap to avoid negative total when items are removed
   }
 
   const discountedHt = r2(subtotalHt - discountAmount)

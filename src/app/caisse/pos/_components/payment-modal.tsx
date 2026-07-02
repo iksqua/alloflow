@@ -42,7 +42,7 @@ export function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   if (ticket.discount) {
     discount = ticket.discount.type === 'percent'
       ? r2(subtotalHt * (ticket.discount.value / 100))
-      : ticket.discount.value
+      : Math.min(ticket.discount.value, subtotalHt) // cap mirrors server: Math.min(dvalue, subtotalHt)
   }
   const discountedHt = r2(subtotalHt - discount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1
