@@ -131,10 +131,6 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
   // Confirm state
   const [completedOrder, setCompletedOrder]   = useState<Order | null>(null)
-  const [receiptChoice, setReceiptChoice]     = useState<'none' | 'email' | 'sms' | 'invoice'>('none')
-  const [receiptContact, setReceiptContact]   = useState(linkedCustomer?.email ?? '')
-  const [companyName, setCompanyName]         = useState('')
-  const [companySiret, setCompanySiret]       = useState('')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   // Synchronous guard against double-tap: useState updates are async so the button
@@ -210,11 +206,13 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     }
     if (inFlightRef.current) return
     inFlightRef.current = true
-    const cardPart = Math.round((total - cashPart) * 100) / 100
     setIsSubmitting(true)
     try {
       const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
       pendingOrderRef.current = order
+      // Use server-authoritative total to compute card portion — avoids split_payments_total_mismatch
+      // when client and server totals diverge by 1 cent due to float accumulation differences.
+      const cardPart = Math.round((order.total_ttc - cashPart) * 100) / 100
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -317,42 +315,12 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     }
   }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitMixedParts, splitOrderTotal, total])
 
-  async function handleTerminate() {
+  function handleTerminate() {
     if (!completedOrder) { onClose(); return }
     if (inFlightRef.current) return
-    inFlightRef.current = true  // one-way latch: prevent duplicate receipts on double-tap
-
-    // Send receipt (non-blocking)
-    if (receiptChoice === 'email' && receiptContact) {
-      fetch(`/api/receipts/${completedOrder.id}/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: receiptContact }),
-      }).then(r => r.ok ? toast.success('Reçu envoyé par email') : toast.error('Échec envoi email'))
-        .catch(() => toast.error('Échec envoi email'))
-    } else if (receiptChoice === 'sms' && receiptContact) {
-      fetch(`/api/receipts/${completedOrder.id}/sms`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: receiptContact }),
-      }).then(r => r.ok ? toast.success('Reçu envoyé par SMS') : toast.error('Échec envoi SMS'))
-        .catch(() => toast.error('Échec envoi SMS'))
-    } else if (receiptChoice === 'invoice' && companyName) {
-      fetch(`/api/receipts/${completedOrder.id}/invoice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_name: companyName, siret: companySiret || undefined }),
-      }).then(async r => {
-        if (r.ok) {
-          const { pdf_url, invoice_number } = await r.json()
-          window.open(pdf_url, '_blank')
-          toast.success(`Facture ${invoice_number} générée`)
-        } else {
-          toast.error('Erreur génération facture')
-        }
-      }).catch(() => toast.error('Erreur génération facture'))
-    }
-
+    inFlightRef.current = true  // one-way latch: prevent double-tap
+    // Receipt delivery is handled by ReceiptModal (opened by onSuccess).
+    // Sending from here too would duplicate emails/SMS when ReceiptModal pre-fills contact info.
     onSuccess(completedOrder)
   }
 
@@ -771,63 +739,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                 </div>
               </div>
 
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text4)' }}>Envoyer un reçu</p>
-
-              {(['none', 'email', 'sms', 'invoice'] as const).map(choice => {
-                const labels = { none: '🚫 Pas de reçu', email: '📧 Email', sms: '📱 SMS', invoice: '🧾 Facture pro' }
-                const descs  = { none: 'Terminer sans envoyer', email: 'Reçu simple par email', sms: 'Lien vers le reçu par SMS', invoice: 'PDF avec SIRET et TVA détaillée' }
-                return (
-                  <button
-                    key={choice}
-                    onClick={() => setReceiptChoice(choice)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all"
-                    style={receiptChoice === choice
-                      ? { borderColor: 'var(--blue)', background: 'rgba(29,78,216,0.08)' }
-                      : { borderColor: 'var(--border)', background: 'var(--surface2)' }}
-                  >
-                    <span className="text-lg">{labels[choice].split(' ')[0]}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text1)' }}>{labels[choice].slice(3)}</p>
-                      <p className="text-xs" style={{ color: 'var(--text4)' }}>{descs[choice]}</p>
-                    </div>
-                    <div className="w-4 h-4 rounded-full border-2 flex-shrink-0"
-                      style={receiptChoice === choice ? { borderColor: 'var(--blue)', background: 'var(--blue)' } : { borderColor: 'var(--text4)' }}
-                    />
-                  </button>
-                )
-              })}
-
-              {(receiptChoice === 'email' || receiptChoice === 'sms') && (
-                <input
-                  type={receiptChoice === 'email' ? 'email' : 'tel'}
-                  value={receiptContact}
-                  onChange={e => setReceiptContact(e.target.value)}
-                  placeholder={receiptChoice === 'email' ? 'email@client.fr' : '+33 6 12 34 56 78'}
-                  className="w-full px-4 py-3 rounded-xl text-sm"
-                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
-                />
-              )}
-
-              {receiptChoice === 'invoice' && (
-                <div className="flex flex-col gap-2">
-                  <input
-                    type="text"
-                    value={companyName}
-                    onChange={e => setCompanyName(e.target.value)}
-                    placeholder="Nom de la société *"
-                    className="w-full px-4 py-3 rounded-xl text-sm"
-                    style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
-                  />
-                  <input
-                    type="text"
-                    value={companySiret}
-                    onChange={e => setCompanySiret(e.target.value)}
-                    placeholder="SIRET (optionnel)"
-                    className="w-full px-4 py-3 rounded-xl text-sm"
-                    style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text1)', outline: 'none' }}
-                  />
-                </div>
-              )}
+              <p className="text-xs" style={{ color: 'var(--text4)' }}>Le reçu peut être envoyé à l&apos;étape suivante (email, SMS, impression).</p>
 
               <button
                 onClick={handleTerminate}
