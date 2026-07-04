@@ -209,16 +209,18 @@ export function TicketPanel({
         )}
         <button
           onClick={onPay}
-          disabled={isEmpty || !sessionOpen}
+          disabled={isEmpty || !sessionOpen || finalTotal <= 0}
           data-testid="pos-pay-btn"
           className="w-full h-12 rounded-xl text-base font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
-          style={{ background: isEmpty ? 'var(--border)' : 'var(--green)' }}
+          style={{ background: (isEmpty || finalTotal <= 0) ? 'var(--border)' : 'var(--green)' }}
         >
           {!sessionOpen
             ? 'Ouvrir la session'
             : isEmpty
               ? 'Ticket vide'
-              : `Encaisser ${finalTotal.toFixed(2).replace('.', ',')} €`}
+              : finalTotal <= 0
+                ? 'Remise > total'
+                : `Encaisser ${finalTotal.toFixed(2).replace('.', ',')} €`}
         </button>
       </div>
     </div>

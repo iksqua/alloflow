@@ -779,7 +779,12 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                 return (
                   <button
                     key={choice}
-                    onClick={() => setReceiptChoice(choice)}
+                    onClick={() => {
+                      if (choice === 'email') setReceiptContact(linkedCustomer?.email ?? '')
+                      else if (choice === 'sms') setReceiptContact(linkedCustomer?.phone ?? '')
+                      else setReceiptContact('')
+                      setReceiptChoice(choice)
+                    }}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all"
                     style={receiptChoice === choice
                       ? { borderColor: 'var(--blue)', background: 'rgba(29,78,216,0.08)' }
