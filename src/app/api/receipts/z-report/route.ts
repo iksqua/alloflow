@@ -68,9 +68,26 @@ export async function POST(req: NextRequest) {
     const rewardHt = ttcBase > 0 ? rewardTtc * (htBase / ttcBase) : 0
     return s + htBase - rewardHt
   }, 0)
-  const totalTax55 = paidOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
-  const totalTax10 = paidOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
-  const totalTax20 = paidOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
+  // Apply the same loyalty-discount ratio to each TVA bracket so that
+  // totalHt + totalTax55 + totalTax10 + totalTax20 == netTtc (NF525 reconciliation).
+  const totalTax55 = paidOrders.reduce((s, o) => {
+    const htBase  = (o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)
+    const ttcBase = htBase + (o.tax_5_5 ?? 0) + (o.tax_10 ?? 0) + (o.tax_20 ?? 0)
+    const ratio   = ttcBase > 0 ? (ttcBase - (o.reward_discount_amount ?? 0)) / ttcBase : 1
+    return s + (o.tax_5_5 ?? 0) * ratio
+  }, 0)
+  const totalTax10 = paidOrders.reduce((s, o) => {
+    const htBase  = (o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)
+    const ttcBase = htBase + (o.tax_5_5 ?? 0) + (o.tax_10 ?? 0) + (o.tax_20 ?? 0)
+    const ratio   = ttcBase > 0 ? (ttcBase - (o.reward_discount_amount ?? 0)) / ttcBase : 1
+    return s + (o.tax_10 ?? 0) * ratio
+  }, 0)
+  const totalTax20 = paidOrders.reduce((s, o) => {
+    const htBase  = (o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)
+    const ttcBase = htBase + (o.tax_5_5 ?? 0) + (o.tax_10 ?? 0) + (o.tax_20 ?? 0)
+    const ratio   = ttcBase > 0 ? (ttcBase - (o.reward_discount_amount ?? 0)) / ttcBase : 1
+    return s + (o.tax_20 ?? 0) * ratio
+  }, 0)
   const totalDiscounts = paidOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0)
 
   // Payment method breakdown

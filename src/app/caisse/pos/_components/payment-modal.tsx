@@ -175,7 +175,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
   const handleCashConfirm = useCallback(async () => {
     const given = parseFloat(cashGiven.replace(',', '.'))
-    if (isNaN(given) || given < total - 0.01) {
+    if (isNaN(given) || given < total) {
       toast.error(`Montant insuffisant (minimum ${total.toFixed(2)} €)`)
       return
     }
@@ -506,7 +506,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
               </div>
               <button
                 onClick={handleCashConfirm}
-                disabled={isSubmitting || !cashGiven || parseFloat(cashGiven.replace(',', '.')) < total - 0.01}
+                disabled={isSubmitting || !cashGiven || parseFloat(cashGiven.replace(',', '.')) < total}
                 className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
                 style={{ background: 'var(--green)' }}
               >
@@ -676,7 +676,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                   </div>
                   <button
                     onClick={() => handleSplitPersonNext(parseFloat(splitCash))}
-                    disabled={isSubmitting || !splitCash || parseFloat(splitCash) < currentPerson.amount - 0.01}
+                    disabled={isSubmitting || !splitCash || parseFloat(splitCash) < currentPerson.amount}
                     className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
                     style={{ background: 'var(--green)' }}
                   >
