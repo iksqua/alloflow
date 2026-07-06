@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'insufficient_points', required: reward.points_required, current: customer.points }, { status: 400 })
   }
 
-  // Fetch order total
+  // Fetch order total — include reward_discount_amount to restore the pre-reward base TTC
   const { data: order, error: oErr } = await supabase
     .from('orders')
-    .select('total_ttc, establishment_id, status')
+    .select('total_ttc, establishment_id, status, reward_discount_amount')
     .eq('id', order_id)
     .single()
   if (oErr || !order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
@@ -59,11 +59,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'order_closed' }, { status: 409 })
   }
 
+  // Restore the pre-reward base TTC so that replacing an existing reward doesn't
+  // compound discounts (percent rewards must be applied to the pre-reward amount).
+  const baseTtc = Math.round((order.total_ttc + (order.reward_discount_amount ?? 0)) * 100) / 100
+
   const discountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
-    ? Math.round(order.total_ttc * (reward.value / 100) * 100) / 100
+    ? Math.round(baseTtc * (reward.value / 100) * 100) / 100
     : reward.value
 
-  const newTotal = Math.round(Math.max(0, order.total_ttc - discountAmount) * 100) / 100
+  const newTotal = Math.round(Math.max(0, baseTtc - discountAmount) * 100) / 100
 
   const { error: uErr } = await supabase
     .from('orders')
