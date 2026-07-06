@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Step 1: Close the session FIRST to prevent new orders/payments from being linked
   // This acts as a fence — any new order will see status='closed' and be rejected
-  const { error: closeError } = await supabase
+  const { data: closedRows, error: closeError } = await supabase
     .from('cash_sessions')
     .update({
       status: 'closed',
@@ -42,9 +42,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
     .eq('id', id)
     .eq('status', 'open')
+    .select('id')
 
   if (closeError) {
     return NextResponse.json({ error: 'Failed to close session', detail: closeError.message }, { status: 500 })
+  }
+  if (!closedRows || closedRows.length === 0) {
+    // Another request already closed this session between our status check and the UPDATE
+    return NextResponse.json({ error: 'session_already_closed' }, { status: 409 })
   }
 
   // Step 2: Now compute totals — session is closed, no new payments can arrive

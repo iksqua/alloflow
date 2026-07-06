@@ -263,6 +263,33 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     }
   }, [ticket, session, linkedCustomer, linkedReward, loyaltyAmt])
 
+  const handleCancelSplit = useCallback(async () => {
+    if (inFlightRef.current) return
+    inFlightRef.current = true
+    setIsSubmitting(true)
+    try {
+      if (splitOrderId) {
+        await fetch(`/api/orders/${splitOrderId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'cancelled' }),
+        })
+      }
+    } catch {
+      // Best-effort: reset local state regardless of network outcome
+    } finally {
+      inFlightRef.current = false
+      setIsSubmitting(false)
+    }
+    setSplitOrderId(null)
+    setSplitPersons([])
+    setSplitIndex(0)
+    setSplitCash('')
+    setSplitCashAmounts([])
+    setSplitMixedParts([])
+    setStep('method')
+  }, [splitOrderId])
+
   const handleSplitPersonNext = useCallback(async (cashAmount?: number, mixedCashPart?: number) => {
     const updatedCashAmounts = [...splitCashAmounts]
     if (cashAmount !== undefined) updatedCashAmounts[splitIndex] = cashAmount
@@ -384,6 +411,16 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
               style={{ color: 'var(--text4)' }}
             >
               ← Retour
+            </button>
+          )}
+          {step === 'split-person' && splitOrderId !== null && (
+            <button
+              onClick={handleCancelSplit}
+              disabled={isSubmitting}
+              className="text-sm disabled:opacity-40"
+              style={{ color: 'var(--red)' }}
+            >
+              ✕ Annuler
             </button>
           )}
         </div>
