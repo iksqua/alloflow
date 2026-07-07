@@ -16,7 +16,8 @@ interface PaymentModalProps {
   linkedCustomer: LoyaltyCustomer | null
   linkedReward: LoyaltyReward | null
   onClose: () => void
-  onSuccess: (order: Order) => void
+  /** receiptSent=true when the payment flow already sent a digital receipt */
+  onSuccess: (order: Order, receiptSent: boolean) => void
 }
 
 // ─── Pure helpers ────────────────────────────────────────────────────────────
@@ -380,7 +381,10 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       }).catch(() => toast.error('Erreur génération facture'))
     }
 
-    onSuccess(completedOrder)
+    const receiptSent = (receiptChoice === 'email' && !!receiptContact) ||
+                        (receiptChoice === 'sms' && !!receiptContact) ||
+                        (receiptChoice === 'invoice' && !!companyName)
+    onSuccess(completedOrder, receiptSent)
   }
 
   // ── Render ────────────────────────────────────────────────────────────────

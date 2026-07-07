@@ -79,6 +79,7 @@ export function PosShell({
   // Modals
   const [showPayment, setShowPayment] = useState(false)
   const [showReceipt, setShowReceipt] = useState(false)
+  const [receiptSentInPayment, setReceiptSentInPayment] = useState(false)
   const [showDiscount, setShowDiscount] = useState(false)
   const [showFloorPlan, setShowFloorPlan] = useState(false)
   const [showSession, setShowSession] = useState(!session)
@@ -315,8 +316,9 @@ export function PosShell({
           linkedCustomer={linkedCustomer}
           linkedReward={linkedReward}
           onClose={() => setShowPayment(false)}
-          onSuccess={(order) => {
+          onSuccess={(order, receiptSent) => {
             setCompletedOrder(order)
+            setReceiptSentInPayment(receiptSent)
             setShowPayment(false)
             setShowReceipt(true)
             // clearTicket is deferred to receipt modal dismissal so linkedCustomer
@@ -330,8 +332,9 @@ export function PosShell({
           order={completedOrder}
           linkedCustomer={linkedCustomer}
           establishmentInfo={establishmentInfo}
-          onClose={() => { setShowReceipt(false); setCompletedOrder(null); clearTicket() }}
-          onNewOrder={() => { setShowReceipt(false); setCompletedOrder(null); clearTicket() }}
+          receiptAlreadySent={receiptSentInPayment}
+          onClose={() => { setShowReceipt(false); setCompletedOrder(null); setReceiptSentInPayment(false); clearTicket() }}
+          onNewOrder={() => { setShowReceipt(false); setCompletedOrder(null); setReceiptSentInPayment(false); clearTicket() }}
         />
       )}
 

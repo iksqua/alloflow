@@ -15,13 +15,15 @@ interface ReceiptModalProps {
   order: Order
   linkedCustomer: LoyaltyCustomer | null
   establishmentInfo: EstablishmentInfo
+  /** When true, a receipt was already sent during the payment flow — don't pre-fill contact fields */
+  receiptAlreadySent?: boolean
   onClose: () => void
   onNewOrder: () => void
 }
 
-export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose, onNewOrder }: ReceiptModalProps) {
-  const [email, setEmail] = useState(linkedCustomer?.email ?? '')
-  const [phone, setPhone] = useState(linkedCustomer?.phone ?? '')
+export function ReceiptModal({ order, linkedCustomer, establishmentInfo, receiptAlreadySent, onClose, onNewOrder }: ReceiptModalProps) {
+  const [email, setEmail] = useState(receiptAlreadySent ? '' : (linkedCustomer?.email ?? ''))
+  const [phone, setPhone] = useState(receiptAlreadySent ? '' : (linkedCustomer?.phone ?? ''))
   const [sending, setSending] = useState<'email' | 'sms' | null>(null)
 
   const handlePrint = () => window.print()
