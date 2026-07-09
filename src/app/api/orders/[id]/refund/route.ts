@@ -8,7 +8,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Check role — admin or manager only
+  // Check role — admin or super_admin only
   const { data: profile } = await supabase
     .from('profiles')
     .select('establishment_id, role')

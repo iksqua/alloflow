@@ -52,11 +52,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'session_already_closed' }, { status: 409 })
   }
 
-  // Step 2: Now compute totals — session is closed, no new payments can arrive
+  // Step 2: Now compute totals — session is closed, no new payments can arrive.
+  // Filter to status='paid' only: refunded orders keep their payment rows in the DB
+  // but the money was returned to the customer and must not inflate the Z-close totals.
   const { data: sessionPayments } = await supabase
     .from('payments')
-    .select('method, amount, orders!inner(session_id)')
+    .select('method, amount, orders!inner(session_id, status)')
     .eq('orders.session_id', id)
+    .eq('orders.status', 'paid')
 
   const totalCash = sessionPayments
     ?.filter((p) => p.method === 'cash')
