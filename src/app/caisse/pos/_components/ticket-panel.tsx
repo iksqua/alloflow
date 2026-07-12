@@ -209,7 +209,7 @@ export function TicketPanel({
         )}
         <button
           onClick={onPay}
-          disabled={isEmpty || !sessionOpen}
+          disabled={isEmpty}
           data-testid="pos-pay-btn"
           className="w-full h-12 rounded-xl text-base font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
           style={{ background: isEmpty ? 'var(--border)' : 'var(--green)' }}
