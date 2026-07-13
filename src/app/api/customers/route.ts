@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url)
   const tier = url.searchParams.get('tier') // optional filter
-  const limit = parseInt(url.searchParams.get('limit') ?? '100', 10)
+  const limit = Math.min(500, Math.max(1, parseInt(url.searchParams.get('limit') ?? '100', 10)))
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase as any)

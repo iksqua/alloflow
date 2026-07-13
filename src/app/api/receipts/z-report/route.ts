@@ -15,11 +15,11 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await supabase
     .from('profiles').select('role, establishment_id').eq('id', user.id).single()
 
-  if (profile?.role === 'caissier') {
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile.role ?? '')) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
-
-  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
 
   const body = zReportSchema.safeParse(await req.json())
   if (!body.success) return NextResponse.json({ error: body.error.flatten() }, { status: 400 })
@@ -57,20 +57,24 @@ export async function POST(req: NextRequest) {
   const totalRefunds = refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
   const netTtc = totalTtc - totalRefunds
 
-  // Compute post-all-discounts HT base: subtract both commercial and loyalty reward discounts.
+  // Compute post-all-discounts HT and tax bases: subtract both commercial and loyalty reward
+  // discounts proportionally across HT, tax_5_5, tax_10, tax_20 so their sum equals net_ttc.
   // tax_5_5/10/20 stored in DB are post-commercial-discount; reward discount is applied on TTC,
-  // so we convert it back to its HT equivalent by dividing by the blended TTC/HT ratio.
-  const totalHt = paidOrders.reduce((s, o) => {
-    const htBase = (o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)
-    const ttcBase = htBase + (o.tax_5_5 ?? 0) + (o.tax_10 ?? 0) + (o.tax_20 ?? 0)
+  // so we allocate it proportionally across HT and each tax bucket by their share of ttcBase.
+  let totalHt = 0, totalTax55 = 0, totalTax10 = 0, totalTax20 = 0
+  for (const o of paidOrders) {
+    const htBase    = (o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)
+    const t55       = o.tax_5_5 ?? 0
+    const t10       = o.tax_10  ?? 0
+    const t20       = o.tax_20  ?? 0
+    const ttcBase   = htBase + t55 + t10 + t20
     const rewardTtc = o.reward_discount_amount ?? 0
-    // Proportionally allocate the reward discount to the HT portion
-    const rewardHt = ttcBase > 0 ? rewardTtc * (htBase / ttcBase) : 0
-    return s + htBase - rewardHt
-  }, 0)
-  const totalTax55 = paidOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
-  const totalTax10 = paidOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
-  const totalTax20 = paidOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
+    const ratio     = ttcBase > 0 ? rewardTtc / ttcBase : 0
+    totalHt    += htBase - rewardTtc * (ttcBase > 0 ? htBase / ttcBase : 0)
+    totalTax55 += t55 * (1 - ratio)
+    totalTax10 += t10 * (1 - ratio)
+    totalTax20 += t20 * (1 - ratio)
+  }
   const totalDiscounts = paidOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0)
 
   // Payment method breakdown

@@ -57,25 +57,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .update({ quantity_received: newReceived })
       .eq('id', orderItem.id)
 
-    // Increment stock
-    const { data: stock } = await supabase
-      .from('stock_items')
-      .select('quantity, alert_threshold')
-      .eq('id', orderItem.stock_item_id)
-      .single()
-
-    if (stock) {
-      const newQty = stock.quantity + delta
-      const newStatus = newQty <= 0
-        ? 'out_of_stock'
-        : newQty < stock.alert_threshold
-        ? 'alert'
-        : 'ok'
-      await supabase
-        .from('stock_items')
-        .update({ quantity: newQty, status: newStatus })
-        .eq('id', orderItem.stock_item_id)
-    }
+    // Increment stock atomically via RPC to avoid TOCTOU race between concurrent receptions
+    await supabase.rpc('increment_stock_quantity', {
+      p_stock_item_id: orderItem.stock_item_id,
+      p_delta:         delta,
+    })
 
     receptionLines.push({ purchase_order_item_id: orderItem.id, quantity_received: delta })
   }

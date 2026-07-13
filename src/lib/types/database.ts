@@ -2031,6 +2031,10 @@ export type Database = {
           invoice_number: string
         }[]
       }
+      increment_stock_quantity: {
+        Args: { p_stock_item_id: string; p_delta: number }
+        Returns: undefined
+      }
     }
     Enums: {
       product_category: "entree" | "plat" | "dessert" | "boisson" | "autre"
