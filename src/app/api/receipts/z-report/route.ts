@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
     .from('orders')
     .select('id, total_ttc, subtotal_ht, tax_5_5, tax_10, tax_20, discount_amount, reward_discount_amount, status')
     .eq('session_id', session_id)
+    .eq('establishment_id', profile.establishment_id)
     .in('status', ['paid', 'refunded'])
 
   // Fetch payments for these orders

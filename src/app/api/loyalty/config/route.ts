@@ -124,13 +124,15 @@ export async function PUT(req: NextRequest) {
 
   if (configError) return NextResponse.json({ error: configError.message }, { status: 500 })
 
-  // Replace loyalty_rewards: delete all then insert new ones
-  const { error: deleteError } = await supabase
+  // Replace loyalty_rewards: insert new ones first, then delete old ones.
+  // This order ensures that if the insert fails, the existing rewards remain intact
+  // (instead of being permanently deleted in a non-transactional delete-then-insert pattern).
+  const { data: existingRewards } = await supabase
     .from('loyalty_rewards')
-    .delete()
+    .select('id')
     .eq('establishment_id', establishmentId)
 
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  const existingIds = (existingRewards ?? []).map((r: { id: string }) => r.id)
 
   const rewardsList = rewards as Array<{
     name: string
@@ -155,6 +157,16 @@ export async function PUT(req: NextRequest) {
       })))
 
     if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+  }
+
+  // Delete old rewards only after new ones are safely inserted
+  if (existingIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('loyalty_rewards')
+      .delete()
+      .in('id', existingIds)
+
+    if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })

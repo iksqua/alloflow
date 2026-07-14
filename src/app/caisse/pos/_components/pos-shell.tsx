@@ -69,6 +69,7 @@ export function PosShell({
   const [session, setSession] = useState<CashSession | null>(initialSession)
   const [ticket, setTicket] = useState<LocalTicket>(EMPTY_TICKET)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null)
   const [mobileView, setMobileView] = useState<'menu' | 'ticket'>('menu')
@@ -87,6 +88,16 @@ export function PosShell({
   const [loyaltyDone,    setLoyaltyDone]    = useState(false)
   const [showLoyalty,    setShowLoyalty]    = useState(false)
   const [showSops,       setShowSops]       = useState(false)
+
+  // Clear loyalty state when the ticket is emptied via individual item removal (not just "Effacer").
+  // Without this, a linked reward silently carries over to the next item added.
+  useEffect(() => {
+    if (ticket.items.length === 0 && loyaltyDone) {
+      setLinkedCustomer(null)
+      setLinkedReward(null)
+      setLoyaltyDone(false)
+    }
+  }, [ticket.items.length, loyaltyDone])
 
   const addItem = (product: typeof initialProducts[0]) => {
     setTicket((prev) => {

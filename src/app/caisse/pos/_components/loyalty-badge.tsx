@@ -13,7 +13,7 @@ export function LoyaltyBadge({ customer, reward, orderTotal }: Props) {
       ? Math.round(orderTotal * (reward.value / 100) * 100) / 100
       : reward.value
     : 0
-  const pointsToEarn = Math.floor(orderTotal - rewardDiscount)
+  const pointsToEarn = Math.max(0, Math.floor(orderTotal - rewardDiscount))
 
   const tierColors: Record<string, string> = {
     gold:     'text-yellow-400',

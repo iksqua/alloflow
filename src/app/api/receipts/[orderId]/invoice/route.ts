@@ -20,6 +20,8 @@ function generateInvoicePdf(params: {
   companySiret: string | undefined
   items: Array<{ product_name: string; quantity: number; unit_price: number; tva_rate: number }>
   subtotalHt: number | null
+  discountAmount: number | null
+  rewardDiscountAmount: number | null
   tax55: number | null
   tax10: number | null
   tax20: number | null
@@ -65,6 +67,22 @@ function generateInvoicePdf(params: {
       doc.text(String(item.quantity), 320, y, { width: 60, align: 'right' })
       doc.text(`${ttc.toFixed(2)} €`, 390, y, { width: 80, align: 'right' })
       doc.text(`${item.tva_rate}%`, 480, y, { width: 65, align: 'right' })
+      y += 18
+    }
+
+    // Discount lines — shown between items and totals so sum of lines matches the grand total
+    if ((params.discountAmount ?? 0) > 0) {
+      doc.font('Helvetica').fontSize(10).fillColor('#15803d')
+      doc.text('Remise commerciale', 50, y)
+      doc.text(`−${(params.discountAmount ?? 0).toFixed(2)} €`, 390, y, { width: 80, align: 'right' })
+      doc.fillColor('black')
+      y += 18
+    }
+    if ((params.rewardDiscountAmount ?? 0) > 0) {
+      doc.font('Helvetica').fontSize(10).fillColor('#15803d')
+      doc.text('Remise fidélité', 50, y)
+      doc.text(`−${(params.rewardDiscountAmount ?? 0).toFixed(2)} €`, 390, y, { width: 80, align: 'right' })
+      doc.fillColor('black')
       y += 18
     }
 
@@ -119,7 +137,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
   // Fetch order + items
   const { data: order } = await supabase
     .from('orders')
-    .select('created_at, total_ttc, status, subtotal_ht, tax_5_5, tax_10, tax_20, order_items(product_name, quantity, unit_price, tva_rate)')
+    .select('created_at, total_ttc, status, subtotal_ht, discount_amount, reward_discount_amount, tax_5_5, tax_10, tax_20, order_items(product_name, quantity, unit_price, tva_rate)')
     .eq('id', orderId)
     .eq('establishment_id', estabId)
     .single()
@@ -171,6 +189,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
     companySiret: parsed.data.siret,
     items,
     subtotalHt: order.subtotal_ht,
+    discountAmount: order.discount_amount,
+    rewardDiscountAmount: order.reward_discount_amount,
     tax55: order.tax_5_5,
     tax10: order.tax_10,
     tax20: order.tax_20,
