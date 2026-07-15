@@ -73,7 +73,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         : 'ok'
       await supabase
         .from('stock_items')
-        .update({ quantity: newQty, status: newStatus })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ quantity: newQty, status: newStatus } as any)
         .eq('id', orderItem.stock_item_id)
     }
 

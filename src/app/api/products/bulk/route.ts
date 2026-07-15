@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
   // Filter by establishment_id to prevent cross-tenant modification
   const { error } = await supabase
     .from('products')
-    .update(update)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(update as any)
     .in('id', ids)
     .eq('establishment_id', profile.establishment_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

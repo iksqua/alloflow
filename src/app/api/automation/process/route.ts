@@ -58,6 +58,9 @@ async function processRule(
   estab: Pick<EstablishmentRow, 'id' | 'name' | 'brevo_sender_name' | 'google_review_url' | 'sms_credits'>
 ): Promise<number> {
   const now = new Date()
+  // opt_in_* columns are not yet in generated Supabase types — use any for customer queries
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any
   type CustomerRow = { id: string; first_name: string; phone: string | null; email: string | null; points: number; tier: string; rfm_segment: string; birthdate?: string | null }
   let customers: CustomerRow[] = []
 
@@ -65,7 +68,7 @@ async function processRule(
     case 'welcome': {
       // Customers with exactly 1 order (rfm_segment = 'nouveau'), order was delay_hours ago
       const cutoff = new Date(now.getTime() - rule.delay_hours * 60 * 60 * 1000).toISOString()
-      const { data } = await supabase
+      const { data } = await sb
         .from('customers')
         .select('id, first_name, phone, email, points, tier, rfm_segment')
         .eq('establishment_id', estab.id)
@@ -91,7 +94,7 @@ async function processRule(
       const targetDate = new Date(now)
       targetDate.setDate(targetDate.getDate() + 2)
       const mmdd = `${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`
-      const { data } = await supabase
+      const { data } = await sb
         .from('customers')
         .select('id, first_name, phone, email, points, tier, rfm_segment, birthdate')
         .eq('establishment_id', estab.id)
@@ -122,7 +125,7 @@ async function processRule(
     case 'reactivation': {
       // Customers who just became a_risque (rfm_updated_at in last hour)
       const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
-      const { data } = await supabase
+      const { data } = await sb
         .from('customers')
         .select('id, first_name, phone, email, points, tier, rfm_segment')
         .eq('establishment_id', estab.id)
@@ -136,7 +139,7 @@ async function processRule(
     case 'lost': {
       // Customers who just became perdu (rfm_updated_at in last hour)
       const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
-      const { data } = await supabase
+      const { data } = await sb
         .from('customers')
         .select('id, first_name, phone, email, points, tier, rfm_segment')
         .eq('establishment_id', estab.id)
@@ -174,7 +177,7 @@ async function processRule(
       const eligibleIds = customerIds.filter(id => !alreadySentIds.has(id))
       if (!eligibleIds.length) return 0
 
-      const { data } = await supabase
+      const { data } = await sb
         .from('customers')
         .select('id, first_name, phone, email, points, tier, rfm_segment')
         .in('id', eligibleIds)

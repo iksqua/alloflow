@@ -68,7 +68,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (notes !== undefined)                   headerUpdate.notes = notes
 
   if (Object.keys(headerUpdate).length > 0) {
-    await supabase.from('purchase_orders').update(headerUpdate).eq('id', id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from('purchase_orders').update(headerUpdate as any).eq('id', id)
   }
 
   // Delete lines (only those with quantity_received null or 0)

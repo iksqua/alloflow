@@ -73,7 +73,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data, error } = await supabase
     .from('orders')
-    .update(allowedUpdate)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(allowedUpdate as any)
     .eq('id', id)
     .select()
     .single()

@@ -25,7 +25,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: recipe, error: recipeError } = await supabase
     .from('recipes')
-    .update(recipeUpdate)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(recipeUpdate as any)
     .eq('id', id)
     .select('*, product:products!products_recipe_id_fkey(id)')
     .single()
@@ -80,7 +81,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     if (Object.keys(productUpdate).length > 0) {
-      await supabase.from('products').update(productUpdate).eq('id', linkedProductId)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabase.from('products').update(productUpdate as any).eq('id', linkedProductId)
     }
   }
 
