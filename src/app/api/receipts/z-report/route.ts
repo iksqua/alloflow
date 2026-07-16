@@ -42,17 +42,19 @@ export async function POST(req: NextRequest) {
     .eq('establishment_id', profile.establishment_id)
     .in('status', ['paid', 'refunded'])
 
-  // Fetch payments for these orders
-  const orderIds = (orders ?? []).map(o => o.id)
-  const { data: payments } = orderIds.length > 0
+  const paidOrders = (orders ?? []).filter(o => o.status === 'paid')
+  const refundedOrders = (orders ?? []).filter(o => o.status === 'refunded')
+
+  // Fetch payments only for paid orders — refunded order payments must not inflate
+  // the by_method totals (the money was returned to the customer).
+  // Cash-session close uses the same filter (orders.status = 'paid').
+  const paidOrderIds = paidOrders.map(o => o.id)
+  const { data: payments } = paidOrderIds.length > 0
     ? await supabase
         .from('payments')
         .select('method, amount, order_id')
-        .in('order_id', orderIds)
+        .in('order_id', paidOrderIds)
     : { data: [] }
-
-  const paidOrders = (orders ?? []).filter(o => o.status === 'paid')
-  const refundedOrders = (orders ?? []).filter(o => o.status === 'refunded')
 
   const totalTtc = paidOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
   const totalRefunds = refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
