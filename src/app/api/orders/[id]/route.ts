@@ -52,8 +52,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (existingOrder.establishment_id !== profile.establishment_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
-  if (existingOrder.status === 'paid') {
-    return NextResponse.json({ error: 'order_already_paid' }, { status: 409 })
+  if (existingOrder.status === 'paid' || existingOrder.status === 'refunded') {
+    return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })
   }
 
   const body = await req.json()
