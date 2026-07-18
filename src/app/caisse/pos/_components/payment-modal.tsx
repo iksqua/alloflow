@@ -144,7 +144,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   // reuse the same order instead of creating a duplicate orphaned order.
   const pendingOrderRef = useRef<{ id: string; total_ttc: number; items: unknown[] } | null>(null)
 
-  const cashChange = cashGiven ? parseFloat(cashGiven.replace(',', '.')) - total : 0
+  const cashGivenNum = cashGiven ? parseFloat(cashGiven.replace(',', '.')) : NaN
+  const cashChange = isNaN(cashGivenNum) ? 0 : cashGivenNum - total
   const currentPerson = splitPersons[splitIndex]
 
   // ── Payment handlers ──────────────────────────────────────────────────────
@@ -543,7 +544,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
               </div>
               <button
                 onClick={handleCashConfirm}
-                disabled={isSubmitting || !cashGiven || parseFloat(cashGiven.replace(',', '.')) < total - 0.01}
+                disabled={isSubmitting || !cashGiven || isNaN(cashGivenNum) || cashGivenNum < total - 0.01}
                 className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
                 style={{ background: 'var(--green)' }}
               >
@@ -713,7 +714,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                   </div>
                   <button
                     onClick={() => handleSplitPersonNext(parseFloat(splitCash))}
-                    disabled={isSubmitting || !splitCash || parseFloat(splitCash) < currentPerson.amount - 0.01}
+                    disabled={isSubmitting || !splitCash || (() => { const v = parseFloat(splitCash); return isNaN(v) || v < currentPerson.amount - 0.01 })()}
                     className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
                     style={{ background: 'var(--green)' }}
                   >
