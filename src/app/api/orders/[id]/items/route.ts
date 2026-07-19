@@ -207,6 +207,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     .from('order_items')
     .delete()
     .eq('id', itemId)
+    .eq('order_id', id)
 
   if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
 

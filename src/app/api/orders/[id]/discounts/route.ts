@@ -60,11 +60,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     ? subtotalHt * (value / 100)
     : Math.min(value, subtotalHt))
 
+  // Recompute raw taxes from order_items so repeated calls (discount updates) don't
+  // apply the ratio to already-discounted stored values, which would compound discounts.
+  const { data: rawItems } = await supabase
+    .from('order_items')
+    .select('unit_price, tva_rate, quantity')
+    .eq('order_id', id)
+
+  let rawTax55 = 0, rawTax10 = 0, rawTax20 = 0
+  for (const it of rawItems ?? []) {
+    const lHt = r2(it.unit_price * it.quantity)
+    const lTax = r2(lHt * (it.tva_rate / 100))
+    if (it.tva_rate === 5.5) rawTax55 += lTax
+    else if (it.tva_rate === 10) rawTax10 += lTax
+    else rawTax20 += lTax
+  }
+  rawTax55 = r2(rawTax55); rawTax10 = r2(rawTax10); rawTax20 = r2(rawTax20)
+
   const discountedHt = r2(subtotalHt - discountAmount)
   const ratio = subtotalHt > 0 ? discountedHt / subtotalHt : 1  // facteur de réduction
-  const newTax55 = r2(order.tax_5_5 * ratio)
-  const newTax10 = r2(order.tax_10 * ratio)
-  const newTax20 = r2(order.tax_20 * ratio)
+  const newTax55 = r2(rawTax55 * ratio)
+  const newTax10 = r2(rawTax10 * ratio)
+  const newTax20 = r2(rawTax20 * ratio)
   const newBaseTtc = r2(discountedHt + newTax55 + newTax10 + newTax20)
 
   // Recompute percent-based loyalty discount on the new (post-commercial-discount) TTC.
