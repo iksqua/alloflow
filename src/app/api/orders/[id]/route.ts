@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: existingOrder } = await supabase
     .from('orders')
-    .select('establishment_id, status')
+    .select('establishment_id, status, table_id')
     .eq('id', id)
     .single()
 
@@ -80,5 +80,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Free the table when an order is cancelled (e.g. split payment abandoned mid-flow).
+  // The /pay route handles the paid→free transition; this covers the cancel path.
+  if (status === 'cancelled' && existingOrder.table_id) {
+    await supabase
+      .from('restaurant_tables')
+      .update({ status: 'free', current_order_id: null })
+      .eq('id', existingOrder.table_id)
+      .eq('current_order_id', id)
+      .eq('establishment_id', profile.establishment_id)
+  }
+
   return NextResponse.json({ order: data })
 }
