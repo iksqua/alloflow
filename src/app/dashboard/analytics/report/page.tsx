@@ -35,6 +35,9 @@ export default async function ReportPage({
 
   const isFranchiseAdmin = profile?.role === 'franchise_admin'
 
+  // Non-franchise_admin users without an establishment must not access reports (no scoped filter possible)
+  if (!isFranchiseAdmin && !profile?.establishment_id) redirect('/dashboard')
+
   const siteId = isFranchiseAdmin
     ? (params.site || profile?.establishment_id || undefined)
     : (profile?.establishment_id || undefined)

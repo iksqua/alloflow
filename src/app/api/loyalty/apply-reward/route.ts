@@ -77,5 +77,18 @@ export async function POST(req: NextRequest) {
     .in('status', ['open'])
 
   if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 })
+
+  // Deduct points from customer after the reward is applied to the order.
+  // The .gte guard prevents double-spending if two requests race past the initial check.
+  const pointsToDeduct = reward.points_required ?? 0
+  if (pointsToDeduct > 0) {
+    await supabase
+      .from('customers')
+      .update({ points: customer.points - pointsToDeduct })
+      .eq('id', customer_id)
+      .eq('establishment_id', profile.establishment_id)
+      .gte('points', pointsToDeduct)
+  }
+
   return NextResponse.json({ order_id, discount_amount: discountAmount, new_total: newTotal })
 }

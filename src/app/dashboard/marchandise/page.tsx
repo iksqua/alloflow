@@ -72,9 +72,8 @@ export default async function MarchandisePage({
       (sum: number, i: { quantity: number; unit_cost: number }) => sum + i.quantity * i.unit_cost, 0
     )
     const product = r.product?.[0] ?? null
-    const priceTTC = product ? product.price * (1 + product.tva_rate / 100) : 0
-    const foodCostPct = priceTTC > 0
-      ? Math.round((foodCostAmount / priceTTC) * 1000) / 10
+    const foodCostPct = product && product.price > 0
+      ? Math.round((foodCostAmount / product.price) * 1000) / 10
       : null
     const sopRaw = r.sop?.[0] ?? null
 

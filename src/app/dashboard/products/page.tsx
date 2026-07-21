@@ -19,8 +19,12 @@ export default async function ProductsPage() {
     .select('*, category:categories(id, name, color_hex, icon)')
     .is('deleted_at', null)
 
-  if (profile?.role !== 'super_admin' && profile?.establishment_id) {
+  if (profile?.role === 'super_admin') {
+    // super_admin sees all products — no filter
+  } else if (profile?.establishment_id) {
     query = query.eq('establishment_id', profile.establishment_id)
+  } else {
+    return null
   }
 
   const { data: products = [] } = await query.order('sort_order').order('name')

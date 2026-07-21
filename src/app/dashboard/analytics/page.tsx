@@ -33,6 +33,9 @@ export default async function AnalyticsPage({
 
   const isFranchiseAdmin = profile?.role === 'franchise_admin'
 
+  // Non-franchise_admin users without an establishment must not access analytics (no scoped filter possible)
+  if (!isFranchiseAdmin && !profile?.establishment_id) redirect('/dashboard')
+
   // siteId: franchise_admin can switch sites, others are locked to their establishment
   const siteId = isFranchiseAdmin
     ? (params.site || profile?.establishment_id || undefined)

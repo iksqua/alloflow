@@ -39,6 +39,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   const [formError,    setFormError]    = useState<string | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rewardsAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (open) {
@@ -77,16 +78,21 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   }, [query, state])
 
   async function selectCustomer(c: LoyaltyCustomer) {
+    rewardsAbortRef.current?.abort()
+    const controller = new AbortController()
+    rewardsAbortRef.current = controller
+
     setSelected(c)
+    setRewards([])
     try {
-      const res = await fetch(`/api/customers/${c.id}/rewards`)
+      const res = await fetch(`/api/customers/${c.id}/rewards`, { signal: controller.signal })
       if (!res.ok) throw new Error()
       const json = await res.json()
-      setRewards(json.rewards ?? [])
-    } catch {
-      setRewards([])
+      if (!controller.signal.aborted) setRewards(json.rewards ?? [])
+    } catch (err) {
+      if (!(err instanceof Error && err.name === 'AbortError')) setRewards([])
     }
-    setState('found')
+    if (!controller.signal.aborted) setState('found')
   }
 
   async function handleCreate() {
