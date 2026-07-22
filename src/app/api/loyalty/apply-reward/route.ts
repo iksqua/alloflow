@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   // Fetch order total
   const { data: order, error: oErr } = await supabase
     .from('orders')
-    .select('total_ttc, establishment_id, status')
+    .select('total_ttc, establishment_id, status, reward_id')
     .eq('id', order_id)
     .single()
   if (oErr || !order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
@@ -59,11 +59,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'order_closed' }, { status: 409 })
   }
 
+  // Idempotency: reject if a reward was already applied to this order
+  if (order.reward_id) {
+    return NextResponse.json({ error: 'reward_already_applied' }, { status: 409 })
+  }
+
   const discountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
     ? Math.round(order.total_ttc * (reward.value / 100) * 100) / 100
     : reward.value
 
   const newTotal = Math.round(Math.max(0, order.total_ttc - discountAmount) * 100) / 100
+
+  // Guard: a zero total would permanently block payment (pay route rejects total_ttc <= 0)
+  if (newTotal <= 0) {
+    return NextResponse.json({ error: 'discount_exceeds_total' }, { status: 400 })
+  }
 
   const { error: uErr } = await supabase
     .from('orders')

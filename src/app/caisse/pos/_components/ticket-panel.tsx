@@ -55,7 +55,7 @@ function computeLoyaltyDiscount(reward: LoyaltyReward | null, total: number): nu
   if (!reward) return 0
   return reward.type === 'percent' || reward.type === 'reduction_pct'
     ? Math.round(total * (reward.value / 100) * 100) / 100
-    : reward.value
+    : Math.min(reward.value, total)
 }
 
 export function TicketPanel({

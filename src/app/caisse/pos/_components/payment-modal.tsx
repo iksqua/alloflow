@@ -64,7 +64,7 @@ function loyaltyDiscountEur(ticket: LocalTicket, reward: LoyaltyReward | null): 
   const base = computeTotalBeforeLoyalty(ticket)
   return (reward.type === 'percent' || reward.type === 'reduction_pct')
     ? Math.round(base * (reward.value / 100) * 100) / 100
-    : reward.value
+    : Math.min(reward.value, base)
 }
 
 // ─── Order creation helper ────────────────────────────────────────────────────
@@ -330,7 +330,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method: 'split',
-            amount: splitOrderTotal || total,
+            amount: splitOrderTotal > 0 ? splitOrderTotal : total,
             split_payments: splitPayments,
           }),
         })
