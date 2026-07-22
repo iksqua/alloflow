@@ -89,15 +89,20 @@ export function PosShell({
   const [showLoyalty,    setShowLoyalty]    = useState(false)
   const [showSops,       setShowSops]       = useState(false)
 
-  // Clear loyalty state when the ticket is emptied via individual item removal (not just "Effacer").
-  // Without this, a linked reward silently carries over to the next item added.
+  // Clear loyalty + discount state when the ticket is emptied via individual item removal (not just "Effacer").
+  // Without this, a linked reward and/or discount silently carries over to the next item added.
   useEffect(() => {
-    if (ticket.items.length === 0 && loyaltyDone) {
-      setLinkedCustomer(null)
-      setLinkedReward(null)
-      setLoyaltyDone(false)
+    if (ticket.items.length === 0) {
+      if (ticket.discount !== null) {
+        setTicket(prev => ({ ...prev, discount: null }))
+      }
+      if (loyaltyDone) {
+        setLinkedCustomer(null)
+        setLinkedReward(null)
+        setLoyaltyDone(false)
+      }
     }
-  }, [ticket.items.length, loyaltyDone])
+  }, [ticket.items.length, ticket.discount, loyaltyDone])
 
   const addItem = (product: typeof initialProducts[0]) => {
     setTicket((prev) => {

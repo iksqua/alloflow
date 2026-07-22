@@ -55,11 +55,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Step 2: Now compute totals — session is closed, no new payments can arrive.
   // Filter to status='paid' only: refunded orders keep their payment rows in the DB
   // but the money was returned to the customer and must not inflate the Z-close totals.
-  const { data: sessionPayments } = await supabase
+  const { data: sessionPayments, error: paymentsError } = await supabase
     .from('payments')
     .select('method, amount, orders!inner(session_id, status)')
     .eq('orders.session_id', id)
     .eq('orders.status', 'paid')
+
+  if (paymentsError) {
+    console.error('[cash-session close] Failed to fetch payments:', paymentsError)
+    return NextResponse.json({ error: 'Failed to compute session totals', detail: paymentsError.message }, { status: 500 })
+  }
 
   const totalCash = sessionPayments
     ?.filter((p) => p.method === 'cash')

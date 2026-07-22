@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     .insert({
       establishment_id: establishmentId,
       created_by:       user.id,
-      name:             result.data.first_name,
+      name:             [result.data.first_name, result.data.last_name].filter(Boolean).join(' '),
       first_name:       result.data.first_name,
       last_name:        result.data.last_name ?? null,
       phone:            result.data.phone ?? null,

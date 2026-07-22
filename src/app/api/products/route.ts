@@ -65,6 +65,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
   }
 
+  if (!['admin', 'super_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
+  }
+
   const { data, error } = await supabase
     .from('products')
     .insert({ ...result.data, establishment_id: profile.establishment_id })

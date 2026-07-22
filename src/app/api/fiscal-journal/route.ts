@@ -20,8 +20,10 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const page  = Math.max(1, parseInt(searchParams.get('page')  ?? '1'))
-  const limit = Math.min(100, parseInt(searchParams.get('limit') ?? '50'))
+  const rawPage  = parseInt(searchParams.get('page')  ?? '', 10)
+  const rawLimit = parseInt(searchParams.get('limit') ?? '', 10)
+  const page  = Math.max(1, isNaN(rawPage)  ? 1  : rawPage)
+  const limit = Math.min(100, isNaN(rawLimit) ? 50 : rawLimit)
   const offset = (page - 1) * limit
 
   const sortParam = searchParams.get('sort') ?? 'desc'

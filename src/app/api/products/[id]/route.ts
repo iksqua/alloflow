@@ -22,12 +22,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('establishment_id')
+    .select('establishment_id, role')
     .eq('id', user.id)
     .single()
 
   if (!profile?.establishment_id) {
     return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 403 })
+  }
+
+  if (!['admin', 'super_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
   }
 
   const { data, error } = await supabase
@@ -39,6 +43,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .single()
 
   if (error) {
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: 'Produit non trouvé ou accès refusé' }, { status: 404 })
+    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
@@ -59,12 +66,16 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('establishment_id')
+    .select('establishment_id, role')
     .eq('id', user.id)
     .single()
 
   if (!profile?.establishment_id) {
     return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 403 })
+  }
+
+  if (!['admin', 'super_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
   }
 
   const { id } = await params
