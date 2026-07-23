@@ -72,6 +72,17 @@ export async function POST(req: NextRequest) {
   const { items, session_id, table_id } = parsed.data
   const { processedItems, subtotalHt, tax55, tax10, tax20, totalTtc } = computeOrderTotals(items)
 
+  // Validate session belongs to this establishment to prevent cross-tenant contamination
+  if (session_id) {
+    const { data: session } = await supabase
+      .from('cash_sessions')
+      .select('id')
+      .eq('id', session_id)
+      .eq('establishment_id', profile.establishment_id)
+      .single()
+    if (!session) return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 })
+  }
+
   // Apply commercial discount atomically if provided (avoids orphaned orders on separate discount API failure).
   let discountAmount = 0
   let storedTax55 = tax55

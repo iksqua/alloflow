@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await supabase
     .from('profiles').select('role, establishment_id').eq('id', user.id).single()
 
-  if (profile?.role === 'caissier') {
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile?.role ?? '')) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 

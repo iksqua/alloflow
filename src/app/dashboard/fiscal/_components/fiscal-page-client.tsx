@@ -33,13 +33,15 @@ const EVENT_CLASSES: Record<string, string> = {
   z_close: 'bg-blue-900/20 text-blue-400',
 }
 
-function checkChainIntegrity(entries: FiscalEntry[]): boolean {
-  if (entries.length === 0) return true
+function checkChainIntegrity(entries: FiscalEntry[]): { intact: boolean; partial: boolean } {
+  if (entries.length === 0) return { intact: true, partial: false }
   const sorted = [...entries].sort((a, b) => a.sequence_no - b.sequence_no)
+  // If the first entry has sequence_no > 1, we only checked a window — not the full chain
+  const partial = sorted[0].sequence_no > 1
   for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i].previous_hash !== sorted[i - 1].entry_hash) return false
+    if (sorted[i].previous_hash !== sorted[i - 1].entry_hash) return { intact: false, partial }
   }
-  return true
+  return { intact: true, partial }
 }
 
 export function FiscalPageClient({ initialEntries }: Props) {
@@ -49,7 +51,7 @@ export function FiscalPageClient({ initialEntries }: Props) {
     .filter(e => e.event_type === 'sale')
     .reduce((s, e) => s + e.amount_ttc, 0)
 
-  const chainIntact = checkChainIntegrity(entries)
+  const { intact: chainIntact, partial: chainPartial } = checkChainIntegrity(entries)
 
   return (
     <div>
@@ -63,7 +65,7 @@ export function FiscalPageClient({ initialEntries }: Props) {
           {chainIntact ? (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold self-start sm:self-auto"
               style={{ background: 'rgba(16,185,129,.1)', color: '#10b981', border: '1px solid rgba(16,185,129,.2)' }}>
-              🔒 Chaîne de hash intacte
+              {chainPartial ? '🔒 Chaîne intacte (200 dernières entrées)' : '🔒 Chaîne de hash intacte'}
             </div>
           ) : (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold self-start sm:self-auto"
@@ -78,7 +80,7 @@ export function FiscalPageClient({ initialEntries }: Props) {
           {[
             { label: 'Entrées totales', value: entries.length, color: 'text-[var(--text1)]' },
             { label: 'Ventes', value: entries.filter(e => e.event_type === 'sale').length, color: 'text-green-400' },
-            { label: 'Total TTC', value: `${totalSales.toFixed(2)} €`, color: 'text-[var(--text1)]' },
+            { label: chainPartial ? 'Total TTC (200 dernières)' : 'Total TTC', value: `${totalSales.toFixed(2)} €`, color: 'text-[var(--text1)]' },
           ].map(kpi => (
             <div key={kpi.label} className="rounded-xl p-4 border border-[var(--border)]" style={{ background: 'var(--surface)' }}>
               <div className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>

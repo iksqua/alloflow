@@ -10,7 +10,14 @@ export function EnvoyerButton({ campaignId }: { campaignId: string }) {
 
   async function handleSend() {
     setLoading(true); setError(null)
-    const res = await fetch(`/api/campaigns/${campaignId}/send`, { method: 'POST' })
+    let res: Response
+    try {
+      res = await fetch(`/api/campaigns/${campaignId}/send`, { method: 'POST' })
+    } catch {
+      setLoading(false)
+      setError('Erreur réseau — réessayez')
+      return
+    }
     setLoading(false)
     if (!res.ok) {
       const data = await res.json() as { error?: string }

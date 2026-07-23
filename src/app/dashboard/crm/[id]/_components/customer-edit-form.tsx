@@ -41,19 +41,26 @@ export function CustomerEditForm({ customer, onSaved }: Props) {
 
     const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
 
-    const res = await fetch(`/api/customers/${customer.id}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        gender:          gender || null,
-        birthdate:       birthdate || null,
-        opt_in_sms:      optSms,
-        opt_in_email:    optEmail,
-        opt_in_whatsapp: optWa,
-        tags,
-        notes,
-      }),
-    })
+    let res: Response
+    try {
+      res = await fetch(`/api/customers/${customer.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          gender:          gender || null,
+          birthdate:       birthdate || null,
+          opt_in_sms:      optSms,
+          opt_in_email:    optEmail,
+          opt_in_whatsapp: optWa,
+          tags,
+          notes,
+        }),
+      })
+    } catch {
+      setSaving(false)
+      setError('Erreur réseau — réessayez')
+      return
+    }
 
     setSaving(false)
     if (!res.ok) {

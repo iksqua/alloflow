@@ -50,11 +50,18 @@ export function AutomationRulesForm({ initialRules, googleReviewUrl, senderName,
     setSaving(trigger)
     setErrors(prev => ({ ...prev, [trigger]: '' }))
 
-    const res = await fetch('/api/automation-rules', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(rule),
-    })
+    let res: Response
+    try {
+      res = await fetch('/api/automation-rules', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(rule),
+      })
+    } catch {
+      setSaving(null)
+      setErrors(prev => ({ ...prev, [trigger]: 'Erreur réseau — réessayez' }))
+      return
+    }
     setSaving(null)
     if (!res.ok) {
       const data = await res.json() as { error?: string }

@@ -38,7 +38,8 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   const [saving,       setSaving]       = useState(false)
   const [formError,    setFormError]    = useState<string | null>(null)
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inFlightRef  = useRef(false)
 
   useEffect(() => {
     if (open) {
@@ -90,10 +91,12 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   }
 
   async function handleCreate() {
+    if (inFlightRef.current) return
     if (!newFirstName.trim() || (!newPhone.trim() && !newEmail.trim())) {
       setFormError('Prénom et (téléphone ou email) requis')
       return
     }
+    inFlightRef.current = true
     setSaving(true); setFormError(null)
     try {
       const res = await fetch('/api/customers', {
@@ -114,6 +117,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Erreur')
     } finally {
+      inFlightRef.current = false
       setSaving(false)
     }
   }

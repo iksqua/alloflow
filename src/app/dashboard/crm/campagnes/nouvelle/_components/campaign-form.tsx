@@ -54,16 +54,23 @@ export function CampaignForm({ establishmentName }: Props) {
 
     setSaving(true); setError(null)
 
-    const res = await fetch('/api/campaigns', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        channel,
-        template_body: message,
-        segment_filter: selectedSegments.length ? { segments: selectedSegments } : {},
-      }),
-    })
+    let res: Response
+    try {
+      res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          channel,
+          template_body: message,
+          segment_filter: selectedSegments.length ? { segments: selectedSegments } : {},
+        }),
+      })
+    } catch {
+      setSaving(false)
+      setError('Erreur réseau — réessayez')
+      return
+    }
     setSaving(false)
     if (!res.ok) {
       const data = await res.json() as { error?: string }
@@ -75,7 +82,14 @@ export function CampaignForm({ establishmentName }: Props) {
 
     if (sendNow) {
       setSending(true)
-      const sendRes = await fetch(`/api/campaigns/${campaign.id}/send`, { method: 'POST' })
+      let sendRes: Response
+      try {
+        sendRes = await fetch(`/api/campaigns/${campaign.id}/send`, { method: 'POST' })
+      } catch {
+        setSending(false)
+        setError('Erreur réseau lors de l\'envoi — réessayez')
+        return
+      }
       setSending(false)
       if (!sendRes.ok) {
         const data = await sendRes.json() as { error?: string }
