@@ -288,6 +288,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     setSplitCash('')
     setSplitCashAmounts([])
     setSplitMixedParts([])
+    setCompletedOrder(null)
     setStep('method')
   }, [splitOrderId])
 

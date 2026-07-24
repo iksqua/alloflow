@@ -98,10 +98,14 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
   }
 
   function cycleAssignment(productId: string) {
+    // Capture persons at call time (not inside the functional updater) to avoid
+    // reading a stale closure if addPerson and cycleAssignment fire in the same
+    // React batch before the next render refreshes the closure.
+    const currentPersons = persons
     setAssignments(prev => {
       const current = prev.get(productId) ?? null
-      const idx = current === null ? 0 : persons.indexOf(current) + 1
-      const next = idx >= persons.length ? null : persons[idx]
+      const idx = current === null ? 0 : currentPersons.indexOf(current) + 1
+      const next = idx >= currentPersons.length ? null : currentPersons[idx]
       return new Map([...prev, [productId, next]])
     })
   }

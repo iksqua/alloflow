@@ -30,8 +30,9 @@ export function DiscountModal({ ticket, onApply, onClose }: DiscountModalProps) 
       onApply({ type, value: Math.round(capped * 100) / 100 })
       return
     }
-    // type === 'percent' — limiter à 100 %
-    const capped = Math.min(v, 100)
+    // type === 'percent' — limiter à 99 % : le serveur refuse les remises qui
+    // annulent intégralement le total (orders/route.ts: finalTotalTtc <= 0 → 400).
+    const capped = Math.min(v, 99)
     onApply({ type, value: capped })
   }
 
@@ -85,7 +86,7 @@ export function DiscountModal({ ticket, onApply, onClose }: DiscountModalProps) 
           type="number"
           step={type === 'percent' ? '1' : '0.01'}
           min="0"
-          max={type === 'percent' ? '100' : undefined}
+          max={type === 'percent' ? '99' : undefined}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={type === 'percent' ? 'Ex: 10' : 'Ex: 5,00'}
