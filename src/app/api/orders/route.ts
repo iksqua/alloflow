@@ -197,7 +197,8 @@ export async function POST(req: NextRequest) {
   )
 
   if (itemsError) {
-    await supabase.from('orders').delete().eq('id', order.id)
+    const { error: deleteError } = await supabase.from('orders').delete().eq('id', order.id)
+    if (deleteError) console.error('[orders/POST] Failed to delete orphaned order', order.id, deleteError)
     return NextResponse.json({ error: itemsError.message }, { status: 500 })
   }
 
