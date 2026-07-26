@@ -96,9 +96,8 @@ export async function POST(req: NextRequest) {
     if (dtype === 'percent' && dvalue > 100) {
       return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
     }
-    if (dtype === 'amount' && dvalue > subtotalHt) {
-      return NextResponse.json({ error: 'discount_value_invalid' }, { status: 400 })
-    }
+    // amount discounts exceeding the subtotal are capped by Math.min below;
+    // the finalTotalTtc <= 0 guard further down returns discount_exceeds_total.
     discountAmount = r2(dtype === 'percent'
       ? subtotalHt * (dvalue / 100)
       : Math.min(dvalue, subtotalHt))
