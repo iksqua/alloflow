@@ -2,9 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-async function getEstablishmentId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data } = await supabase.from('profiles').select('establishment_id').eq('id', userId).single()
-  return data?.establishment_id ?? null
+async function getProfile(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data } = await supabase.from('profiles').select('establishment_id, role').eq('id', userId).single()
+  return data ?? null
 }
 
 const DEFAULT_LEVELS = [
@@ -36,7 +36,8 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const establishmentId = await getEstablishmentId(supabase, user.id)
+  const profile = await getProfile(supabase, user.id)
+  const establishmentId = profile?.establishment_id ?? null
   if (!establishmentId) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
 
   // Fetch config (may not exist yet)
@@ -92,8 +93,12 @@ export async function PUT(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const establishmentId = await getEstablishmentId(supabase, user.id)
+  const profile = await getProfile(supabase, user.id)
+  const establishmentId = profile?.establishment_id ?? null
   if (!establishmentId) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile?.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
+  }
 
   const body = await req.json()
 

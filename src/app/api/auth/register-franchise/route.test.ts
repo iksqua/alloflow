@@ -84,7 +84,8 @@ describe('POST /api/auth/register-franchise', () => {
     }))
   })
 
-  it('retourne 409 si email déjà enregistré', async () => {
+  it('retourne 201 si email déjà enregistré (anti-énumération)', async () => {
+    // Returns 201 instead of 409 to prevent email enumeration attacks.
     mockInsert.mockReturnValue({
       select: () => ({
         single: () => Promise.resolve({ data: { id: 'org-123' }, error: null }),
@@ -102,7 +103,7 @@ describe('POST /api/auth/register-franchise', () => {
       password: 'SecurePass1!',
     }))
 
-    expect(res.status).toBe(409)
+    expect(res.status).toBe(201)
     expect(mockEq).toHaveBeenCalledWith('id', 'org-123')
   })
 })

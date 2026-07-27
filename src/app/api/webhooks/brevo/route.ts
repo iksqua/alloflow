@@ -18,14 +18,15 @@ const EVENT_TO_STATUS: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
-  // Validate webhook secret (set BREVO_WEBHOOK_SECRET in Vercel env vars)
-  // Configure Brevo to send this header: X-Brevo-Secret: <value>
+  // BREVO_WEBHOOK_SECRET must be set — configure Brevo to send X-Brevo-Secret: <value>
   const secret = process.env.BREVO_WEBHOOK_SECRET
-  if (secret) {
-    const incoming = req.headers.get('x-brevo-secret')
-    if (incoming !== secret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  if (!secret) {
+    console.error('[brevo/webhook] BREVO_WEBHOOK_SECRET not configured — rejecting request')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+  }
+  const incoming = req.headers.get('x-brevo-secret')
+  if (incoming !== secret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const events: BrevoEvent[] = await req.json().catch(() => [])

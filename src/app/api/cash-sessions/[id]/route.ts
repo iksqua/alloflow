@@ -61,13 +61,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .eq('orders.session_id', id)
     .eq('orders.status', 'paid')
 
-  const totalCash = sessionPayments
-    ?.filter((p) => p.method === 'cash')
-    .reduce((sum, p) => sum + p.amount, 0) ?? 0
+  const r2 = (x: number) => Math.round(x * 100) / 100
 
-  const totalCard = sessionPayments
+  const totalCash = r2(sessionPayments
+    ?.filter((p) => p.method === 'cash')
+    .reduce((sum, p) => sum + p.amount, 0) ?? 0)
+
+  const totalCard = r2(sessionPayments
     ?.filter((p) => p.method === 'card')
-    .reduce((sum, p) => sum + p.amount, 0) ?? 0
+    .reduce((sum, p) => sum + p.amount, 0) ?? 0)
 
   // Step 3: Update with final computed totals
   const { data, error } = await supabase
@@ -75,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .update({
       total_cash: totalCash,
       total_card: totalCard,
-      total_sales: totalCash + totalCard,
+      total_sales: r2(totalCash + totalCard),
     })
     .eq('id', id)
     .select()

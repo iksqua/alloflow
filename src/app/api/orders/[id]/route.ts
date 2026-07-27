@@ -1,6 +1,7 @@
 // src/app/api/orders/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { writeFiscalJournalEntry } from '@/lib/fiscal/journal'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -90,6 +91,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .eq('id', existingOrder.table_id)
       .eq('current_order_id', id)
       .eq('establishment_id', profile.establishment_id)
+  }
+
+  // NF525: write a void journal entry for every cancelled order so the audit chain is complete.
+  if (status === 'cancelled') {
+    const { data: orderFull } = await supabase
+      .from('orders')
+      .select('total_ttc, session_id')
+      .eq('id', id)
+      .single()
+    await writeFiscalJournalEntry({
+      supabase,
+      establishmentId: profile.establishment_id,
+      eventType:       'void',
+      orderId:         id,
+      amountTtc:       orderFull?.total_ttc ?? 0,
+      cashierId:       user.id,
+      meta:            { session_id: orderFull?.session_id ?? null },
+    })
   }
 
   return NextResponse.json({ order: data })

@@ -1,6 +1,6 @@
 // src/app/api/automation/process/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { sendBrevoSms, renderTemplate } from '@/lib/brevo'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database'
@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createClient()
+  // Cron jobs have no user session — use service role to bypass RLS.
+  // All per-establishment queries below are explicitly filtered by establishment_id.
+  const supabase = createServiceClient()
 
   // Get all active automation rules with their establishment data
   const { data: rules } = await supabase
