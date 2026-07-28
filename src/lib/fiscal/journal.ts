@@ -32,9 +32,10 @@ interface WriteJournalEntryOptions {
 /**
  * Writes a fiscal journal entry with SHA-256 chaining (NF525).
  * Retries up to 3 times on sequence_no unique-constraint conflicts.
- * Failure is non-blocking: logs the error but does not throw.
+ * Returns true if the entry was written, false on persistent failure.
+ * Never throws — callers must check the return value and log critically on false.
  */
-export async function writeFiscalJournalEntry(opts: WriteJournalEntryOptions): Promise<void> {
+export async function writeFiscalJournalEntry(opts: WriteJournalEntryOptions): Promise<boolean> {
   const { supabase, establishmentId, eventType, orderId, amountTtc, cashierId, meta } = opts
   try {
     let written = false
@@ -74,7 +75,9 @@ export async function writeFiscalJournalEntry(opts: WriteJournalEntryOptions): P
       }
       // code '23505': concurrent operation claimed this sequence_no — retry with fresh seq
     }
+    return written
   } catch (err) {
     console.error(`[fiscal-journal] Unexpected error writing ${eventType} entry:`, err)
+    return false
   }
 }

@@ -53,7 +53,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // Write a fiscal journal entry (refund with negative amount).
-  await writeFiscalJournalEntry({
+  const journalOk = await writeFiscalJournalEntry({
     supabase,
     establishmentId: profile.establishment_id,
     eventType:       'refund',
@@ -62,6 +62,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     cashierId:       user.id,
     meta:            { session_id: order.session_id ?? null },
   })
+  if (!journalOk) {
+    console.error('[refund] CRITICAL: fiscal journal entry failed — refund committed but NF525 chain has a gap. order_id:', id)
+  }
 
   return NextResponse.json({ success: true, order_id: id, status: 'refunded' })
 }

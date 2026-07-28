@@ -88,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Write NF525 z_close journal entry — marks the end of this fiscal session.
-  await writeFiscalJournalEntry({
+  const journalOk = await writeFiscalJournalEntry({
     supabase,
     establishmentId: profile.establishment_id,
     eventType:       'z_close',
@@ -97,6 +97,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     cashierId:       user.id,
     meta:            { session_id: id, total_cash: totalCash, total_card: totalCard },
   })
+  if (!journalOk) {
+    console.error('[cash-session/close] CRITICAL: z_close fiscal journal entry failed — session closed but NF525 chain has a gap. session_id:', id)
+  }
 
   return NextResponse.json({ session: data })
 }

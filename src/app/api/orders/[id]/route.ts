@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Use data returned by the update (which already contains all columns) instead of a second
   // query — a failed second query would silently write amountTtc=0 into the fiscal chain.
   if (status === 'cancelled') {
-    await writeFiscalJournalEntry({
+    const journalOk = await writeFiscalJournalEntry({
       supabase,
       establishmentId: profile.establishment_id,
       eventType:       'void',
@@ -106,6 +106,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       cashierId:       user.id,
       meta:            { session_id: data.session_id ?? null },
     })
+    if (!journalOk) {
+      console.error('[order/cancel] CRITICAL: fiscal journal entry failed — void not recorded. order_id:', id)
+    }
   }
 
   return NextResponse.json({ order: data })

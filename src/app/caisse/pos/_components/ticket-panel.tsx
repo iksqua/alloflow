@@ -53,9 +53,12 @@ function computeTicketTotals(ticket: LocalTicket) {
 
 function computeLoyaltyDiscount(reward: LoyaltyReward | null, total: number): number {
   if (!reward) return 0
-  return reward.type === 'percent' || reward.type === 'reduction_pct'
+  const raw = reward.type === 'percent' || reward.type === 'reduction_pct'
     ? Math.round(total * (reward.value / 100) * 100) / 100
     : reward.value
+  // Cap to total: prevents displaying a discount larger than the order and ensures
+  // the pay button is correctly disabled when the reward fully covers the order.
+  return Math.min(raw, total)
 }
 
 export function TicketPanel({
@@ -209,7 +212,7 @@ export function TicketPanel({
         )}
         <button
           onClick={onPay}
-          disabled={isEmpty || !sessionOpen}
+          disabled={isEmpty || !sessionOpen || finalTotal === 0}
           data-testid="pos-pay-btn"
           className="w-full h-12 rounded-xl text-base font-bold text-white transition-all disabled:opacity-30 hover:opacity-90"
           style={{ background: isEmpty ? 'var(--border)' : 'var(--green)' }}
@@ -218,7 +221,9 @@ export function TicketPanel({
             ? 'Ouvrir la session'
             : isEmpty
               ? 'Ticket vide'
-              : `Encaisser ${finalTotal.toFixed(2).replace('.', ',')} €`}
+              : finalTotal === 0
+                ? 'Total nul — remise à vérifier'
+                : `Encaisser ${finalTotal.toFixed(2).replace('.', ',')} €`}
         </button>
       </div>
     </div>

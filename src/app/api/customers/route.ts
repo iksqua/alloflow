@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url)
   const tier = url.searchParams.get('tier') // optional filter
-  const limit = parseInt(url.searchParams.get('limit') ?? '100', 10)
+  const limit = Math.min(1000, Math.max(1, parseInt(url.searchParams.get('limit') ?? '100', 10) || 100))
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase as any)
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     .insert({
       establishment_id: establishmentId,
       created_by:       user.id,
-      name:             result.data.first_name,
+      name:             [result.data.first_name, result.data.last_name].filter(Boolean).join(' '),
       first_name:       result.data.first_name,
       last_name:        result.data.last_name ?? null,
       phone:            result.data.phone ?? null,

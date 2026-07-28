@@ -138,10 +138,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (paymentsError) {
     console.error('[pay] Failed to insert payments:', paymentsError)
     // Best-effort revert: try to re-open the order so it can be retried
-    await supabase
+    const { error: revertError } = await supabase
       .from('orders')
       .update({ status: 'open', updated_at: new Date().toISOString() })
       .eq('id', id)
+    if (revertError) {
+      // Both writes failed — order is stuck as paid with no payment record.
+      // Requires manual intervention: order ID logged below for ops.
+      console.error('[pay] CRITICAL: payment insert AND revert both failed — order stuck paid, no payment record. order_id:', id, revertError)
+    }
     return NextResponse.json({ error: 'payment_record_failed', detail: paymentsError.message }, { status: 500 })
   }
 
@@ -155,7 +160,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // --- Fiscal journal entry (NF525 chain hash) ---
-  await writeFiscalJournalEntry({
+  // All financial state is committed at this point. writeFiscalJournalEntry never throws;
+  // check return value so a persistent failure is surfaced in logs without returning 500
+  // (which would make a committed payment appear to have failed, blocking the cashier).
+  const journalOk = await writeFiscalJournalEntry({
     supabase,
     establishmentId: profile.establishment_id,
     eventType:       'sale',
@@ -164,6 +172,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     cashierId:       user.id,
     meta:            { method: parsed.data.method, session_id: order.session_id ?? null },
   })
+  if (!journalOk) {
+    console.error('[pay] CRITICAL: fiscal journal entry failed — payment committed but NF525 chain has a gap. order_id:', id)
+  }
 
   return NextResponse.json({ success: true, payments })
 }
