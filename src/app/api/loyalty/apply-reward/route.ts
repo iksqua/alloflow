@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   // Fetch order total
   const { data: order, error: oErr } = await supabase
     .from('orders')
-    .select('total_ttc, establishment_id, status')
+    .select('total_ttc, reward_discount_amount, establishment_id, status')
     .eq('id', order_id)
     .single()
   if (oErr || !order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
@@ -59,11 +59,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'order_closed' }, { status: 409 })
   }
 
+  // The stored total_ttc is always post-reward. To avoid compounding discounts when the
+  // cashier replaces a reward, compute the base TTC (before any loyalty reward) first.
+  const baseTtc = Math.round((order.total_ttc + (order.reward_discount_amount ?? 0)) * 100) / 100
+
   const discountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
-    ? Math.round(order.total_ttc * (reward.value / 100) * 100) / 100
+    ? Math.round(baseTtc * (reward.value / 100) * 100) / 100
     : reward.value
 
-  const newTotal = Math.round(Math.max(0, order.total_ttc - discountAmount) * 100) / 100
+  const newTotal = Math.round(Math.max(0, baseTtc - discountAmount) * 100) / 100
 
   const { error: uErr } = await supabase
     .from('orders')

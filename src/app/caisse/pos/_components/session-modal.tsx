@@ -127,7 +127,18 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
         body: JSON.stringify({ closing_float: parseFloat(closingFloat || '0') }),
       })
       if (!res.ok) throw new Error()
-      const { session: closedSession } = await res.json()
+      // Parse body separately so a network interruption after headers arrive
+      // doesn't prevent the parent from learning the session is now closed.
+      let closedSession: typeof session
+      try {
+        const parsed = await res.json()
+        closedSession = parsed.session
+      } catch {
+        // Server committed the close — notify parent with whatever we knew
+        onClose(session)
+        toast.success('Session clôturée')
+        return
+      }
       toast.success('Session clôturée')
       // Fetch Z-report BEFORE calling onClose — onClose triggers setShowSession(false) which
       // unmounts this modal, so setZReport would land on an unmounted component and the

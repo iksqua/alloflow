@@ -21,14 +21,16 @@ const r2 = (x: number) => Math.round(x * 100) / 100
 async function recomputeRawTotals(
   supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
   orderId: string
-) {
-  const { data: allItems } = await supabase
+): Promise<{ error: true } | { error: false; rawHt: number; rawTax55: number; rawTax10: number; rawTax20: number }> {
+  const { data: allItems, error: dbError } = await supabase
     .from('order_items')
     .select('unit_price, tva_rate, quantity')
     .eq('order_id', orderId)
 
+  if (dbError || !allItems) return { error: true }
+
   let rawHt = 0, rawTax55 = 0, rawTax10 = 0, rawTax20 = 0
-  for (const it of allItems ?? []) {
+  for (const it of allItems) {
     const lHt = r2(it.unit_price * it.quantity)
     const lTax = r2(lHt * (it.tva_rate / 100))
     rawHt += lHt
@@ -36,7 +38,7 @@ async function recomputeRawTotals(
     else if (it.tva_rate === 10) rawTax10 += lTax
     else rawTax20 += lTax
   }
-  return { rawHt: r2(rawHt), rawTax55: r2(rawTax55), rawTax10: r2(rawTax10), rawTax20: r2(rawTax20) }
+  return { error: false, rawHt: r2(rawHt), rawTax55: r2(rawTax55), rawTax10: r2(rawTax10), rawTax20: r2(rawTax20) }
 }
 
 // Applies stored discount + reward to undiscounted totals and returns the fields to write back.
@@ -75,6 +77,8 @@ async function applyDiscountsToTotals(
       .single()
     if (reward && (reward.type === 'percent' || reward.type === 'reduction_pct')) {
       rewardDiscount = r2(baseTtc * (reward.value / 100))
+    } else {
+      rewardDiscount = r2(Math.min(rewardDiscount, baseTtc))
     }
   }
 
@@ -143,8 +147,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (hasDiscount) {
     // Order has active discount(s) — recompute everything from all items to avoid
     // mixing post-discount stored taxes with pre-discount new-item taxes.
-    const { rawHt, rawTax55, rawTax10, rawTax20 } = await recomputeRawTotals(supabase, id)
-    updateFields = await applyDiscountsToTotals(supabase, rawHt, rawTax55, rawTax10, rawTax20, order)
+    const raw = await recomputeRawTotals(supabase, id)
+    if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
+    updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
   } else {
     // Fast incremental path — no active discount or reward.
     const newSubtotalHt = r2(order.subtotal_ht + lineHt)
@@ -217,8 +222,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   if (hasDiscount) {
     // Recompute from remaining items after deletion.
-    const { rawHt, rawTax55, rawTax10, rawTax20 } = await recomputeRawTotals(supabase, id)
-    updateFields = await applyDiscountsToTotals(supabase, rawHt, rawTax55, rawTax10, rawTax20, order)
+    const raw = await recomputeRawTotals(supabase, id)
+    if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
+    updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
   } else {
     // Fast decremental path — no active discount or reward.
     const lineHt  = r2(item.unit_price * item.quantity)

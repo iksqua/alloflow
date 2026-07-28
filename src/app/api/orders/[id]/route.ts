@@ -53,7 +53,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (existingOrder.establishment_id !== profile.establishment_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
-  if (existingOrder.status === 'paid' || existingOrder.status === 'refunded') {
+  if (existingOrder.status === 'paid' || existingOrder.status === 'refunded' || existingOrder.status === 'cancelled') {
     return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })
   }
 
@@ -94,20 +94,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // NF525: write a void journal entry for every cancelled order so the audit chain is complete.
+  // Use data returned by the update (which already contains all columns) instead of a second
+  // query — a failed second query would silently write amountTtc=0 into the fiscal chain.
   if (status === 'cancelled') {
-    const { data: orderFull } = await supabase
-      .from('orders')
-      .select('total_ttc, session_id')
-      .eq('id', id)
-      .single()
     await writeFiscalJournalEntry({
       supabase,
       establishmentId: profile.establishment_id,
       eventType:       'void',
       orderId:         id,
-      amountTtc:       orderFull?.total_ttc ?? 0,
+      amountTtc:       data.total_ttc ?? 0,
       cashierId:       user.id,
-      meta:            { session_id: orderFull?.session_id ?? null },
+      meta:            { session_id: data.session_id ?? null },
     })
   }
 

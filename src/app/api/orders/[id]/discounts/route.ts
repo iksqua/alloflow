@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (order.establishment_id !== profile.establishment_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
-  if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 400 })
+  if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 409 })
 
   const { type, value } = parsed.data
 
@@ -62,13 +62,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Recompute raw taxes from order_items so repeated calls (discount updates) don't
   // apply the ratio to already-discounted stored values, which would compound discounts.
-  const { data: rawItems } = await supabase
+  const { data: rawItems, error: itemsErr } = await supabase
     .from('order_items')
     .select('unit_price, tva_rate, quantity')
     .eq('order_id', id)
 
+  if (itemsErr || !rawItems) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
+
   let rawTax55 = 0, rawTax10 = 0, rawTax20 = 0
-  for (const it of rawItems ?? []) {
+  for (const it of rawItems) {
     const lHt = r2(it.unit_price * it.quantity)
     const lTax = r2(lHt * (it.tva_rate / 100))
     if (it.tva_rate === 5.5) rawTax55 += lTax
@@ -85,7 +87,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const newBaseTtc = r2(discountedHt + newTax55 + newTax10 + newTax20)
 
   // Recompute percent-based loyalty discount on the new (post-commercial-discount) TTC.
-  // Fixed-amount rewards keep their original amount unchanged.
+  // Fixed-amount rewards are capped to newBaseTtc to preserve the invariant
+  // total_ttc + reward_discount_amount = newBaseTtc.
   let newRewardDiscountAmount = order.reward_discount_amount ?? 0
   if (order.reward_id && newRewardDiscountAmount > 0) {
     const { data: reward } = await supabase
@@ -95,6 +98,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .single()
     if (reward && (reward.type === 'percent' || reward.type === 'reduction_pct')) {
       newRewardDiscountAmount = r2(newBaseTtc * (reward.value / 100))
+    } else {
+      newRewardDiscountAmount = r2(Math.min(newRewardDiscountAmount, newBaseTtc))
     }
   }
 
