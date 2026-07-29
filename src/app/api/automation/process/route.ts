@@ -135,6 +135,19 @@ async function processRule(
         .eq(`opt_in_${rule.channel}`, true)
         .gte('rfm_updated_at', hourAgo)
       customers = (data ?? []) as CustomerRow[]
+      // Dedup: skip customers who already received a reactivation message in the last 30 days
+      // to avoid duplicates if rfm_updated_at is updated multiple times or cron frequency changes.
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      if (customers.length > 0) {
+        const { data: alreadySent } = await supabase
+          .from('campaign_sends')
+          .select('customer_id')
+          .in('customer_id', customers.map(c => c.id))
+          .eq('trigger_type', 'reactivation')
+          .gte('sent_at', thirtyDaysAgo)
+        const alreadySentIds = new Set((alreadySent ?? []).map(s => s.customer_id))
+        customers = customers.filter(c => !alreadySentIds.has(c.id))
+      }
       break
     }
 
@@ -149,6 +162,18 @@ async function processRule(
         .eq(`opt_in_${rule.channel}`, true)
         .gte('rfm_updated_at', hourAgo)
       customers = (data ?? []) as CustomerRow[]
+      // Dedup: skip customers who already received a lost-segment message in the last 30 days.
+      const thirtyDaysAgoLost = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      if (customers.length > 0) {
+        const { data: alreadySent } = await supabase
+          .from('campaign_sends')
+          .select('customer_id')
+          .in('customer_id', customers.map(c => c.id))
+          .eq('trigger_type', 'lost')
+          .gte('sent_at', thirtyDaysAgoLost)
+        const alreadySentIds = new Set((alreadySent ?? []).map(s => s.customer_id))
+        customers = customers.filter(c => !alreadySentIds.has(c.id))
+      }
       break
     }
 
@@ -208,6 +233,10 @@ async function processRule(
       lien_avis:     estab.google_review_url ?? '',
       etablissement: estab.name,
     })
+
+    // Skip customers without a phone number for SMS channel to avoid a wasted credit
+    // deduction followed by a Brevo rejection and refund cycle.
+    if (rule.channel === 'sms' && !customer.phone) continue
 
     // Deduct credit BEFORE sending — consistent with campaigns/[id]/send pattern.
     // If deduction fails (credits exhausted), stop processing this rule.
