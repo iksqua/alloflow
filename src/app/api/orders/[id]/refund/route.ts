@@ -63,7 +63,13 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     meta:            { session_id: order.session_id ?? null },
   })
   if (!journalOk) {
-    console.error('[refund] CRITICAL: fiscal journal entry failed — refund committed but NF525 chain has a gap. order_id:', id)
+    console.error('[refund] CRITICAL: fiscal journal entry failed — attempting rollback. order_id:', id)
+    await supabase
+      .from('orders')
+      .update({ status: 'paid', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('status', 'refunded')
+    return NextResponse.json({ error: 'fiscal_journal_failed' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, order_id: id, status: 'refunded' })

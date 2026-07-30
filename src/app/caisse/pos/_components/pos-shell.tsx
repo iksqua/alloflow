@@ -143,9 +143,9 @@ export function PosShell({
   }
 
   const filteredProducts = (() => {
-    let base = selectedCategoryId
+    let base = (selectedCategoryId
       ? initialProducts.filter((p) => p.category_id === selectedCategoryId)
-      : initialProducts
+      : initialProducts).filter((p) => p.is_active)
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
       base = base.filter((p) => p.name.toLowerCase().includes(q))

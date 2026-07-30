@@ -45,6 +45,18 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   const { opening_float } = parsed.data
 
+  const { data: existingSession } = await supabase
+    .from('cash_sessions')
+    .select('id')
+    .eq('establishment_id', profile.establishment_id)
+    .eq('status', 'open')
+    .limit(1)
+    .single()
+
+  if (existingSession) {
+    return NextResponse.json({ error: 'session_already_open', session_id: existingSession.id }, { status: 409 })
+  }
+
   const { data, error } = await supabase
     .from('cash_sessions')
     .insert({

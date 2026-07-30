@@ -140,30 +140,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (itemError) return NextResponse.json({ error: itemError.message }, { status: 500 })
 
-  const hasDiscount = order.discount_type != null || (order.reward_discount_amount ?? 0) > 0
-
-  let updateFields: Record<string, unknown>
-
-  if (hasDiscount) {
-    // Order has active discount(s) — recompute everything from all items to avoid
-    // mixing post-discount stored taxes with pre-discount new-item taxes.
-    const raw = await recomputeRawTotals(supabase, id)
-    if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
-    updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
-  } else {
-    // Fast incremental path — no active discount or reward.
-    const newSubtotalHt = r2(order.subtotal_ht + lineHt)
-    const newTax55 = tva_rate === 5.5 ? r2(order.tax_5_5 + lineTax) : order.tax_5_5
-    const newTax10 = tva_rate === 10  ? r2(order.tax_10 + lineTax) : order.tax_10
-    const newTax20 = tva_rate === 20  ? r2(order.tax_20 + lineTax) : order.tax_20
-    updateFields = {
-      subtotal_ht: newSubtotalHt,
-      tax_5_5: newTax55,
-      tax_10: newTax10,
-      tax_20: newTax20,
-      total_ttc: r2(newSubtotalHt + newTax55 + newTax10 + newTax20),
-    }
-  }
+  // Always recompute from all items to avoid race conditions on concurrent requests.
+  const raw = await recomputeRawTotals(supabase, id)
+  if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
+  const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
 
   const { error: updateError } = await supabase
     .from('orders')
@@ -216,31 +196,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
 
-  const hasDiscount = order.discount_type != null || (order.reward_discount_amount ?? 0) > 0
-
-  let updateFields: Record<string, unknown>
-
-  if (hasDiscount) {
-    // Recompute from remaining items after deletion.
-    const raw = await recomputeRawTotals(supabase, id)
-    if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
-    updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
-  } else {
-    // Fast decremental path — no active discount or reward.
-    const lineHt  = r2(item.unit_price * item.quantity)
-    const lineTax = r2(lineHt * (item.tva_rate / 100))
-    const newSubtotalHt = r2(Math.max(0, order.subtotal_ht - lineHt))
-    const newTax55 = item.tva_rate === 5.5 ? r2(Math.max(0, order.tax_5_5 - lineTax)) : order.tax_5_5
-    const newTax10 = item.tva_rate === 10  ? r2(Math.max(0, order.tax_10 - lineTax)) : order.tax_10
-    const newTax20 = item.tva_rate === 20  ? r2(Math.max(0, order.tax_20 - lineTax)) : order.tax_20
-    updateFields = {
-      subtotal_ht: newSubtotalHt,
-      tax_5_5: newTax55,
-      tax_10: newTax10,
-      tax_20: newTax20,
-      total_ttc: r2(newSubtotalHt + newTax55 + newTax10 + newTax20),
-    }
-  }
+  // Always recompute from all items to avoid race conditions on concurrent requests.
+  const raw = await recomputeRawTotals(supabase, id)
+  if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
+  const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
 
   const { error: updateError } = await supabase
     .from('orders')
