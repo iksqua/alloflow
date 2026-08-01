@@ -52,8 +52,12 @@ function computeOrderTotals(items: z.infer<typeof createOrderSchema>['items']) {
     return { ...item, line_total: lineTtc }
   })
 
-  const totalTtc = r2(subtotalHt + tax55 + tax10 + tax20)
-  return { processedItems, subtotalHt: r2(subtotalHt), tax55: r2(tax55), tax10: r2(tax10), tax20: r2(tax20), totalTtc }
+  // Round each bucket first so totalTtc matches what the client computes
+  // (client rounds buckets before summing); prevents 1-cent display/charge divergence
+  const subtotalHtR = r2(subtotalHt)
+  const tax55R = r2(tax55); const tax10R = r2(tax10); const tax20R = r2(tax20)
+  const totalTtc = r2(subtotalHtR + tax55R + tax10R + tax20R)
+  return { processedItems, subtotalHt: subtotalHtR, tax55: tax55R, tax10: tax10R, tax20: tax20R, totalTtc }
 }
 
 export async function POST(req: NextRequest) {
