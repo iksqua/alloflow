@@ -4,10 +4,17 @@ import { createClient } from '@/lib/supabase/server'
 import { sopStepSchema } from '@/lib/validations/sop'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string; stepId: string }> }) {
-  const { stepId } = await params
+  const { id: sopId, stepId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  // Verify the parent SOP belongs to this establishment
+  const { data: sop } = await supabase.from('sops').select('id').eq('id', sopId).eq('establishment_id', profile.establishment_id).single()
+  if (!sop) return NextResponse.json({ error: 'SOP not found' }, { status: 404 })
 
   const body = await req.json()
   const result = sopStepSchema.partial().safeParse(body)
@@ -17,20 +24,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .from('sop_steps')
     .update(result.data)
     .eq('id', stepId)
+    .eq('sop_id', sopId)
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: 'Step not found' }, { status: 404 })
   return NextResponse.json(data)
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string; stepId: string }> }) {
-  const { stepId } = await params
+  const { id: sopId, stepId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { error } = await supabase.from('sop_steps').delete().eq('id', stepId)
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  // Verify the parent SOP belongs to this establishment
+  const { data: sop } = await supabase.from('sops').select('id').eq('id', sopId).eq('establishment_id', profile.establishment_id).single()
+  if (!sop) return NextResponse.json({ error: 'SOP not found' }, { status: 404 })
+
+  const { error } = await supabase.from('sop_steps').delete().eq('id', stepId).eq('sop_id', sopId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

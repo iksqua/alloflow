@@ -9,6 +9,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  // Verify SOP ownership before reading its steps
+  const { data: sop } = await supabase.from('sops').select('id').eq('id', id).eq('establishment_id', profile.establishment_id).single()
+  if (!sop) return NextResponse.json({ error: 'SOP not found' }, { status: 404 })
+
   const { data, error } = await supabase
     .from('sop_steps')
     .select('*')
@@ -24,6 +31,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  // Verify SOP ownership before adding steps
+  const { data: sop } = await supabase.from('sops').select('id').eq('id', id).eq('establishment_id', profile.establishment_id).single()
+  if (!sop) return NextResponse.json({ error: 'SOP not found' }, { status: 404 })
 
   const body = await req.json()
   const result = sopStepSchema.safeParse(body)
