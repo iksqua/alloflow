@@ -64,7 +64,7 @@ function loyaltyDiscountEur(ticket: LocalTicket, reward: LoyaltyReward | null): 
   const base = computeTotalBeforeLoyalty(ticket)
   return (reward.type === 'percent' || reward.type === 'reduction_pct')
     ? Math.round(base * (reward.value / 100) * 100) / 100
-    : reward.value
+    : Math.min(reward.value, base)
 }
 
 // ─── Order creation helper ────────────────────────────────────────────────────
@@ -144,6 +144,20 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   // Stores an order that was created but whose payment call failed, so retries
   // reuse the same order instead of creating a duplicate orphaned order.
   const pendingOrderRef = useRef<{ id: string; total_ttc: number; items: unknown[] } | null>(null)
+
+  // Cancel any pending (created but unpaid) order before closing the modal, so the
+  // DB doesn't accumulate orphaned open orders when payment fails mid-flow.
+  const handleCloseWithCleanup = useCallback(() => {
+    if (pendingOrderRef.current) {
+      fetch(`/api/orders/${pendingOrderRef.current.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      }).catch(() => {})
+      pendingOrderRef.current = null
+    }
+    onClose()
+  }, [onClose])
 
   const cashGivenNum = cashGiven ? parseFloat(cashGiven.replace(',', '.')) : NaN
   const cashChange = isNaN(cashGivenNum) ? 0 : cashGivenNum - total
@@ -390,7 +404,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={step === 'method' ? onClose : undefined} />
+      <div className="absolute inset-0 bg-black/70" onClick={step === 'method' ? handleCloseWithCleanup : undefined} />
       <div
         data-testid="payment-modal"
         className="relative w-full max-w-md mx-4 sm:mx-0 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"
@@ -402,7 +416,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
             {step === 'confirm' ? 'Paiement enregistré' : 'Encaissement'}
           </h2>
           {step === 'method' && (
-            <button onClick={onClose} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
+            <button onClick={handleCloseWithCleanup} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>
           )}
           {step === 'confirm' && (
             <button onClick={handleTerminate} style={{ color: 'var(--text4)' }} className="text-xl hover:opacity-70">✕</button>

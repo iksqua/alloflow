@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     if (!reward) return NextResponse.json({ error: 'Reward not found or access denied' }, { status: 404 })
     rewardDiscountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
       ? r2(baseTtcForReward * (reward.value / 100))
-      : reward.value
+      : Math.min(reward.value, baseTtcForReward)
   }
 
   // Guard: combined discounts must leave a positive total (prevents an unpayable order)
