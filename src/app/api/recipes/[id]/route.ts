@@ -9,6 +9,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase
+    .from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
   const body = await req.json()
   const result = updateRecipeSchema.safeParse(body)
   if (!result.success) return NextResponse.json({ error: result.error.flatten() }, { status: 400 })
@@ -28,6 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .update(recipeUpdate as any)
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .select('*, product:products!products_recipe_id_fkey(id)')
     .single()
 
@@ -88,12 +93,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // If switching from internal → POS and no product exists yet, create it
   if (is_internal === false && !linkedProductId && pos) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('establishment_id')
-      .eq('id', user.id)
-      .single()
-
     if (profile?.establishment_id) {
       await supabase.from('products').insert({
         establishment_id: profile.establishment_id,
@@ -116,13 +115,21 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Soft delete recipe
-  const { error } = await supabase
+  const { data: profile } = await supabase
+    .from('profiles').select('establishment_id').eq('id', user.id).single()
+  if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  // Soft delete recipe (scoped to establishment)
+  const { data: deleted, error } = await supabase
     .from('recipes')
     .update({ active: false })
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
+    .select('id')
+    .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   // Soft delete linked product if any
   await supabase

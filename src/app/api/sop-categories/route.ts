@@ -23,14 +23,14 @@ export async function GET(_req: NextRequest) {
     .eq('establishment_id', establishmentId)
 
   if (count === 0) {
-    await supabase.from('sop_categories').insert([
+    await supabase.from('sop_categories').upsert([
       { establishment_id: establishmentId, name: 'Recettes & Production', emoji: '🍳', sort_order: 0 },
       { establishment_id: establishmentId, name: 'Hygiène & HACCP',       emoji: '🧼', sort_order: 1 },
       { establishment_id: establishmentId, name: 'Tenue & Comportement',  emoji: '👕', sort_order: 2 },
       { establishment_id: establishmentId, name: 'Nettoyage & Entretien', emoji: '🧹', sort_order: 3 },
       { establishment_id: establishmentId, name: 'Rôle & Accueil',        emoji: '👤', sort_order: 4 },
       { establishment_id: establishmentId, name: 'Réception & Stocks',    emoji: '📦', sort_order: 5 },
-    ])
+    ], { onConflict: 'establishment_id,name', ignoreDuplicates: true })
   }
 
   const { data, error } = await supabase

@@ -226,11 +226,12 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     }
     if (inFlightRef.current) return
     inFlightRef.current = true
-    const cardPart = Math.round((total - cashPart) * 100) / 100
     setIsSubmitting(true)
     try {
       const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
       pendingOrderRef.current = order
+      // Use order.total_ttc (server-authoritative) so cardPart + cashPart = server total
+      const cardPart = Math.round((order.total_ttc - cashPart) * 100) / 100
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -81,7 +81,9 @@ export async function POST(req: NextRequest) {
     })
     brevoMessageId = result.messageId
   } catch (err) {
-    // Credit already deducted — log failure
+    // Brevo call failed — refund the credit that was already deducted
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.rpc as any)('refund_sms_credit', { p_establishment_id: profile.establishment_id })
     const msg = err instanceof Error ? err.message : 'Erreur Brevo'
     await supabase.from('campaign_sends').insert({
       campaign_id:      campaignId ?? null,

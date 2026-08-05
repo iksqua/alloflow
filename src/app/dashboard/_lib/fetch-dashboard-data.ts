@@ -163,7 +163,7 @@ export async function fetchDashboardData(supabase: SupabaseClient<any>, estId: s
 
     // 5. Stock alerts
     supabase.from('stock_items').select('id, name, quantity, alert_threshold')
-      .eq('establishment_id', estId).gt('alert_threshold', 0),
+      .eq('establishment_id', estId).eq('active', true).gt('alert_threshold', 0),
 
     // 6. Pending deliveries (purchase_orders received)
     supabase.from('purchase_orders').select('id, supplier, created_at')

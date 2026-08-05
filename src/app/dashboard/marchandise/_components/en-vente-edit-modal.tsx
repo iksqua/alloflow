@@ -2,6 +2,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import type { EnVenteItem, PosCategory } from './types'
 
 interface Props {
@@ -25,7 +26,7 @@ export function EnVenteEditModal({ item, categories, onClose, onSave }: Props) {
     const priceHT = ttcVal / (1 + tvaVal / 100)
 
     if (item.origin === 'direct') {
-      await supabase
+      const { error } = await supabase
         .from('stock_items')
         .update({
           pos_price: priceHT,
@@ -33,9 +34,10 @@ export function EnVenteEditModal({ item, categories, onClose, onSave }: Props) {
           pos_category_id: categoryId || null,
         })
         .eq('id', item.source_id)
+      if (error) { toast.error(error.message); setSaving(false); return }
     } else {
       // Recette → update the product record
-      await supabase
+      const { error } = await supabase
         .from('products')
         .update({
           price: priceHT,
@@ -43,6 +45,7 @@ export function EnVenteEditModal({ item, categories, onClose, onSave }: Props) {
           category_id: categoryId || null,
         })
         .eq('id', item.id)
+      if (error) { toast.error(error.message); setSaving(false); return }
     }
 
     const cat = categories.find(c => c.id === categoryId)

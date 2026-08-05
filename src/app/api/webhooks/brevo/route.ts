@@ -1,6 +1,6 @@
 // src/app/api/webhooks/brevo/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 
 interface BrevoEvent {
   event: 'delivered' | 'soft_bounce' | 'hard_bounce' | 'unsubscribed' | 'clicked'
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   const list = Array.isArray(events) ? events : [events as BrevoEvent]
   if (!list.length) return NextResponse.json({ ok: true })
 
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   try {
 
