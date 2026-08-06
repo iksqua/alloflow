@@ -105,6 +105,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const newTotal = r2(Math.max(0, newBaseTtc - newRewardDiscountAmount))
 
+  if (newTotal <= 0) {
+    return NextResponse.json({ error: 'discount_exceeds_total' }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .from('orders')
     .update({

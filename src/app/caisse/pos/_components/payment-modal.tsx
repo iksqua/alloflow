@@ -425,7 +425,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           {step !== 'method' && step !== 'confirm' && !(step === 'split-person' && splitOrderId !== null) && (
             <button
               onClick={() => setStep('method')}
-              className="text-sm"
+              disabled={isSubmitting}
+              className="text-sm disabled:opacity-40"
               style={{ color: 'var(--text4)' }}
             >
               ← Retour
@@ -502,7 +503,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
               >
                 {isSubmitting ? 'Enregistrement…' : '✓ Paiement reçu'}
               </button>
-              <button onClick={() => setStep('method')} className="w-full py-2 text-sm" style={{ color: 'var(--text4)' }}>
+              <button onClick={() => setStep('method')} disabled={isSubmitting} className="w-full py-2 text-sm disabled:opacity-40" style={{ color: 'var(--text4)' }}>
                 Annuler
               </button>
             </>
