@@ -127,12 +127,15 @@ export function PosShell({
       const items = prev.items
         .map((i) => i.productId === productId ? { ...i, quantity: i.quantity + delta } : i)
         .filter((i) => i.quantity > 0)
-      return { ...prev, items }
+      return { ...prev, items, discount: items.length === 0 ? null : prev.discount }
     })
   }
 
   const removeItem = (productId: string) => {
-    setTicket((prev) => ({ ...prev, items: prev.items.filter((i) => i.productId !== productId) }))
+    setTicket((prev) => {
+      const items = prev.items.filter((i) => i.productId !== productId)
+      return { ...prev, items, discount: items.length === 0 ? null : prev.discount }
+    })
   }
 
   const clearTicket = () => {
