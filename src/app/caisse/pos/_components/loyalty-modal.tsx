@@ -90,11 +90,13 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
       const res = await fetch(`/api/customers/${c.id}/rewards`, { signal: controller.signal })
       if (!res.ok) throw new Error()
       const json = await res.json()
-      setRewards(json.rewards ?? [])
+      // Guard: if this request was superseded by a newer selectCustomer call, discard the result.
+      // Without this, a fast server response arriving after abort can overwrite the newer customer's rewards.
+      if (!controller.signal.aborted) setRewards(json.rewards ?? [])
     } catch (err) {
-      if (!(err instanceof Error && err.name === 'AbortError')) setRewards([])
+      if (!controller.signal.aborted && !(err instanceof Error && err.name === 'AbortError')) setRewards([])
     }
-    setState('found')
+    if (!controller.signal.aborted) setState('found')
   }
 
   async function handleCreate() {
