@@ -50,7 +50,7 @@ export interface Order {
   tax_20: number
   discount_type: 'percent' | 'amount' | null
   discount_value: number | null
-  discount_amount: number
+  discount_amount: number | null
   total_ttc: number
   items: OrderItem[]
   created_at: string

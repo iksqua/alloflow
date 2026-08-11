@@ -823,7 +823,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                 <span className="text-lg">✅</span>
                 <div>
                   <p className="text-sm font-bold" style={{ color: '#4ade80' }}>Paiement enregistré</p>
-                  <p className="text-xs" style={{ color: 'var(--text4)' }}>{total.toFixed(2).replace('.', ',')} € TTC</p>
+                  <p className="text-xs" style={{ color: 'var(--text4)' }}>{completedOrder.total_ttc.toFixed(2).replace('.', ',')} € TTC</p>
                 </div>
               </div>
 

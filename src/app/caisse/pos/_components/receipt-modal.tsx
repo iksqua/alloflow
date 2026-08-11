@@ -108,10 +108,10 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
             <span>Sous-total HT</span>
             <span>{order.subtotal_ht?.toFixed(2) ?? '—'} €</span>
           </div>
-          {order.discount_amount > 0 && (
+          {(order.discount_amount ?? 0) > 0 && (
             <div className="receipt-row">
               <span>Remise</span>
-              <span>-{order.discount_amount.toFixed(2)} €</span>
+              <span>-{(order.discount_amount ?? 0).toFixed(2)} €</span>
             </div>
           )}
           {order.tax_5_5 > 0 && (
