@@ -16,9 +16,9 @@ export function DiscountModal({ ticket, onApply, onClose }: DiscountModalProps) 
 
   // The server validates amount discounts against subtotal_ht (not TTC), so cap here too
   // to avoid a 400 error that would leave an orphaned unpaid order in the DB.
-  const subtotalHt = ticket.items.reduce((sum, item) => {
+  const subtotalHt = Math.round(ticket.items.reduce((sum, item) => {
     return sum + Math.round(item.unitPriceHt * item.quantity * 100) / 100
-  }, 0)
+  }, 0) * 100) / 100
 
   const handleApply = () => {
     const v = parseFloat(value.replace(',', '.'))

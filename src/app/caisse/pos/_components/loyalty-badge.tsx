@@ -11,7 +11,7 @@ export function LoyaltyBadge({ customer, reward, orderTotal }: Props) {
   const rewardDiscount = reward
     ? (reward.type === 'percent' || reward.type === 'reduction_pct')
       ? Math.round(orderTotal * (reward.value / 100) * 100) / 100
-      : reward.value
+      : Math.min(reward.value, orderTotal)
     : 0
   const pointsToEarn = Math.max(0, Math.floor(orderTotal - rewardDiscount))
 

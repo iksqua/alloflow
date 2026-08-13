@@ -27,6 +27,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   const [rewards,     setRewards]     = useState<LoyaltyReward[]>([])
   const [chosenReward,setChosenReward]= useState<LoyaltyReward | null>(null)
   const [searching,   setSearching]   = useState(false)
+  const [rewardsError, setRewardsError] = useState(false)
 
   // New customer form
   const [newFirstName, setNewFirstName] = useState('')
@@ -45,7 +46,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
   useEffect(() => {
     if (open) {
       setQuery(''); setState('searching'); setCustomers([]); setSelected(null)
-      setRewards([]); setChosenReward(null); setSearching(false)
+      setRewards([]); setChosenReward(null); setSearching(false); setRewardsError(false)
       setNewFirstName(''); setNewLastName(''); setNewPhone(''); setNewEmail('')
       setNewOptInSms(false); setNewOptInEmail(false); setFormError(null)
     }
@@ -94,7 +95,10 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
       // Without this, a fast server response arriving after abort can overwrite the newer customer's rewards.
       if (!controller.signal.aborted) setRewards(json.rewards ?? [])
     } catch (err) {
-      if (!controller.signal.aborted && !(err instanceof Error && err.name === 'AbortError')) setRewards([])
+      if (!controller.signal.aborted && !(err instanceof Error && err.name === 'AbortError')) {
+        setRewards([])
+        setRewardsError(true)
+      }
     }
     if (!controller.signal.aborted) setState('found')
   }
@@ -253,7 +257,9 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
                 </div>
               )}
 
-              {rewards.length === 0 && (
+              {rewardsError ? (
+                <p className="text-xs text-red-400 text-center py-1">Erreur chargement des récompenses — procédez sans récompense</p>
+              ) : rewards.length === 0 && (
                 <p className="text-xs text-[var(--text4)] text-center py-1">Aucune récompense disponible (points insuffisants)</p>
               )}
 
