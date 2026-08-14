@@ -375,7 +375,7 @@ export function PosShell({
         <SessionModal
           session={session}
           onOpen={(newSession) => { setSession(newSession); setShowSession(false) }}
-          onClose={(closedSession) => { setSession(closedSession); setShowSession(false) }}
+          onClose={(_closedSession) => { setSession(null); setShowSession(false) }}
           onDismiss={() => setShowSession(false)}
           userRole={userRole}
         />

@@ -134,8 +134,9 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
         const parsed = await res.json()
         closedSession = parsed.session
       } catch {
-        // Server committed the close — notify parent with whatever we knew
-        onClose(session)
+        // Server committed the close — synthesize a closed session so the parent
+        // correctly reflects the server state instead of keeping status: 'open'.
+        onClose({ ...session, status: 'closed', closed_at: new Date().toISOString() } as CashSession)
         toast.success('Session clôturée')
         return
       }
