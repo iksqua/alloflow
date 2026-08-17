@@ -46,6 +46,10 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
 
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
+  }
+
   const body = await req.json()
   const parsed = createCategorySchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })

@@ -9,11 +9,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('establishment_id')
+    .select('establishment_id, role')
     .eq('id', user.id)
     .single()
 
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
+  }
 
   const { id } = await params
 
@@ -50,11 +54,15 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('establishment_id')
+    .select('establishment_id, role')
     .eq('id', user.id)
     .single()
 
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Profile not found' }, { status: 403 })
+
+  if (!['admin', 'super_admin', 'franchise_admin'].includes(profile.role ?? '')) {
+    return NextResponse.json({ error: 'Insufficient permissions — admin required' }, { status: 403 })
+  }
 
   const { id } = await params
 
