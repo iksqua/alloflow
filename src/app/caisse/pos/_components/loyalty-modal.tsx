@@ -87,6 +87,7 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
 
     setSelected(c)
     setRewards([])
+    setRewardsError(false)
     try {
       const res = await fetch(`/api/customers/${c.id}/rewards`, { signal: controller.signal })
       if (!res.ok) throw new Error()
