@@ -13,8 +13,9 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase
-    .from('profiles').select('establishment_id').eq('id', user.id).single()
+    .from('profiles').select('establishment_id, role').eq('id', user.id).single()
   if (!profile?.establishment_id) return NextResponse.json({ error: 'Établissement non trouvé' }, { status: 400 })
+  if (!['admin', 'super_admin'].includes(profile.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   // Load campaign
   const { data: campaign } = await supabase

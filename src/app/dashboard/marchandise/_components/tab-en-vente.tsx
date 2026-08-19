@@ -68,11 +68,10 @@ export function TabEnVente({ items, recipes, categories }: Props) {
   const [localEnVente, setLocalEnVente] = useState<EnVenteItem[]>(enVente)
   const [editItem, setEditItem] = useState<EnVenteItem | null>(null)
 
-  // Sync when parent items/recipes change
+  // Sync when parent items/recipes/categories change
   useEffect(() => {
     setLocalEnVente(buildEnVenteList(items, recipes, categories))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, recipes])
+  }, [items, recipes, categories])
 
   function getMarginColor(pct: number | null) {
     if (pct === null) return 'var(--text4)'

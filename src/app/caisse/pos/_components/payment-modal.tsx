@@ -267,7 +267,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     // Create order before sequencing through persons
     setIsSubmitting(true)
     try {
-      const order = await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      pendingOrderRef.current = order
       setSplitOrderId(order.id)
       setSplitOrderTotal(order.total_ttc)
       setCompletedOrder(order as unknown as Order)
@@ -347,11 +348,12 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method: 'split',
-            amount: splitOrderTotal || total,
+            amount: splitOrderTotal,
             split_payments: splitPayments,
           }),
         })
         if (!payRes.ok) throw new Error(`Erreur enregistrement paiement (${payRes.status})`)
+        pendingOrderRef.current = null
         setStep('confirm')
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Erreur — réessayez')
