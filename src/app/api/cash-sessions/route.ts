@@ -67,6 +67,13 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    // 23505 = unique_violation — two concurrent requests both passed the SELECT guard;
+    // the partial unique index (unique_open_cash_session_per_establishment) rejected the second.
+    if ((error as { code?: string }).code === '23505') {
+      return NextResponse.json({ error: 'session_already_open' }, { status: 409 })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json({ session: data }, { status: 201 })
 }

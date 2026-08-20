@@ -83,6 +83,17 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 })
   }
 
+  // Validate table belongs to this establishment — prevents storing a cross-tenant table_id on the order
+  if (table_id) {
+    const { data: tbl } = await supabase
+      .from('restaurant_tables')
+      .select('id')
+      .eq('id', table_id)
+      .eq('establishment_id', profile.establishment_id)
+      .single()
+    if (!tbl) return NextResponse.json({ error: 'Table not found or access denied' }, { status: 404 })
+  }
+
   // Apply commercial discount atomically if provided (avoids orphaned orders on separate discount API failure).
   let discountAmount = 0
   let storedTax55 = tax55
