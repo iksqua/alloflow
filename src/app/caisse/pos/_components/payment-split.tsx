@@ -57,7 +57,10 @@ export function computeSplitAmounts(
       amount = Math.round(totalFinal * ratio * 100) / 100
       sumSoFar += amount
     }
-    results.push({ label, amount: Math.max(0, amount), method: personMethods.get(label) ?? 'card' })
+    // For the last person, emit the raw remainder so the split total exactly equals totalFinal.
+    // Clamping with Math.max(0, …) on the last person would cause the sum to exceed totalFinal
+    // by the clamped amount, making the server's split-total validation fail.
+    results.push({ label, amount: isLast ? amount : Math.max(0, amount), method: personMethods.get(label) ?? 'card' })
   }
   return results
 }

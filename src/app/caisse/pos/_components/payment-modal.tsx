@@ -160,7 +160,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
   }, [onClose])
 
   const cashGivenNum = cashGiven ? parseFloat(cashGiven.replace(',', '.')) : NaN
-  const cashChange = isNaN(cashGivenNum) ? 0 : cashGivenNum - total
+  const cashChange = isNaN(cashGivenNum) ? 0 : Math.round((cashGivenNum - total) * 100) / 100
   const currentPerson = splitPersons[splitIndex]
 
   // ── Payment handlers ──────────────────────────────────────────────────────
@@ -230,6 +230,12 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     try {
       const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
       pendingOrderRef.current = order
+      // Re-validate against server total: floating-point accumulation across items with different
+      // TVA rates can produce a 1-cent divergence between client `total` and server `order.total_ttc`.
+      if (cashPart >= order.total_ttc) {
+        toast.error('La part espèces doit être inférieure au total')
+        return
+      }
       // Use order.total_ttc (server-authoritative) so cardPart + cashPart = server total
       const cardPart = Math.round((order.total_ttc - cashPart) * 100) / 100
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
@@ -299,6 +305,9 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       inFlightRef.current = false
       setIsSubmitting(false)
     }
+    // Reset the pending order ref so subsequent card/cash payment attempts
+    // don't try to pay the already-cancelled split order.
+    pendingOrderRef.current = null
     setSplitOrderId(null)
     setSplitPersons([])
     setSplitIndex(0)
