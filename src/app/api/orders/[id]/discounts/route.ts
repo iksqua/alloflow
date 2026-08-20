@@ -95,6 +95,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .from('loyalty_rewards')
       .select('type, value')
       .eq('id', order.reward_id)
+      .eq('establishment_id', profile.establishment_id)
       .single()
     if (reward && (reward.type === 'percent' || reward.type === 'reduction_pct')) {
       newRewardDiscountAmount = r2(newBaseTtc * (reward.value / 100))

@@ -64,11 +64,14 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   })
   if (!journalOk) {
     console.error('[refund] CRITICAL: fiscal journal entry failed — attempting rollback. order_id:', id)
-    await supabase
+    const { error: rollbackErr } = await supabase
       .from('orders')
       .update({ status: 'paid', updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('status', 'refunded')
+    if (rollbackErr) {
+      console.error('[refund] CRITICAL: rollback failed — order stuck as refunded with no fiscal entry. order_id:', id, rollbackErr)
+    }
     return NextResponse.json({ error: 'fiscal_journal_failed' }, { status: 500 })
   }
 

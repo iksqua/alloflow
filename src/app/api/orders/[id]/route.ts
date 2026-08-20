@@ -72,15 +72,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (status !== undefined) allowedUpdate.status = status
   if (note !== undefined) allowedUpdate.note = note
 
-  const { data, error } = await supabase
-    .from('orders')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .update(allowedUpdate as any)
-    .eq('id', id)
-    .select()
-    .single()
+  // CAS guard for cancellation: include the current status in the WHERE predicate so that
+  // two concurrent cancel requests cannot both succeed and write duplicate void fiscal entries.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let updateQuery = (supabase.from('orders').update(allowedUpdate as any) as any).eq('id', id)
+  if (status === 'cancelled') {
+    updateQuery = updateQuery.eq('status', existingOrder.status)
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const { data, error } = await updateQuery.select().single()
+
+  if (error) {
+    // PGRST116 = no rows matched — a concurrent cancel already claimed the transition
+    if (status === 'cancelled' && (error as { code?: string }).code === 'PGRST116') {
+      return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
   // Free the table when an order is cancelled (e.g. split payment abandoned mid-flow).
   // The /pay route handles the paid→free transition; this covers the cancel path.

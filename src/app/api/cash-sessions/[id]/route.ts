@@ -61,7 +61,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .eq('orders.session_id', id)
     .eq('orders.status', 'paid')
 
-  if (paymentsErr) return NextResponse.json({ error: 'Failed to compute session totals', detail: paymentsErr.message }, { status: 500 })
+  if (paymentsErr) {
+    // The session is already closed in the DB (Step 1 committed). Returning 500 here would leave
+    // the session stuck: closed with null totals, unreachable because future PATCH calls hit the
+    // session_already_closed guard. Instead, write zeros, flag for manual reconciliation, and
+    // return a warning so the admin knows the totals need review.
+    console.error('[cash-session/close] Failed to fetch payments totals — writing zeros, manual reconciliation required. session_id:', id, paymentsErr.message)
+    await supabase
+      .from('cash_sessions')
+      .update({ total_cash: 0, total_card: 0, total_sales: 0 })
+      .eq('id', id)
+    await writeFiscalJournalEntry({
+      supabase,
+      establishmentId: profile.establishment_id,
+      eventType:       'z_close',
+      orderId:         null,
+      amountTtc:       0,
+      cashierId:       user.id,
+      meta:            { session_id: id, recovery_needed: true, error: paymentsErr.message },
+    })
+    return NextResponse.json({ warning: 'session_closed_totals_unavailable', detail: paymentsErr.message }, { status: 207 })
+  }
 
   const r2 = (x: number) => Math.round(x * 100) / 100
 

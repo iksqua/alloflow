@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
   const newTotal = Math.round(Math.max(0, baseTtc - discountAmount) * 100) / 100
 
-  const { error: uErr } = await supabase
+  const { data: updatedRows, error: uErr } = await supabase
     .from('orders')
     .update({
       customer_id,
@@ -79,7 +79,12 @@ export async function POST(req: NextRequest) {
     })
     .eq('id', order_id)
     .in('status', ['open'])
+    .select('id')
 
   if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 })
+  // 0 rows updated means the order's status changed concurrently after our status check above
+  if (!updatedRows || updatedRows.length === 0) {
+    return NextResponse.json({ error: 'order_no_longer_open' }, { status: 409 })
+  }
   return NextResponse.json({ order_id, discount_amount: discountAmount, new_total: newTotal })
 }

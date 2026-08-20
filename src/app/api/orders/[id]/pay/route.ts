@@ -150,12 +150,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'payment_record_failed', detail: paymentsError.message }, { status: 500 })
   }
 
-  // Libérer la table
+  // Libérer la table — guard on current_order_id to avoid freeing a table reassigned to a new order
   if (order.table_id) {
     await supabase
       .from('restaurant_tables')
       .update({ status: 'free', current_order_id: null })
       .eq('id', order.table_id)
+      .eq('current_order_id', id)
       .eq('establishment_id', profile.establishment_id)
   }
 
