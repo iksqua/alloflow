@@ -40,7 +40,7 @@ function mockSupabase({
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({
-      data: establishmentId ? { establishment_id: establishmentId } : null,
+      data: establishmentId ? { establishment_id: establishmentId, role: 'admin' } : null,
       error: null,
     }),
   }
