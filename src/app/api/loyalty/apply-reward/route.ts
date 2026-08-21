@@ -69,6 +69,12 @@ export async function POST(req: NextRequest) {
 
   const newTotal = Math.round(Math.max(0, baseTtc - discountAmount) * 100) / 100
 
+  // Guard: reward must not reduce the order total to zero — a zero-total order is
+  // unpayable (/pay rejects total_ttc <= 0 with invalid_order_total).
+  if (newTotal <= 0) {
+    return NextResponse.json({ error: 'reward_exceeds_total' }, { status: 400 })
+  }
+
   const { data: updatedRows, error: uErr } = await supabase
     .from('orders')
     .update({
