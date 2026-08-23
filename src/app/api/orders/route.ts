@@ -79,8 +79,9 @@ export async function POST(req: NextRequest) {
       .select('id')
       .eq('id', session_id)
       .eq('establishment_id', profile.establishment_id)
+      .eq('status', 'open')
       .single()
-    if (!session) return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 })
+    if (!session) return NextResponse.json({ error: 'Session not found or closed' }, { status: 404 })
   }
 
   // Validate table belongs to this establishment — prevents storing a cross-tenant table_id on the order
