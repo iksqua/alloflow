@@ -70,6 +70,31 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { items, session_id, table_id } = parsed.data
+
+  // Server-authoritative price/TVA verification — never trust client-supplied prices.
+  // A cashier posting {unit_price: 0.01} or a wrong tva_rate would otherwise bypass the tariff
+  // and skew the fiscal journal. All product_ids must belong to this establishment.
+  const productIds = Array.from(new Set(items.map(i => i.product_id)))
+  const { data: dbProducts, error: prodErr } = await supabase
+    .from('products')
+    .select('id, price, tva_rate, is_active')
+    .in('id', productIds)
+    .eq('establishment_id', profile.establishment_id)
+    .is('deleted_at', null)
+  if (prodErr) return NextResponse.json({ error: prodErr.message }, { status: 500 })
+  const priceMap = new Map((dbProducts ?? []).map(p => [p.id, p]))
+  for (const it of items) {
+    const canonical = priceMap.get(it.product_id)
+    if (!canonical) return NextResponse.json({ error: 'product_not_found', product_id: it.product_id }, { status: 404 })
+    if (canonical.is_active === false) return NextResponse.json({ error: 'product_inactive', product_id: it.product_id }, { status: 400 })
+    if (Math.abs(canonical.price - it.unit_price) > 0.001) {
+      return NextResponse.json({ error: 'price_mismatch', product_id: it.product_id, expected: canonical.price, got: it.unit_price }, { status: 400 })
+    }
+    if (canonical.tva_rate !== it.tva_rate) {
+      return NextResponse.json({ error: 'tva_rate_mismatch', product_id: it.product_id, expected: canonical.tva_rate, got: it.tva_rate }, { status: 400 })
+    }
+  }
+
   const { processedItems, subtotalHt, tax55, tax10, tax20, totalTtc } = computeOrderTotals(items)
 
   // Validate session belongs to this establishment to prevent cross-tenant contamination

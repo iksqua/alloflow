@@ -118,6 +118,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 400 })
 
   const { product_id, product_name, emoji, unit_price, tva_rate, quantity, note } = parsed.data
+
+  // Server-authoritative price/TVA verification — never trust client-supplied prices.
+  const { data: canonical, error: prodErr } = await supabase
+    .from('products')
+    .select('id, price, tva_rate, is_active')
+    .eq('id', product_id)
+    .eq('establishment_id', profile.establishment_id)
+    .is('deleted_at', null)
+    .single()
+  if (prodErr || !canonical) return NextResponse.json({ error: 'product_not_found', product_id }, { status: 404 })
+  if (canonical.is_active === false) return NextResponse.json({ error: 'product_inactive', product_id }, { status: 400 })
+  if (Math.abs(canonical.price - unit_price) > 0.001) {
+    return NextResponse.json({ error: 'price_mismatch', product_id, expected: canonical.price, got: unit_price }, { status: 400 })
+  }
+  if (canonical.tva_rate !== tva_rate) {
+    return NextResponse.json({ error: 'tva_rate_mismatch', product_id, expected: canonical.tva_rate, got: tva_rate }, { status: 400 })
+  }
+
   const lineHt  = r2(unit_price * quantity)
   const lineTax = r2(lineHt * (tva_rate / 100))
   const lineTtc = r2(lineHt + lineTax)
