@@ -66,7 +66,8 @@ async function applyDiscountsToTotals(
     finalTax20 = r2(rawTax20 * ratio)
   }
 
-  const baseTtc = r2(rawHt - discountAmount + finalTax55 + finalTax10 + finalTax20)
+  const discountedHt = r2(rawHt - discountAmount)
+  const baseTtc = r2(discountedHt + finalTax55 + finalTax10 + finalTax20)
 
   let rewardDiscount = order.reward_discount_amount ?? 0
   if (order.reward_id && rewardDiscount > 0) {

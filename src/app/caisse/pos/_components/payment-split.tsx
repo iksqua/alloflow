@@ -5,7 +5,8 @@ import type { LocalItem, SplitPerson } from '../types'
 
 function lineTtc(item: LocalItem): number {
   const lineHt = Math.round(item.unitPriceHt * item.quantity * 100) / 100
-  return Math.round(lineHt * (1 + item.tvaRate / 100) * 100) / 100
+  const lineTax = Math.round(lineHt * (item.tvaRate / 100) * 100) / 100
+  return Math.round((lineHt + lineTax) * 100) / 100
 }
 
 export function computeSplitAmounts(
