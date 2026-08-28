@@ -332,9 +332,9 @@ export function PosShell({
           onSuccess={(order) => {
             setCompletedOrder(order)
             setShowPayment(false)
-            setShowReceipt(true)
-            // clearTicket is deferred to receipt modal dismissal so linkedCustomer
-            // remains available for pre-filling email/phone and showing loyalty info
+            // PaymentModal's confirm step already handles receipt (email/SMS/invoice);
+            // clear the ticket immediately so the POS is ready for the next order.
+            clearTicket()
           }}
         />
       )}
