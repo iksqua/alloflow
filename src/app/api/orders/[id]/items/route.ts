@@ -50,7 +50,8 @@ async function applyDiscountsToTotals(
     discount_value: number | null
     reward_id: string | null
     reward_discount_amount: number | null
-  }
+  },
+  establishmentId: string
 ) {
   let discountAmount = 0
   let finalTax55 = rawTax55, finalTax10 = rawTax10, finalTax20 = rawTax20
@@ -75,6 +76,7 @@ async function applyDiscountsToTotals(
       .from('loyalty_rewards')
       .select('type, value')
       .eq('id', order.reward_id)
+      .eq('establishment_id', establishmentId)
       .single()
     if (reward && (reward.type === 'percent' || reward.type === 'reduction_pct')) {
       rewardDiscount = r2(baseTtc * (reward.value / 100))
@@ -144,7 +146,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Always recompute from all items to avoid race conditions on concurrent requests.
   const raw = await recomputeRawTotals(supabase, id)
   if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
-  const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
+  const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order, profile.establishment_id)
 
   const { error: updateError } = await supabase
     .from('orders')
@@ -200,7 +202,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   // Always recompute from all items to avoid race conditions on concurrent requests.
   const raw = await recomputeRawTotals(supabase, id)
   if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
-  const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order)
+  const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order, profile.establishment_id)
 
   const { error: updateError } = await supabase
     .from('orders')
