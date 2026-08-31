@@ -201,6 +201,12 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     try {
       const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
       pendingOrderRef.current = order
+      // Re-validate against server total: floating-point accumulation across items with different
+      // TVA rates can produce a 1-cent divergence between client `total` and server `order.total_ttc`.
+      if (given < order.total_ttc) {
+        toast.error(`Montant insuffisant — total exact: ${order.total_ttc.toFixed(2).replace('.', ',')} €`)
+        return
+      }
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
