@@ -400,6 +400,9 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       }).then(r => r.ok ? toast.success('Reçu envoyé par SMS') : toast.error('Échec envoi SMS'))
         .catch(() => toast.error('Échec envoi SMS'))
     } else if (receiptChoice === 'invoice' && companyName) {
+      // Open a blank window synchronously while the user gesture is still active so
+      // popup blockers don't block the PDF tab (async callbacks lose gesture context).
+      const invoiceWindow = window.open('', '_blank')
       fetch(`/api/receipts/${completedOrder.id}/invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -407,12 +410,17 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       }).then(async r => {
         if (r.ok) {
           const { pdf_url, invoice_number } = await r.json()
-          window.open(pdf_url, '_blank')
+          if (invoiceWindow) {
+            invoiceWindow.location.href = pdf_url
+          } else {
+            window.open(pdf_url, '_blank')
+          }
           toast.success(`Facture ${invoice_number} générée`)
         } else {
+          invoiceWindow?.close()
           toast.error('Erreur génération facture')
         }
-      }).catch(() => toast.error('Erreur génération facture'))
+      }).catch(() => { invoiceWindow?.close(); toast.error('Erreur génération facture') })
     }
 
     onSuccess(completedOrder)
