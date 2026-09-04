@@ -35,7 +35,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({})) as { unavailable?: boolean }
       if (data.unavailable) {
         toast.error('Envoi par email non configuré — utilisez l\'impression')
         return
@@ -59,7 +59,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({})) as { unavailable?: boolean }
       if (data.unavailable) {
         toast.error('Envoi par SMS non configuré — utilisez l\'impression')
         return

@@ -209,6 +209,11 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
         ))}
       </div>
 
+      {splitPersons.some(p => p.amount <= 0) && (
+        <p className="text-xs text-center" style={{ color: 'var(--red)' }}>
+          La répartition produit un montant nul ou négatif — ajustez les attributions.
+        </p>
+      )}
       <button
         onClick={() => onConfirm(splitPersons)}
         disabled={splitPersons.some(p => p.amount <= 0)}
