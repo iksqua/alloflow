@@ -110,7 +110,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'discount_exceeds_total' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  // CAS guard: include status in WHERE to prevent overwriting a paid/cancelled order
+  // if payment is processed concurrently between the status check above and this update.
+  const { data: updatedRows, error } = await supabase
     .from('orders')
     .update({
       discount_type: type,
@@ -124,9 +126,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
+    .eq('status', 'open')
     .select()
-    .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ order: data })
+  if (!updatedRows || updatedRows.length === 0) {
+    return NextResponse.json({ error: 'order_no_longer_open' }, { status: 409 })
+  }
+  return NextResponse.json({ order: updatedRows[0] })
 }
