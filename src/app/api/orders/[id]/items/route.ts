@@ -5,13 +5,13 @@ import { z } from 'zod'
 import { uuidStr } from '@/lib/validations/uuid'
 
 const addItemSchema = z.object({
-  product_id: uuidStr,
+  product_id:   uuidStr,
   product_name: z.string(),
-  emoji: z.string().nullable().optional(),
-  unit_price: z.number().positive(),
-  tva_rate: z.union([z.literal(5.5), z.literal(10), z.literal(20)]),
+  emoji:        z.string().nullable().optional(),
+  // unit_price and tva_rate are intentionally NOT accepted here — prices are
+  // fetched from the products table server-side to prevent price manipulation.
   quantity: z.number().int().positive(),
-  note: z.string().optional(),
+  note:     z.string().optional(),
 })
 
 const r2 = (x: number) => Math.round(x * 100) / 100
@@ -120,7 +120,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 400 })
 
-  const { product_id, product_name, emoji, unit_price, tva_rate, quantity, note } = parsed.data
+  const { product_id, product_name, emoji, quantity, note } = parsed.data
+
+  // Fetch authoritative price from DB — never trust client-supplied unit_price/tva_rate.
+  const { data: dbProduct, error: productErr } = await supabase
+    .from('products')
+    .select('price, tva_rate')
+    .eq('id', product_id)
+    .eq('establishment_id', profile.establishment_id)
+    .single()
+
+  if (productErr || !dbProduct) return NextResponse.json({ error: 'Product not found or access denied' }, { status: 404 })
+
+  const unit_price = dbProduct.price
+  const tva_rate = dbProduct.tva_rate as 5.5 | 10 | 20
+
   const lineHt  = r2(unit_price * quantity)
   const lineTax = r2(lineHt * (tva_rate / 100))
   const lineTtc = r2(lineHt + lineTax)
