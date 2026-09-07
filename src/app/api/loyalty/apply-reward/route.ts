@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   const discountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
     ? Math.round(baseTtc * (reward.value / 100) * 100) / 100
-    : Math.min(reward.value, baseTtc)
+    : Math.round(Math.min(reward.value, baseTtc) * 100) / 100
 
   const newTotal = Math.round(Math.max(0, baseTtc - discountAmount) * 100) / 100
 

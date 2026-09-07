@@ -70,7 +70,35 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { items, session_id, table_id } = parsed.data
-  const { processedItems, subtotalHt, tax55, tax10, tax20, totalTtc } = computeOrderTotals(items)
+
+  // Fetch authoritative prices from DB — never trust client-supplied unit_price.
+  // This prevents a cashier from creating orders at arbitrary prices.
+  const productIds = [...new Set(items.map(i => i.product_id))]
+  const { data: dbProducts, error: productsErr } = await supabase
+    .from('products')
+    .select('id, price, tva_rate')
+    .eq('establishment_id', profile.establishment_id)
+    .in('id', productIds)
+
+  if (productsErr) return NextResponse.json({ error: 'Failed to fetch product prices' }, { status: 500 })
+
+  const productMap = new Map((dbProducts ?? []).map(p => [p.id, p]))
+  const resolvedItems = items.map(item => {
+    const dbProduct = productMap.get(item.product_id)
+    if (!dbProduct) return null
+    return {
+      ...item,
+      unit_price: dbProduct.price,
+      tva_rate:   dbProduct.tva_rate as 5.5 | 10 | 20,
+    }
+  })
+
+  if (resolvedItems.some(i => i === null)) {
+    return NextResponse.json({ error: 'One or more products not found or access denied' }, { status: 404 })
+  }
+
+  const trustedItems = resolvedItems as NonNullable<typeof resolvedItems[number]>[]
+  const { processedItems, subtotalHt, tax55, tax10, tax20, totalTtc } = computeOrderTotals(trustedItems)
 
   // Validate session belongs to this establishment to prevent cross-tenant contamination
   if (session_id) {
@@ -158,7 +186,7 @@ export async function POST(req: NextRequest) {
     if (!reward) return NextResponse.json({ error: 'Reward not found or access denied' }, { status: 404 })
     rewardDiscountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
       ? r2(baseTtcForReward * (reward.value / 100))
-      : Math.min(reward.value, baseTtcForReward)
+      : r2(Math.min(reward.value, baseTtcForReward))
   }
 
   // Guard: combined discounts must leave a positive total (prevents an unpayable order)
