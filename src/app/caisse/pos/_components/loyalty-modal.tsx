@@ -49,6 +49,11 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
       setRewards([]); setChosenReward(null); setSearching(false); setRewardsError(false)
       setNewFirstName(''); setNewLastName(''); setNewPhone(''); setNewEmail('')
       setNewOptInSms(false); setNewOptInEmail(false); setFormError(null)
+    } else {
+      // Abort any in-flight rewards fetch so its response can't overwrite state
+      // after the modal is closed (and potentially reopened with fresh state).
+      rewardsControllerRef.current?.abort()
+      rewardsControllerRef.current = null
     }
   }, [open])
 
