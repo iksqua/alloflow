@@ -98,7 +98,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
           </div>
           <div className="receipt-divider" />
           {order.items?.map((item) => (
-            <div key={item.product_id} className="receipt-row">
+            <div key={item.id} className="receipt-row">
               <span>{item.quantity}× {item.product_name}</span>
               <span>{item.line_total.toFixed(2)} €</span>
             </div>
@@ -112,6 +112,12 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
             <div className="receipt-row">
               <span>Remise</span>
               <span>-{(order.discount_amount ?? 0).toFixed(2)} €</span>
+            </div>
+          )}
+          {(order.reward_discount_amount ?? 0) > 0 && (
+            <div className="receipt-row">
+              <span>Réduction fidélité</span>
+              <span>-{(order.reward_discount_amount ?? 0).toFixed(2)} €</span>
             </div>
           )}
           {order.tax_5_5 > 0 && (

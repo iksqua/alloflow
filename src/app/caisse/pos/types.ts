@@ -51,6 +51,7 @@ export interface Order {
   discount_type: 'percent' | 'amount' | null
   discount_value: number | null
   discount_amount: number | null
+  reward_discount_amount: number | null
   total_ttc: number
   items: OrderItem[]
   created_at: string
