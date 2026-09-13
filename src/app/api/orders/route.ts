@@ -112,15 +112,17 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Session not found or closed' }, { status: 404 })
   }
 
-  // Validate table belongs to this establishment — prevents storing a cross-tenant table_id on the order
+  // Validate table belongs to this establishment and is free — prevents storing a cross-tenant
+  // table_id on the order and prevents silently overwriting current_order_id on an occupied table.
   if (table_id) {
     const { data: tbl } = await supabase
       .from('restaurant_tables')
-      .select('id')
+      .select('id, status')
       .eq('id', table_id)
       .eq('establishment_id', profile.establishment_id)
       .single()
     if (!tbl) return NextResponse.json({ error: 'Table not found or access denied' }, { status: 404 })
+    if (tbl.status !== 'free') return NextResponse.json({ error: 'table_already_occupied' }, { status: 409 })
   }
 
   // Apply commercial discount atomically if provided (avoids orphaned orders on separate discount API failure).
