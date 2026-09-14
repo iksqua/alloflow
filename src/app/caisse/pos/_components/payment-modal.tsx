@@ -377,7 +377,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         setIsSubmitting(false)
       }
     }
-  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitMixedParts, splitOrderTotal, total])
+  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitMixedParts, splitOrderTotal])
 
   async function handleTerminate() {
     if (!completedOrder) { onClose(); return }

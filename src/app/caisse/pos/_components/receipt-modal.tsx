@@ -91,7 +91,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
             <div className="receipt-center" style={{ fontSize: '10px', marginBottom: '4px' }}>SIRET : {establishmentInfo.siret}</div>
           )}
           <div className="receipt-center" style={{ marginBottom: '8px' }}>
-            {new Date(order.created_at).toLocaleDateString('fr-FR', {
+            {new Date(order.created_at).toLocaleString('fr-FR', {
               day: '2-digit', month: '2-digit', year: 'numeric',
               hour: '2-digit', minute: '2-digit',
             })}
