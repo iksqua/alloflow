@@ -1,6 +1,7 @@
 // src/app/api/loyalty/config/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 
 async function getProfile(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase.from('profiles').select('establishment_id, role').eq('id', userId).single()
@@ -113,6 +114,19 @@ export async function PUT(req: NextRequest) {
   if (!Array.isArray(rewards))
     return NextResponse.json({ error: 'rewards invalide' }, { status: 400 })
 
+  const rewardItemSchema = z.object({
+    name:          z.string().min(1),
+    ptsRequired:   z.number().int().min(0),
+    type:          z.enum(['percent', 'reduction_pct', 'fixed']),
+    value:         z.number().positive(),
+    levelRequired: z.string().min(1).optional().default('standard'),
+    active:        z.boolean().optional().default(true),
+  })
+  const rewardsValidation = z.array(rewardItemSchema).safeParse(rewards)
+  if (!rewardsValidation.success) {
+    return NextResponse.json({ error: 'rewards items invalides', detail: rewardsValidation.error.flatten() }, { status: 400 })
+  }
+
   // Upsert loyalty_config
   const { error: configError } = await supabase
     .from('loyalty_config')
@@ -139,14 +153,7 @@ export async function PUT(req: NextRequest) {
 
   const existingIds = (existingRewards ?? []).map((r: { id: string }) => r.id)
 
-  const rewardsList = rewards as Array<{
-    name: string
-    ptsRequired: number
-    type: string
-    value: number
-    levelRequired: string
-    active: boolean
-  }>
+  const rewardsList = rewardsValidation.data
 
   if (rewardsList.length > 0) {
     const { error: insertError } = await supabase
