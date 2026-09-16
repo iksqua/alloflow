@@ -52,8 +52,12 @@ function computeOrderTotals(items: z.infer<typeof createOrderSchema>['items']) {
     return { ...item, line_total: lineTtc }
   })
 
+  // Normalize accumulators before summing so that totalTtc == subtotalHt + tax55 + tax10 + tax20
+  // (avoids a 1-cent divergence in fiscal records caused by summing raw float accumulators).
+  subtotalHt = r2(subtotalHt)
+  tax55 = r2(tax55); tax10 = r2(tax10); tax20 = r2(tax20)
   const totalTtc = r2(subtotalHt + tax55 + tax10 + tax20)
-  return { processedItems, subtotalHt: r2(subtotalHt), tax55: r2(tax55), tax10: r2(tax10), tax20: r2(tax20), totalTtc }
+  return { processedItems, subtotalHt, tax55, tax10, tax20, totalTtc }
 }
 
 export async function POST(req: NextRequest) {
