@@ -98,7 +98,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
           </div>
           <div className="receipt-divider" />
           {order.items?.map((item) => (
-            <div key={item.id} className="receipt-row">
+            <div key={item.product_id} className="receipt-row">
               <span>{item.quantity}× {item.product_name}</span>
               <span>{item.line_total.toFixed(2)} €</span>
             </div>
