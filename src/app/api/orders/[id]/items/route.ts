@@ -18,19 +18,22 @@ const r2 = (x: number) => Math.round(x * 100) / 100
 
 // Recomputes undiscounted subtotalHt + tax breakdown from all current order_items.
 // Used when a discount or reward is present to avoid mixing post-discount and pre-discount values.
+// excludeItemId: optionally skip one item (for pre-checking hypothetical totals before deletion).
 async function recomputeRawTotals(
   supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>,
-  orderId: string
+  orderId: string,
+  excludeItemId?: string
 ): Promise<{ error: true } | { error: false; rawHt: number; rawTax55: number; rawTax10: number; rawTax20: number }> {
   const { data: allItems, error: dbError } = await supabase
     .from('order_items')
-    .select('unit_price, tva_rate, quantity')
+    .select('id, unit_price, tva_rate, quantity')
     .eq('order_id', orderId)
 
   if (dbError || !allItems) return { error: true }
 
   let rawHt = 0, rawTax55 = 0, rawTax10 = 0, rawTax20 = 0
   for (const it of allItems) {
+    if (excludeItemId && it.id === excludeItemId) continue
     const lHt = r2(it.unit_price * it.quantity)
     const lTax = r2(lHt * (it.tva_rate / 100))
     rawHt += lHt
@@ -204,6 +207,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 400 })
+
+  // Guard: if a discount/reward is applied, pre-check that removing this item won't make total_ttc=0
+  // while other items still remain (which would leave the order permanently unpayable in the DB).
+  if ((order.discount_amount ?? 0) > 0 || (order.reward_discount_amount ?? 0) > 0) {
+    const hypotheticalRaw = await recomputeRawTotals(supabase, id, itemId)
+    if (!hypotheticalRaw.error && hypotheticalRaw.rawHt > 0) {
+      const hypotheticalFields = await applyDiscountsToTotals(supabase, hypotheticalRaw.rawHt, hypotheticalRaw.rawTax55, hypotheticalRaw.rawTax10, hypotheticalRaw.rawTax20, order, profile.establishment_id)
+      if (hypotheticalFields.total_ttc <= 0) {
+        return NextResponse.json({ error: 'discount_exceeds_total_after_item_removal' }, { status: 400 })
+      }
+    }
+  }
 
   const { error: deleteError } = await supabase
     .from('order_items')

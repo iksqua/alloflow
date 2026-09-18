@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
   const q = new URL(req.url).searchParams.get('q') ?? ''
   if (q.length < 3) return NextResponse.json({ customers: [] })
 
-  // Commas and parentheses break PostgREST's .or() filter string parser — strip them.
-  const safeQ = q.replace(/[,()]/g, '')
+  // Strip chars that break PostgREST's .or() filter string parser, and SQL ILIKE wildcards.
+  const safeQ = q.replace(/[,()\%_]/g, '')
   if (safeQ.length < 3) return NextResponse.json({ customers: [] })
 
   // Search by email if query contains @, otherwise search phone AND name
