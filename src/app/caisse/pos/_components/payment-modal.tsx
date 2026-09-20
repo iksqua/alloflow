@@ -377,7 +377,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         setIsSubmitting(false)
       }
     }
-  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitMixedParts, splitOrderTotal, total])
+  }, [splitIndex, splitPersons, splitOrderId, splitCashAmounts, splitMixedParts, splitOrderTotal])
 
   async function handleTerminate() {
     if (!completedOrder) { onClose(); return }
@@ -407,7 +407,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
       }).then(async r => {
         if (r.ok) {
           const { pdf_url, invoice_number } = await r.json()
-          window.open(pdf_url, '_blank')
+          if (pdf_url) window.open(pdf_url, '_blank')
           toast.success(`Facture ${invoice_number} générée`)
         } else {
           toast.error('Erreur génération facture')
