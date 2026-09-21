@@ -44,6 +44,7 @@ export function computeSplitAmounts(
     }
   }
 
+  const r2 = (x: number) => Math.round(x * 100) / 100
   const results: SplitPerson[] = []
   let sumSoFar = 0
   for (let i = 0; i < personLabels.length; i++) {
@@ -53,15 +54,20 @@ export function computeSplitAmounts(
     const isLast = i === personLabels.length - 1
     let amount: number
     if (isLast) {
-      amount = Math.round((totalFinal - sumSoFar) * 100) / 100
+      amount = r2(totalFinal - sumSoFar)
+      // Rounding of non-last persons can cause their sum to slightly exceed totalFinal,
+      // yielding a negative remainder for the last person. Absorb the deficit into the
+      // person with the largest share so the split total still equals totalFinal exactly.
+      if (amount < 0 && results.length > 0) {
+        const maxIdx = results.reduce((mi, p, ci) => p.amount > results[mi].amount ? ci : mi, 0)
+        results[maxIdx] = { ...results[maxIdx], amount: r2(results[maxIdx].amount + amount) }
+        amount = 0
+      }
     } else {
-      amount = Math.round(totalFinal * ratio * 100) / 100
+      amount = r2(totalFinal * ratio)
       sumSoFar += amount
     }
-    // For the last person, emit the raw remainder so the split total exactly equals totalFinal.
-    // Clamping with Math.max(0, …) on the last person would cause the sum to exceed totalFinal
-    // by the clamped amount, making the server's split-total validation fail.
-    results.push({ label, amount: isLast ? amount : Math.max(0, amount), method: personMethods.get(label) ?? 'card' })
+    results.push({ label, amount: Math.max(0, amount), method: personMethods.get(label) ?? 'card' })
   }
   return results
 }
@@ -209,14 +215,19 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
         ))}
       </div>
 
-      <button
-        onClick={() => onConfirm(splitPersons)}
-        disabled={splitPersons.some(p => p.amount <= 0)}
-        className="w-full py-4 rounded-xl text-base font-bold text-white disabled:opacity-40"
-        style={{ background: 'var(--green)' }}
-      >
-        Encaisser {splitPersons.map(p => p.label).join(' + ')} →
-      </button>
+      {(() => {
+        const hasZero = splitPersons.some(p => p.amount <= 0)
+        return (
+          <button
+            onClick={() => onConfirm(splitPersons)}
+            disabled={hasZero}
+            className="w-full py-4 rounded-xl text-base font-bold text-white disabled:opacity-40"
+            style={{ background: 'var(--green)' }}
+          >
+            {hasZero ? 'Assignez tous les articles' : `Encaisser ${splitPersons.map(p => p.label).join(' + ')} →`}
+          </button>
+        )
+      })()}
       <button
         onClick={onBack}
         className="w-full py-2 text-sm"
