@@ -208,6 +208,7 @@ async function processRule(
         .from('customers')
         .select('id, first_name, phone, email, points, tier, rfm_segment')
         .in('id', eligibleIds)
+        .eq('establishment_id', estab.id)
         .eq(`opt_in_${rule.channel}`, true)
       customers = (data ?? []) as CustomerRow[]
       break

@@ -60,25 +60,28 @@ export async function POST(req: NextRequest) {
   const totalRefunds = refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
   const netTtc = totalTtc - totalRefunds
 
-  // Compute post-all-discounts HT base: subtract both commercial and loyalty reward discounts.
-  // tax_5_5/10/20 stored in DB are post-commercial-discount; reward discount is applied on TTC,
-  // so we convert it back to its HT equivalent by dividing by the blended TTC/HT ratio.
-  // Refunded orders must be subtracted so the tax breakdown reconciles with net_ttc.
-  const computeHt = (o: (typeof paidOrders)[number]) => {
+  // Compute post-all-discounts HT + per-bracket tax totals.
+  // tax_5_5/10/20 stored in DB are post-commercial-discount but pre-loyalty-reward.
+  // Apply the same reward ratio to every tax bucket so that:
+  //   total_ht + tax_5_5 + tax_10 + tax_20 == net_ttc  (fiscal reconciliation invariant).
+  const computeBreakdown = (o: (typeof paidOrders)[number]) => {
     const htBase = (o.subtotal_ht ?? 0) - (o.discount_amount ?? 0)
-    const ttcBase = htBase + (o.tax_5_5 ?? 0) + (o.tax_10 ?? 0) + (o.tax_20 ?? 0)
+    const t55 = o.tax_5_5 ?? 0
+    const t10 = o.tax_10 ?? 0
+    const t20 = o.tax_20 ?? 0
+    const ttcBase = htBase + t55 + t10 + t20
     const rewardTtc = o.reward_discount_amount ?? 0
-    const rewardHt = ttcBase > 0 ? rewardTtc * (htBase / ttcBase) : 0
-    return htBase - rewardHt
+    const ratio = ttcBase > 0 ? (ttcBase - rewardTtc) / ttcBase : 1
+    return { ht: htBase * ratio, t55: t55 * ratio, t10: t10 * ratio, t20: t20 * ratio }
   }
-  const totalHt = paidOrders.reduce((s, o) => s + computeHt(o), 0)
-             - refundedOrders.reduce((s, o) => s + computeHt(o), 0)
-  const totalTax55 = paidOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
-                   - refundedOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
-  const totalTax10 = paidOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
-                   - refundedOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
-  const totalTax20 = paidOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
-                   - refundedOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
+  const totalHt = paidOrders.reduce((s, o) => s + computeBreakdown(o).ht, 0)
+             - refundedOrders.reduce((s, o) => s + computeBreakdown(o).ht, 0)
+  const totalTax55 = paidOrders.reduce((s, o) => s + computeBreakdown(o).t55, 0)
+                   - refundedOrders.reduce((s, o) => s + computeBreakdown(o).t55, 0)
+  const totalTax10 = paidOrders.reduce((s, o) => s + computeBreakdown(o).t10, 0)
+                   - refundedOrders.reduce((s, o) => s + computeBreakdown(o).t10, 0)
+  const totalTax20 = paidOrders.reduce((s, o) => s + computeBreakdown(o).t20, 0)
+                   - refundedOrders.reduce((s, o) => s + computeBreakdown(o).t20, 0)
   const totalDiscounts = paidOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0)
                        - refundedOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0)
 
