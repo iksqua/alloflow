@@ -567,7 +567,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                     key={k}
                     onClick={() => {
                       if (k === '⌫') { setCashGiven(prev => prev.slice(0, -1)); return }
-                      if (k === '.') { setCashGiven(prev => prev.includes('.') ? prev : prev + '.'); return }
+                      if (k === '.') { setCashGiven(prev => prev.includes('.') ? prev : (prev || '0') + '.'); return }
                       setCashGiven(prev => (prev === '0' ? k : prev + k))
                     }}
                     className="py-4 rounded-xl text-base font-bold transition-colors"
@@ -638,7 +638,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                       key={k}
                       onClick={() => {
                         if (k === '⌫') { setMixedCash(prev => prev.slice(0, -1)); return }
-                        if (k === '.') { setMixedCash(prev => prev.includes('.') ? prev : prev + '.'); return }
+                        if (k === '.') { setMixedCash(prev => prev.includes('.') ? prev : (prev || '0') + '.'); return }
                         setMixedCash(prev => (prev === '0' ? k : prev + k))
                       }}
                       className="py-4 rounded-xl text-base font-bold transition-colors"
@@ -737,7 +737,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                         key={k}
                         onClick={() => {
                           if (k === '⌫') { setSplitCash(prev => prev.slice(0, -1)); return }
-                          if (k === '.') { setSplitCash(prev => prev.includes('.') ? prev : prev + '.'); return }
+                          if (k === '.') { setSplitCash(prev => prev.includes('.') ? prev : (prev || '0') + '.'); return }
                           setSplitCash(prev => (prev === '0' ? k : prev + k))
                         }}
                         className="py-4 rounded-xl text-base font-bold"
@@ -803,7 +803,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                           key={k}
                           onClick={() => {
                             if (k === '⌫') { setSplitCash(prev => prev.slice(0, -1)); return }
-                            if (k === '.') { setSplitCash(prev => prev.includes('.') ? prev : prev + '.'); return }
+                            if (k === '.') { setSplitCash(prev => prev.includes('.') ? prev : (prev || '0') + '.'); return }
                             setSplitCash(prev => (prev === '0' ? k : prev + k))
                           }}
                           className="py-4 rounded-xl text-base font-bold"
