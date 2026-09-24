@@ -914,10 +914,13 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
 
               <button
                 onClick={handleTerminate}
-                className="w-full py-5 rounded-xl text-base font-bold text-white"
+                disabled={receiptChoice === 'invoice' && !companyName.trim()}
+                className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
                 style={{ background: 'var(--blue)' }}
               >
-                ✓ Terminer &amp; nouvelle commande
+                {receiptChoice === 'invoice' && !companyName.trim()
+                  ? 'Saisissez le nom de la société'
+                  : '✓ Terminer & nouvelle commande'}
               </button>
             </>
           )}

@@ -217,6 +217,10 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
 
       {(() => {
         const hasZero = splitPersons.some(p => p.amount <= 0)
+        const unassigned = items.some(i => (assignments.get(i.productId) ?? null) === null)
+        const buttonLabel = hasZero
+          ? (unassigned ? 'Assignez tous les articles' : 'Montant invalide — réduisez le nombre de personnes')
+          : `Encaisser ${splitPersons.map(p => p.label).join(' + ')} →`
         return (
           <button
             onClick={() => onConfirm(splitPersons)}
@@ -224,7 +228,7 @@ export function PaymentSplit({ items, discount, loyaltyDiscount, totalFinal, onC
             className="w-full py-4 rounded-xl text-base font-bold text-white disabled:opacity-40"
             style={{ background: 'var(--green)' }}
           >
-            {hasZero ? 'Assignez tous les articles' : `Encaisser ${splitPersons.map(p => p.label).join(' + ')} →`}
+            {buttonLabel}
           </button>
         )
       })()}
