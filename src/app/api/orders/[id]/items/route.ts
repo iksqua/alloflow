@@ -165,12 +165,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
   const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order, profile.establishment_id)
 
-  const { error: updateError } = await supabase
+  const { data: updatedRows, error: updateError } = await supabase
     .from('orders')
     .update({ ...updateFields, updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('status', 'open')
+    .select('id')
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+  if (!updatedRows || updatedRows.length === 0) return NextResponse.json({ error: 'order_status_changed' }, { status: 409 })
   return NextResponse.json({ item }, { status: 201 })
 }
 
@@ -233,11 +236,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (raw.error) return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
   const updateFields = await applyDiscountsToTotals(supabase, raw.rawHt, raw.rawTax55, raw.rawTax10, raw.rawTax20, order, profile.establishment_id)
 
-  const { error: updateError } = await supabase
+  const { data: updatedRows, error: updateError } = await supabase
     .from('orders')
     .update({ ...updateFields, updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('status', 'open')
+    .select('id')
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+  if (!updatedRows || updatedRows.length === 0) return NextResponse.json({ error: 'order_status_changed' }, { status: 409 })
   return NextResponse.json({ success: true })
 }

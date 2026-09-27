@@ -124,9 +124,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
+    .eq('status', 'open')
     .select()
-    .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ order: data })
+  if (!data || data.length === 0) return NextResponse.json({ error: 'order_status_changed' }, { status: 409 })
+  return NextResponse.json({ order: data[0] })
 }
