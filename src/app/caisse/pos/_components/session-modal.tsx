@@ -132,7 +132,13 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
       let closedSession: typeof session
       try {
         const parsed = await res.json()
-        closedSession = parsed.session
+        if (parsed.session) {
+          closedSession = parsed.session
+        } else {
+          // 207: session closed but payment totals unavailable
+          closedSession = session
+          toast.warning('Totaux de session incomplets — vérifiez le journal fiscal')
+        }
       } catch {
         // Server committed the close — notify parent with whatever we knew
         onClose(session)
