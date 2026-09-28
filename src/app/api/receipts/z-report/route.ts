@@ -56,9 +56,11 @@ export async function POST(req: NextRequest) {
         .in('order_id', paidOrderIds)
     : { data: [] }
 
-  const totalTtc = paidOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
-  const totalRefunds = refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0)
-  const netTtc = totalTtc - totalRefunds
+  const r2 = (x: number) => Math.round(x * 100) / 100
+
+  const totalTtc = r2(paidOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0))
+  const totalRefunds = r2(refundedOrders.reduce((s, o) => s + (o.total_ttc ?? 0), 0))
+  const netTtc = r2(totalTtc - totalRefunds)
 
   // Compute post-all-discounts HT base: subtract both commercial and loyalty reward discounts.
   // tax_5_5/10/20 stored in DB are post-commercial-discount; reward discount is applied on TTC,
@@ -71,21 +73,21 @@ export async function POST(req: NextRequest) {
     const rewardHt = ttcBase > 0 ? rewardTtc * (htBase / ttcBase) : 0
     return htBase - rewardHt
   }
-  const totalHt = paidOrders.reduce((s, o) => s + computeHt(o), 0)
-             - refundedOrders.reduce((s, o) => s + computeHt(o), 0)
-  const totalTax55 = paidOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
-                   - refundedOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
-  const totalTax10 = paidOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
-                   - refundedOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
-  const totalTax20 = paidOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
-                   - refundedOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
-  const totalDiscounts = paidOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0)
-                       - refundedOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0)
+  const totalHt = r2(paidOrders.reduce((s, o) => s + computeHt(o), 0)
+             - refundedOrders.reduce((s, o) => s + computeHt(o), 0))
+  const totalTax55 = r2(paidOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0)
+                   - refundedOrders.reduce((s, o) => s + (o.tax_5_5 ?? 0), 0))
+  const totalTax10 = r2(paidOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0)
+                   - refundedOrders.reduce((s, o) => s + (o.tax_10 ?? 0), 0))
+  const totalTax20 = r2(paidOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0)
+                   - refundedOrders.reduce((s, o) => s + (o.tax_20 ?? 0), 0))
+  const totalDiscounts = r2(paidOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0)
+                       - refundedOrders.reduce((s, o) => s + (o.discount_amount ?? 0), 0))
 
   // Payment method breakdown
   const byMethod: Record<string, number> = {}
   for (const p of (payments ?? [])) {
-    byMethod[p.method] = (byMethod[p.method] ?? 0) + p.amount
+    byMethod[p.method] = r2((byMethod[p.method] ?? 0) + p.amount)
   }
 
   return NextResponse.json({

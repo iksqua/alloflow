@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabase/service'
 
 export function computeEntryHash(
   previousHash: string,
@@ -54,7 +55,11 @@ export async function writeFiscalJournalEntry(opts: WriteJournalEntryOptions): P
       const occurredAt = new Date().toISOString()
       const entryHash  = computeEntryHash(prevHash, establishmentId, nextSeq, eventType, orderId ?? '', cashierId, amountTtc, occurredAt)
 
-      const { error } = await supabase.from('fiscal_journal_entries').insert({
+      // Use service role for the INSERT so the fiscal chain can only be written
+      // by server-side code — direct Supabase client calls from a browser session
+      // are rejected once the INSERT RLS policy is removed (see migration).
+      const serviceClient = createServiceClient()
+      const { error } = await serviceClient.from('fiscal_journal_entries').insert({
         establishment_id: establishmentId,
         sequence_no:      nextSeq,
         event_type:       eventType,

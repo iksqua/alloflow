@@ -5,7 +5,7 @@ import { uuidStr } from '@/lib/validations/uuid'
 
 const bulkSchema = z.object({
   action: z.enum(['activate', 'deactivate', 'delete', 'change_category', 'change_tva']),
-  ids: z.array(z.string().min(1)).min(1),
+  ids: z.array(uuidStr).min(1),
   category_id: uuidStr.optional(),
   tva_rate: z.union([z.literal(5.5), z.literal(10), z.literal(20)]).optional(),
 })
@@ -37,12 +37,13 @@ export async function POST(req: NextRequest) {
   else return NextResponse.json({ error: 'Missing required field for action' }, { status: 400 })
 
   // Filter by establishment_id to prevent cross-tenant modification
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('products')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .update(update as any)
     .in('id', ids)
     .eq('establishment_id', profile.establishment_id)
+    .select('id')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true, count: ids.length })
+  return NextResponse.json({ success: true, count: updated?.length ?? 0 })
 }

@@ -20,14 +20,15 @@ describe('POST /api/products/bulk', () => {
         const chain = {
           update: vi.fn().mockReturnThis(),
           in:     vi.fn().mockReturnThis(),
-          eq:     vi.fn().mockResolvedValue({ error: null }),
+          eq:     vi.fn().mockReturnThis(),
+          select: vi.fn().mockResolvedValue({ data: [{ id: '00000000-0000-0000-0000-000000000001' }, { id: '00000000-0000-0000-0000-000000000002' }], error: null }),
         }
         return chain
       }),
     })
     const req = new NextRequest('http://localhost/api/products/bulk', {
       method: 'POST',
-      body: JSON.stringify({ action: 'activate', ids: ['p1', 'p2'] }),
+      body: JSON.stringify({ action: 'activate', ids: ['00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002'] }),
     })
     const res = await POST(req)
     expect(res.status).toBe(200)
