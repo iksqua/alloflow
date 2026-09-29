@@ -153,7 +153,10 @@ export async function POST(req: NextRequest) {
     baseTtcForReward = r2(discountedHt + storedTax55 + storedTax10 + storedTax20)
   }
 
-  // Validate customer belongs to this establishment (cross-tenant IDOR guard)
+  // Validate customer belongs to this establishment (cross-tenant IDOR guard).
+  // Also fetch reward in a single query to avoid TOCTOU between points-check and discount computation.
+  let custPoints: number | null = null
+  let rewardPointsRequired: number | null = null
   if (parsed.data.customer_id) {
     const { data: cust } = await supabase
       .from('customers')
@@ -162,8 +165,8 @@ export async function POST(req: NextRequest) {
       .eq('establishment_id', profile.establishment_id)
       .single()
     if (!cust) return NextResponse.json({ error: 'Customer not found or access denied' }, { status: 404 })
+    custPoints = cust.points
 
-    // Validate customer has enough points for the requested reward
     if (parsed.data.reward_id) {
       const { data: rewardCheck } = await supabase
         .from('loyalty_rewards')
@@ -174,11 +177,12 @@ export async function POST(req: NextRequest) {
       if (rewardCheck && cust.points < (rewardCheck.points_required ?? 0)) {
         return NextResponse.json({ error: 'insufficient_points', required: rewardCheck.points_required, current: cust.points }, { status: 400 })
       }
+      rewardPointsRequired = rewardCheck?.points_required ?? null
     }
   }
 
   // Compute reward discount on the post-commercial-discount base.
-  // Never trust a client-supplied discount value.
+  // Single fetch includes all needed fields (points_required already verified above).
   let rewardDiscountAmount = 0
   if (parsed.data.reward_id) {
     const { data: reward } = await supabase
@@ -243,6 +247,21 @@ export async function POST(req: NextRequest) {
     const { error: deleteError } = await supabase.from('orders').delete().eq('id', order.id)
     if (deleteError) console.error('[orders/POST] Failed to delete orphaned order', order.id, deleteError)
     return NextResponse.json({ error: itemsError.message }, { status: 500 })
+  }
+
+  // Deduct loyalty points now that the order is committed. CAS on current `points`
+  // prevents double-spend if two requests race with the same customer+reward.
+  if (parsed.data.reward_id && parsed.data.customer_id && rewardPointsRequired && rewardPointsRequired > 0 && custPoints !== null) {
+    const { data: deducted } = await supabase
+      .from('customers')
+      .update({ points: custPoints - rewardPointsRequired })
+      .eq('id', parsed.data.customer_id)
+      .eq('establishment_id', profile.establishment_id)
+      .eq('points', custPoints)
+      .select('id')
+    if (!deducted || deducted.length === 0) {
+      console.error('[orders/POST] Points deduction CAS failed for customer', parsed.data.customer_id, 'order', order.id)
+    }
   }
 
   // Marquer la table comme occupée

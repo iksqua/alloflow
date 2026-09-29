@@ -92,5 +92,20 @@ export async function POST(req: NextRequest) {
   if (!updatedRows || updatedRows.length === 0) {
     return NextResponse.json({ error: 'order_no_longer_open' }, { status: 409 })
   }
+
+  // Deduct loyalty points. CAS on current `points` value prevents double-spend in concurrent requests.
+  if (reward.points_required && reward.points_required > 0) {
+    const { data: deducted } = await supabase
+      .from('customers')
+      .update({ points: customer.points - reward.points_required })
+      .eq('id', customer_id)
+      .eq('establishment_id', profile.establishment_id)
+      .eq('points', customer.points)
+      .select('id')
+    if (!deducted || deducted.length === 0) {
+      return NextResponse.json({ error: 'points_changed_concurrently' }, { status: 409 })
+    }
+  }
+
   return NextResponse.json({ order_id, discount_amount: discountAmount, new_total: newTotal })
 }
