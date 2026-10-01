@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: existingOrder } = await supabase
     .from('orders')
-    .select('establishment_id, status, table_id')
+    .select('establishment_id, status, table_id, reward_id, customer_id')
     .eq('id', id)
     .single()
 
@@ -116,6 +116,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
     if (!journalOk) {
       console.error('[order/cancel] CRITICAL: fiscal journal entry failed — void not recorded. order_id:', id)
+    }
+
+    // Restore loyalty points deducted at order-creation time (orders/route.ts uses a CAS deduction).
+    // The trigger only fires on status='paid', so cancellation must handle restoration here.
+    if (existingOrder.reward_id && existingOrder.customer_id) {
+      const { data: reward } = await supabase
+        .from('loyalty_rewards')
+        .select('points_required')
+        .eq('id', existingOrder.reward_id)
+        .eq('establishment_id', profile.establishment_id)
+        .single()
+
+      if (reward?.points_required && reward.points_required > 0) {
+        const { data: cust } = await supabase
+          .from('customers')
+          .select('points')
+          .eq('id', existingOrder.customer_id)
+          .eq('establishment_id', profile.establishment_id)
+          .single()
+
+        if (cust) {
+          await supabase
+            .from('customers')
+            .update({ points: cust.points + reward.points_required })
+            .eq('id', existingOrder.customer_id)
+            .eq('establishment_id', profile.establishment_id)
+        }
+      }
     }
   }
 
