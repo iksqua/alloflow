@@ -154,9 +154,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate customer belongs to this establishment (cross-tenant IDOR guard).
-  // Also fetch reward in a single query to avoid TOCTOU between points-check and discount computation.
+  // Reward is fetched once here (all fields) to avoid a second round-trip below.
   let custPoints: number | null = null
   let rewardPointsRequired: number | null = null
+  let fetchedReward: { type: string; value: number; points_required: number | null } | null = null
   if (parsed.data.customer_id) {
     const { data: cust } = await supabase
       .from('customers')
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest) {
     if (parsed.data.reward_id) {
       const { data: rewardCheck } = await supabase
         .from('loyalty_rewards')
-        .select('points_required')
+        .select('points_required, type, value')
         .eq('id', parsed.data.reward_id)
         .eq('establishment_id', profile.establishment_id)
         .single()
@@ -178,23 +179,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'insufficient_points', required: rewardCheck.points_required, current: cust.points }, { status: 400 })
       }
       rewardPointsRequired = rewardCheck?.points_required ?? null
+      fetchedReward = rewardCheck ?? null
     }
   }
 
   // Compute reward discount on the post-commercial-discount base.
-  // Single fetch includes all needed fields (points_required already verified above).
   let rewardDiscountAmount = 0
   if (parsed.data.reward_id) {
-    const { data: reward } = await supabase
-      .from('loyalty_rewards')
-      .select('type, value')
-      .eq('id', parsed.data.reward_id)
-      .eq('establishment_id', profile.establishment_id)
-      .single()
-    if (!reward) return NextResponse.json({ error: 'Reward not found or access denied' }, { status: 404 })
-    rewardDiscountAmount = reward.type === 'percent' || reward.type === 'reduction_pct'
-      ? r2(baseTtcForReward * (reward.value / 100))
-      : r2(Math.min(reward.value, baseTtcForReward))
+    if (!fetchedReward) {
+      const { data: reward } = await supabase
+        .from('loyalty_rewards')
+        .select('type, value')
+        .eq('id', parsed.data.reward_id)
+        .eq('establishment_id', profile.establishment_id)
+        .single()
+      if (!reward) return NextResponse.json({ error: 'Reward not found or access denied' }, { status: 404 })
+      fetchedReward = { ...reward, points_required: null }
+    }
+    rewardDiscountAmount = fetchedReward.type === 'percent' || fetchedReward.type === 'reduction_pct'
+      ? r2(baseTtcForReward * (fetchedReward.value / 100))
+      : r2(Math.min(fetchedReward.value, baseTtcForReward))
   }
 
   // Guard: combined discounts must leave a positive total (prevents an unpayable order)
@@ -260,7 +264,12 @@ export async function POST(req: NextRequest) {
       .eq('points', custPoints)
       .select('id')
     if (!deducted || deducted.length === 0) {
+      // CAS failed: another concurrent request already changed points. Roll back the
+      // order so the reward discount is not applied without consuming points.
       console.error('[orders/POST] Points deduction CAS failed for customer', parsed.data.customer_id, 'order', order.id)
+      const { error: deleteError } = await supabase.from('orders').delete().eq('id', order.id)
+      if (deleteError) console.error('[orders/POST] Failed to delete order after CAS failure', order.id, deleteError)
+      return NextResponse.json({ error: 'points_changed_concurrently' }, { status: 409 })
     }
   }
 
