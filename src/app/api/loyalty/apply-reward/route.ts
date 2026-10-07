@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'insufficient_points', required: reward.points_required, current: customer.points }, { status: 400 })
   }
 
-  // Fetch order total
+  // Fetch order total — also select original reward/customer fields so we can roll back on CAS failure
   const { data: order, error: oErr } = await supabase
     .from('orders')
-    .select('total_ttc, reward_discount_amount, establishment_id, status')
+    .select('total_ttc, reward_discount_amount, reward_id, customer_id, establishment_id, status')
     .eq('id', order_id)
     .single()
   if (oErr || !order) return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 })
@@ -103,6 +103,19 @@ export async function POST(req: NextRequest) {
       .eq('points', customer.points)
       .select('id')
     if (!deducted || deducted.length === 0) {
+      // Roll back the order update so the discount is not applied without consuming points.
+      const { error: revertErr } = await supabase
+        .from('orders')
+        .update({
+          customer_id:            order.customer_id ?? null,
+          reward_id:              order.reward_id ?? null,
+          reward_discount_amount: order.reward_discount_amount ?? 0,
+          total_ttc:              order.total_ttc,
+        })
+        .eq('id', order_id)
+      if (revertErr) {
+        console.error('[apply-reward] CRITICAL: order rollback failed after points CAS failure. order_id:', order_id, revertErr)
+      }
       return NextResponse.json({ error: 'points_changed_concurrently' }, { status: 409 })
     }
   }
