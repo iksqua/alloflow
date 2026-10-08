@@ -88,6 +88,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Use the server-stored total_ttc as the authoritative amount (avoids client/server float mismatch)
   const authorizedTotal = order.total_ttc
 
+  // For cash payments, cash_given must cover the server-authoritative total (not the client-supplied
+  // `amount`, which is ignored). Without this guard, a crafted request with a low client `amount`
+  // passes schema validation while cash_given < authorizedTotal, producing a negative change_due.
+  if (method === 'cash' && cash_given != null && cash_given < authorizedTotal) {
+    return NextResponse.json({ error: 'cash_given_insufficient', required: authorizedTotal }, { status: 400 })
+  }
+
   // Validate split totals BEFORE updating status to avoid marking paid with mismatched payments
   if (method === 'split' && split_payments) {
     const splitTotal = Math.round(split_payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100
