@@ -27,7 +27,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   // Fetch the order — must be 'paid' to refund
   const { data: order } = await supabase
     .from('orders')
-    .select('id, total_ttc, status, establishment_id, session_id')
+    .select('id, total_ttc, status, establishment_id, session_id, customer_id, reward_id')
     .eq('id', id)
     .eq('establishment_id', profile.establishment_id)
     .single()
@@ -73,6 +73,34 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       console.error('[refund] CRITICAL: rollback failed — order stuck as refunded with no fiscal entry. order_id:', id, rollbackErr)
     }
     return NextResponse.json({ error: 'fiscal_journal_failed' }, { status: 500 })
+  }
+
+  // Restore loyalty points that were deducted at order-creation time (orders/route.ts CAS deduction).
+  // Mirrors the cancel path in PATCH route.ts — a refund must return the points to the customer.
+  if (order.reward_id && order.customer_id) {
+    const { data: reward } = await supabase
+      .from('loyalty_rewards')
+      .select('points_required')
+      .eq('id', order.reward_id)
+      .eq('establishment_id', profile.establishment_id)
+      .single()
+
+    if (reward?.points_required && reward.points_required > 0) {
+      const { data: cust } = await supabase
+        .from('customers')
+        .select('points')
+        .eq('id', order.customer_id)
+        .eq('establishment_id', profile.establishment_id)
+        .single()
+
+      if (cust) {
+        await supabase
+          .from('customers')
+          .update({ points: cust.points + reward.points_required })
+          .eq('id', order.customer_id)
+          .eq('establishment_id', profile.establishment_id)
+      }
+    }
   }
 
   return NextResponse.json({ success: true, order_id: id, status: 'refunded' })
