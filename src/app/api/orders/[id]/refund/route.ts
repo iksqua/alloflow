@@ -75,17 +75,26 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'fiscal_journal_failed' }, { status: 500 })
   }
 
-  // Restore loyalty points that were deducted at order-creation time (orders/route.ts CAS deduction).
-  // Mirrors the cancel path in PATCH route.ts — a refund must return the points to the customer.
-  if (order.reward_id && order.customer_id) {
-    const { data: reward } = await supabase
-      .from('loyalty_rewards')
-      .select('points_required')
-      .eq('id', order.reward_id)
-      .eq('establishment_id', profile.establishment_id)
-      .single()
+  // On refund, reverse the two loyalty point movements that happened at order lifecycle:
+  //   1. order creation: API deducted points_required (CAS) → restore these (+ redeemedPoints)
+  //   2. order paid:     DB trigger credited floor(total_ttc) earned points → deduct these (- earnedPoints)
+  // Net delta = redeemedPoints - earnedPoints (may be positive, negative, or zero).
+  if (order.customer_id) {
+    const earnedPoints = Math.floor(order.total_ttc)
 
-    if (reward?.points_required && reward.points_required > 0) {
+    let redeemedPoints = 0
+    if (order.reward_id) {
+      const { data: reward } = await supabase
+        .from('loyalty_rewards')
+        .select('points_required')
+        .eq('id', order.reward_id)
+        .eq('establishment_id', profile.establishment_id)
+        .single()
+      redeemedPoints = reward?.points_required ?? 0
+    }
+
+    const pointsDelta = redeemedPoints - earnedPoints
+    if (pointsDelta !== 0) {
       const { data: cust } = await supabase
         .from('customers')
         .select('points')
@@ -96,7 +105,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       if (cust) {
         await supabase
           .from('customers')
-          .update({ points: cust.points + reward.points_required })
+          .update({ points: Math.max(0, cust.points + pointsDelta) })
           .eq('id', order.customer_id)
           .eq('establishment_id', profile.establishment_id)
       }
