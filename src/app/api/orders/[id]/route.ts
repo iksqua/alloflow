@@ -137,11 +137,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           .single()
 
         if (cust) {
-          await supabase
+          const { data: restored } = await supabase
             .from('customers')
             .update({ points: cust.points + reward.points_required })
             .eq('id', existingOrder.customer_id)
             .eq('establishment_id', profile.establishment_id)
+            .eq('points', cust.points)
+            .select('id')
+          if (!restored || restored.length === 0) {
+            console.error('[order/cancel] WARNING: loyalty points restoration CAS failed — concurrent modification. customer_id:', existingOrder.customer_id, 'order_id:', id)
+          }
         }
       }
     }

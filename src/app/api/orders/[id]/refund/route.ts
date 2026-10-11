@@ -103,11 +103,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         .single()
 
       if (cust) {
-        await supabase
+        const { data: adjusted } = await supabase
           .from('customers')
           .update({ points: Math.max(0, cust.points + pointsDelta) })
           .eq('id', order.customer_id)
           .eq('establishment_id', profile.establishment_id)
+          .eq('points', cust.points)
+          .select('id')
+        if (!adjusted || adjusted.length === 0) {
+          console.error('[refund] WARNING: loyalty points adjustment CAS failed — concurrent modification. customer_id:', order.customer_id, 'order_id:', id)
+        }
       }
     }
   }
