@@ -74,7 +74,6 @@ async function createOrder(
   session: CashSession | null,
   linkedCustomer: LoyaltyCustomer | null,
   linkedReward: LoyaltyReward | null,
-  loyaltyAmt: number,
 ): Promise<{ id: string; total_ttc: number; items: unknown[] }> {
   const orderRes = await fetch('/api/orders', {
     method: 'POST',
@@ -170,7 +169,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     inFlightRef.current = true
     setIsSubmitting(true)
     try {
-      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward)
       pendingOrderRef.current = order
       const payRes = await fetch(`/api/orders/${order.id}/pay`, {
         method: 'POST',
@@ -199,7 +198,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     inFlightRef.current = true
     setIsSubmitting(true)
     try {
-      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward)
       pendingOrderRef.current = order
       // Re-validate against server total: floating-point accumulation across items with different
       // TVA rates can produce a 1-cent divergence between client `total` and server `order.total_ttc`.
@@ -234,7 +233,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     inFlightRef.current = true
     setIsSubmitting(true)
     try {
-      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward)
       pendingOrderRef.current = order
       // Re-validate against server total: floating-point accumulation across items with different
       // TVA rates can produce a 1-cent divergence between client `total` and server `order.total_ttc`.
@@ -279,7 +278,7 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
     // Create order before sequencing through persons
     setIsSubmitting(true)
     try {
-      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward, loyaltyAmt)
+      const order = pendingOrderRef.current ?? await createOrder(ticket, session, linkedCustomer, linkedReward)
       pendingOrderRef.current = order
       setSplitOrderId(order.id)
       setSplitOrderTotal(order.total_ttc)

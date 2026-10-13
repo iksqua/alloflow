@@ -28,7 +28,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const body = await req.json().catch(() => ({}))
-  const { closing_float } = body
+  const closing_float = typeof body.closing_float === 'number' && body.closing_float >= 0
+    ? body.closing_float
+    : undefined
 
   // Step 1: Close the session FIRST to prevent new orders/payments from being linked
   // This acts as a fence — any new order will see status='closed' and be rejected
