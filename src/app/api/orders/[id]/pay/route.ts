@@ -108,6 +108,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .from('orders')
     .update({ status: 'paid', updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .in('status', ['open', 'paying'])
     .select('id')
 

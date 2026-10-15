@@ -43,6 +43,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     .single()
 
   if (error) {
+    if ((error as { code?: string }).code === 'PGRST116') {
+      return NextResponse.json({ error: 'Produit non trouvé ou accès refusé' }, { status: 404 })
+    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 

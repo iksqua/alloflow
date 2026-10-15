@@ -30,11 +30,11 @@ export function computeTotalBeforeLoyalty(ticket: LocalTicket): number {
   let tax20 = 0
   for (const item of ticket.items) {
     const lineHt = r2(item.unitPriceHt * item.quantity)
-    const lineTax = r2(lineHt * (item.tvaRate / 100))
+    const lineTax = r2(lineHt * ((item.tvaRate ?? 0) / 100))
     subtotalHt += lineHt
     if (item.tvaRate === 5.5) tax55 += lineTax
     else if (item.tvaRate === 10) tax10 += lineTax
-    else tax20 += lineTax
+    else if (item.tvaRate === 20) tax20 += lineTax
   }
   subtotalHt = r2(subtotalHt)
   tax55 = r2(tax55); tax10 = r2(tax10); tax20 = r2(tax20)

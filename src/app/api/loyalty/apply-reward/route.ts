@@ -40,11 +40,6 @@ export async function POST(req: NextRequest) {
     .single()
   if (cErr || !customer) return NextResponse.json({ error: 'Client non trouvé' }, { status: 404 })
 
-  // Verify customer has enough points to redeem this reward
-  if (customer.points < (reward.points_required ?? 0)) {
-    return NextResponse.json({ error: 'insufficient_points', required: reward.points_required, current: customer.points }, { status: 400 })
-  }
-
   // Fetch order total — also select original reward/customer fields so we can roll back on CAS failure
   const { data: order, error: oErr } = await supabase
     .from('orders')
@@ -57,6 +52,23 @@ export async function POST(req: NextRequest) {
   }
   if (order.status !== 'open') {
     return NextResponse.json({ error: 'order_closed' }, { status: 409 })
+  }
+
+  // When replacing an existing reward, its previously deducted points must be netted against the
+  // new deduction — otherwise the customer loses points for the old reward permanently.
+  let oldPointsRequired = 0
+  if (order.reward_id && order.reward_id !== reward_id) {
+    const { data: oldReward } = await supabase
+      .from('loyalty_rewards')
+      .select('points_required')
+      .eq('id', order.reward_id)
+      .eq('establishment_id', profile.establishment_id)
+      .single()
+    oldPointsRequired = oldReward?.points_required ?? 0
+  }
+  const rawPointsDiff = (reward.points_required ?? 0) - oldPointsRequired
+  if (rawPointsDiff > 0 && customer.points < rawPointsDiff) {
+    return NextResponse.json({ error: 'insufficient_points', required: rawPointsDiff, current: customer.points }, { status: 400 })
   }
 
   // The stored total_ttc is always post-reward. To avoid compounding discounts when the
@@ -84,6 +96,7 @@ export async function POST(req: NextRequest) {
       total_ttc:              newTotal,
     })
     .eq('id', order_id)
+    .eq('establishment_id', profile.establishment_id)
     .in('status', ['open'])
     .select('id')
 
@@ -93,11 +106,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'order_no_longer_open' }, { status: 409 })
   }
 
-  // Deduct loyalty points. CAS on current `points` value prevents double-spend in concurrent requests.
-  if (reward.points_required && reward.points_required > 0) {
+  // Apply net loyalty points change (CAS deduction prevents double-spend; net handles replacements).
+  if (rawPointsDiff > 0) {
     const { data: deducted } = await supabase
       .from('customers')
-      .update({ points: customer.points - reward.points_required })
+      .update({ points: customer.points - rawPointsDiff })
       .eq('id', customer_id)
       .eq('establishment_id', profile.establishment_id)
       .eq('points', customer.points)
@@ -117,6 +130,16 @@ export async function POST(req: NextRequest) {
         console.error('[apply-reward] CRITICAL: order rollback failed after points CAS failure. order_id:', order_id, revertErr)
       }
       return NextResponse.json({ error: 'points_changed_concurrently' }, { status: 409 })
+    }
+  } else if (rawPointsDiff < 0) {
+    // New reward is cheaper than the old one: refund the difference back to the customer.
+    const { error: refundErr } = await supabase
+      .from('customers')
+      .update({ points: customer.points - rawPointsDiff })
+      .eq('id', customer_id)
+      .eq('establishment_id', profile.establishment_id)
+    if (refundErr) {
+      console.error('[apply-reward] CRITICAL: failed to refund net points on reward replacement. customer_id:', customer_id, refundErr)
     }
   }
 
