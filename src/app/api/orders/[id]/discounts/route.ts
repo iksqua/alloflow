@@ -124,6 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .eq('status', 'open')
     .select()
 

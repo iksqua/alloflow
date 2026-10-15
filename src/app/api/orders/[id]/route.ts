@@ -75,7 +75,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // CAS guard for cancellation: include the current status in the WHERE predicate so that
   // two concurrent cancel requests cannot both succeed and write duplicate void fiscal entries.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let updateQuery = (supabase.from('orders').update(allowedUpdate as any) as any).eq('id', id)
+  let updateQuery = (supabase.from('orders').update(allowedUpdate as any) as any).eq('id', id).eq('establishment_id', profile.establishment_id)
   if (status === 'cancelled') {
     updateQuery = updateQuery.eq('status', existingOrder.status)
   }
