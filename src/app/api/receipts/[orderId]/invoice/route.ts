@@ -62,7 +62,12 @@ function generateInvoicePdf(params: {
     let y = tableTop + 25
     doc.font('Helvetica').fontSize(10)
     for (const item of params.items) {
-      const ttc = Math.round(item.unit_price * (1 + item.tva_rate / 100) * 100) / 100 * item.quantity
+      // Mirror computeOrderTotals: round on the full line, not on the unit price.
+      // unit_price * qty → round → apply TVA → round → gives the same lineTtc
+      // as stored in order_items.line_total and in order.total_ttc.
+      const lineHt  = Math.round(item.unit_price * item.quantity * 100) / 100
+      const lineTax = Math.round(lineHt * (item.tva_rate / 100) * 100) / 100
+      const ttc     = Math.round((lineHt + lineTax) * 100) / 100
       doc.text(item.product_name, 50, y)
       doc.text(String(item.quantity), 320, y, { width: 60, align: 'right' })
       doc.text(`${ttc.toFixed(2)} €`, 390, y, { width: 80, align: 'right' })
