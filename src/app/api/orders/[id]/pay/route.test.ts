@@ -25,10 +25,12 @@ function buildFromMock(options: {
         single: vi.fn().mockResolvedValue({ data: options.order, error: null }),
         update: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            in: vi.fn().mockReturnValue({
-              select: vi.fn().mockResolvedValue({
-                data: options.updatedRows ?? [{ id: options.order.id }],
-                error: null,
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
+                select: vi.fn().mockResolvedValue({
+                  data: options.updatedRows ?? [{ id: options.order.id }],
+                  error: null,
+                }),
               }),
             }),
           }),
