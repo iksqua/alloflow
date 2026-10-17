@@ -33,7 +33,10 @@ export async function GET(req: NextRequest) {
   if (categoryId) query = query.eq('category_id', categoryId)
   if (status === 'active') query = query.eq('is_active', true)
   if (status === 'inactive') query = query.eq('is_active', false)
-  if (tvaRate) query = query.eq('tva_rate', parseFloat(tvaRate))
+  if (tvaRate) {
+    const parsed = parseFloat(tvaRate)
+    if (Number.isFinite(parsed)) query = query.eq('tva_rate', parsed)
+  }
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
