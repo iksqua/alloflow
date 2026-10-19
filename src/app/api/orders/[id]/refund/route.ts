@@ -103,11 +103,27 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         .single()
 
       if (cust) {
-        await supabase
-          .from('customers')
-          .update({ points: Math.max(0, cust.points + pointsDelta) })
-          .eq('id', order.customer_id)
-          .eq('establishment_id', profile.establishment_id)
+        // CAS retry: prevent points drift if a concurrent purchase modifies points between
+        // our read and write. Up to 3 attempts; log and move on if all fail (no blocking).
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const pointsNow = attempt === 0 ? cust.points : (
+            await supabase
+              .from('customers')
+              .select('points')
+              .eq('id', order.customer_id)
+              .eq('establishment_id', profile.establishment_id)
+              .single()
+          ).data?.points ?? cust.points
+          const { data: updated } = await supabase
+            .from('customers')
+            .update({ points: Math.max(0, pointsNow + pointsDelta) })
+            .eq('id', order.customer_id)
+            .eq('establishment_id', profile.establishment_id)
+            .eq('points', pointsNow)
+            .select('id')
+          if (updated && updated.length > 0) break
+          if (attempt === 2) console.error('[refund] Failed to adjust loyalty points after 3 CAS attempts. customer_id:', order.customer_id)
+        }
       }
     }
   }
