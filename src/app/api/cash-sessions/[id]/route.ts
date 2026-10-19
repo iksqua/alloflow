@@ -93,13 +93,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ?.filter((p) => p.method === 'card')
     .reduce((sum, p) => sum + p.amount, 0) ?? 0)
 
+  // ticket_resto and any future payment methods are included in total_sales
+  const totalSales = r2(sessionPayments?.reduce((sum, p) => sum + p.amount, 0) ?? 0)
+
   // Step 3: Update with final computed totals
   const { data, error } = await supabase
     .from('cash_sessions')
     .update({
       total_cash: totalCash,
       total_card: totalCard,
-      total_sales: r2(totalCash + totalCard),
+      total_sales: totalSales,
     })
     .eq('id', id)
     .select()
@@ -113,9 +116,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     establishmentId: profile.establishment_id,
     eventType:       'z_close',
     orderId:         null,
-    amountTtc:       r2(totalCash + totalCard),
+    amountTtc:       totalSales,
     cashierId:       user.id,
-    meta:            { session_id: id, total_cash: totalCash, total_card: totalCard },
+    meta:            { session_id: id, total_cash: totalCash, total_card: totalCard, total_sales: totalSales },
   })
   if (!journalOk) {
     console.error('[cash-session/close] CRITICAL: z_close fiscal journal entry failed — session closed but NF525 chain has a gap. session_id:', id)

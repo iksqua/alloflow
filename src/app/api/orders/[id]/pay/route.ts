@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { writeFiscalJournalEntry } from '@/lib/fiscal/journal'
 
 const splitPaymentSchema = z.object({
-  method: z.enum(['card', 'cash']),
+  method: z.enum(['card', 'cash', 'ticket_resto']),
   amount: z.number().positive(),
   cash_given: z.number().optional(),
 }).superRefine((p, ctx) => {
@@ -15,7 +15,7 @@ const splitPaymentSchema = z.object({
 })
 
 const paySchema = z.object({
-  method: z.enum(['card', 'cash', 'split']),
+  method: z.enum(['card', 'cash', 'ticket_resto', 'split']),
   amount: z.number().positive(),
   cash_given: z.number().optional(),    // pour espèces
   split_payments: z.array(splitPaymentSchema).optional(),
