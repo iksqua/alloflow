@@ -748,7 +748,8 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
                     ))}
                   </div>
                   <button
-                    onClick={() => handleSplitPersonNext(parseFloat(splitCash))}
+                    onClick={() => handleSplitPersonNext(parseFloat(splitCash.replace(',', '.')))}
+
                     disabled={isSubmitting || !splitCash || (() => { const v = parseFloat(splitCash); return isNaN(v) || v < currentPerson.amount })()}
                     className="w-full py-5 rounded-xl text-base font-bold text-white disabled:opacity-40"
                     style={{ background: 'var(--green)' }}
