@@ -133,13 +133,32 @@ export async function POST(req: NextRequest) {
     }
   } else if (rawPointsDiff < 0) {
     // New reward is cheaper than the old one: refund the difference back to the customer.
-    const { error: refundErr } = await supabase
-      .from('customers')
-      .update({ points: customer.points - rawPointsDiff })
-      .eq('id', customer_id)
-      .eq('establishment_id', profile.establishment_id)
-    if (refundErr) {
-      console.error('[apply-reward] CRITICAL: failed to refund net points on reward replacement. customer_id:', customer_id, refundErr)
+    // Use CAS retry (up to 3 attempts) to prevent points drift under concurrent load,
+    // matching the pattern in orders/[id]/route.ts and orders/[id]/refund/route.ts.
+    let refundDone = false
+    let pointsNow = customer.points
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        const fresh = await supabase
+          .from('customers')
+          .select('points')
+          .eq('id', customer_id)
+          .eq('establishment_id', profile.establishment_id)
+          .single()
+        if (!fresh.data) break
+        pointsNow = fresh.data.points
+      }
+      const { data: updated } = await supabase
+        .from('customers')
+        .update({ points: pointsNow - rawPointsDiff })
+        .eq('id', customer_id)
+        .eq('establishment_id', profile.establishment_id)
+        .eq('points', pointsNow)
+        .select('id')
+      if (updated && updated.length > 0) { refundDone = true; break }
+    }
+    if (!refundDone) {
+      console.error('[apply-reward] CRITICAL: failed to refund net points on reward replacement after 3 CAS attempts. customer_id:', customer_id)
     }
   }
 
