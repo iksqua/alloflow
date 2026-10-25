@@ -84,7 +84,9 @@ async function applyDiscountsToTotals(
     if (reward && (reward.type === 'percent' || reward.type === 'reduction_pct')) {
       rewardDiscount = r2(baseTtc * (reward.value / 100))
     } else {
-      rewardDiscount = r2(Math.min(rewardDiscount, baseTtc))
+      // Use reward.value (DB-authoritative) so a previously capped stored amount is not
+      // mistakenly treated as the canonical reward amount after items are added back.
+      rewardDiscount = r2(Math.min(reward ? reward.value : rewardDiscount, baseTtc))
     }
   }
 

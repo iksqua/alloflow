@@ -100,7 +100,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (reward && (reward.type === 'percent' || reward.type === 'reduction_pct')) {
       newRewardDiscountAmount = r2(newBaseTtc * (reward.value / 100))
     } else {
-      newRewardDiscountAmount = r2(Math.min(newRewardDiscountAmount, newBaseTtc))
+      // Use reward.value (DB-authoritative) so a previously capped stored amount is not
+      // mistakenly treated as the canonical reward amount after items are added back.
+      newRewardDiscountAmount = r2(Math.min(reward ? reward.value : newRewardDiscountAmount, newBaseTtc))
     }
   }
 
