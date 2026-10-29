@@ -213,15 +213,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   if (order.status !== 'open') return NextResponse.json({ error: 'order_closed' }, { status: 400 })
 
-  // Guard: if a discount/reward is applied, pre-check that removing this item won't make total_ttc=0
-  // while other items still remain (which would leave the order permanently unpayable in the DB).
+  // Guard: always pre-check the hypothetical state after removal so we never commit a deletion
+  // that would leave the order permanently unpayable (total_ttc=0 or no items).
+  const hypotheticalRaw = await recomputeRawTotals(supabase, id, itemId)
+  if (hypotheticalRaw.error) {
+    return NextResponse.json({ error: 'Failed to fetch order items' }, { status: 500 })
+  }
+  if (hypotheticalRaw.rawHt === 0) {
+    return NextResponse.json({ error: 'cannot_delete_last_item' }, { status: 400 })
+  }
   if ((order.discount_amount ?? 0) > 0 || (order.reward_discount_amount ?? 0) > 0) {
-    const hypotheticalRaw = await recomputeRawTotals(supabase, id, itemId)
-    if (!hypotheticalRaw.error && hypotheticalRaw.rawHt > 0) {
-      const hypotheticalFields = await applyDiscountsToTotals(supabase, hypotheticalRaw.rawHt, hypotheticalRaw.rawTax55, hypotheticalRaw.rawTax10, hypotheticalRaw.rawTax20, order, profile.establishment_id)
-      if (hypotheticalFields.total_ttc <= 0) {
-        return NextResponse.json({ error: 'discount_exceeds_total_after_item_removal' }, { status: 400 })
-      }
+    const hypotheticalFields = await applyDiscountsToTotals(supabase, hypotheticalRaw.rawHt, hypotheticalRaw.rawTax55, hypotheticalRaw.rawTax10, hypotheticalRaw.rawTax20, order, profile.establishment_id)
+    if (hypotheticalFields.total_ttc <= 0) {
+      return NextResponse.json({ error: 'discount_exceeds_total_after_item_removal' }, { status: 400 })
     }
   }
 
