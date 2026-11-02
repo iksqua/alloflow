@@ -51,19 +51,22 @@ export async function POST(req: NextRequest) {
       .update({ status: newStatus })
       .eq('brevo_message_id', messageId)
 
-    // Handle unsubscribe — find customer by phone/email and flip opt-in off
+    // Handle unsubscribe — scope the opt-out to the exact customer record from the send,
+    // not to all customers with that phone/email across all establishments (cross-tenant bug).
     if (event.event === 'unsubscribed') {
-      if (event.phone) {
+      const { data: sendRecord } = await supabase
+        .from('campaign_sends')
+        .select('customer_id, channel')
+        .eq('brevo_message_id', messageId)
+        .single()
+      if (sendRecord?.customer_id) {
+        const field = sendRecord.channel === 'email' ? 'opt_in_email'
+          : sendRecord.channel === 'whatsapp' ? 'opt_in_whatsapp'
+          : 'opt_in_sms'
         await supabase
           .from('customers')
-          .update({ opt_in_sms: false })
-          .eq('phone', event.phone)
-      }
-      if (event.email) {
-        await supabase
-          .from('customers')
-          .update({ opt_in_email: false })
-          .eq('email', event.email)
+          .update({ [field]: false })
+          .eq('id', sendRecord.customer_id)
       }
     }
 

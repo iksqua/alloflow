@@ -36,6 +36,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       )
     `)
     .eq('customer_id', id)
+    .eq('establishment_id', profile.establishment_id)
     .eq('status', 'paid')
     .order('created_at', { ascending: false })
     .limit(20)

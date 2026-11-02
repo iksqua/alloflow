@@ -47,12 +47,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .from('orders')
     .select('establishment_id, status, table_id, reward_id, customer_id')
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .single()
 
   if (!existingOrder) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-  if (existingOrder.establishment_id !== profile.establishment_id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
   if (existingOrder.status === 'paid' || existingOrder.status === 'refunded' || existingOrder.status === 'cancelled') {
     return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })
   }

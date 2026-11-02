@@ -48,14 +48,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .from('orders')
     .select('total_ttc, status, table_id, session_id, establishment_id')
     .eq('id', id)
+    .eq('establishment_id', profile.establishment_id)
     .single()
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-
-  // Cross-tenant guard — reject if order belongs to a different establishment
-  if (order.establishment_id !== profile.establishment_id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
 
   if (order.status !== 'open' && order.status !== 'paying') {
     return NextResponse.json({ error: 'order_already_closed' }, { status: 409 })

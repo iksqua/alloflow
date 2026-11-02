@@ -19,8 +19,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const { data: sessionCheck } = await supabase
-    .from('cash_sessions').select('establishment_id, status').eq('id', id).single()
-  if (!sessionCheck || sessionCheck.establishment_id !== profile.establishment_id) {
+    .from('cash_sessions').select('status').eq('id', id).eq('establishment_id', profile.establishment_id).single()
+  if (!sessionCheck) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
   if (sessionCheck.status === 'closed') {
