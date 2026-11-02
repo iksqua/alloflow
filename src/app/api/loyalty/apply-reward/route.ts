@@ -56,15 +56,21 @@ export async function POST(req: NextRequest) {
 
   // When replacing an existing reward, its previously deducted points must be netted against the
   // new deduction — otherwise the customer loses points for the old reward permanently.
+  // When re-applying the exact same reward, treat oldPointsRequired as equal to the new cost so
+  // rawPointsDiff = 0 and no second deduction fires.
   let oldPointsRequired = 0
-  if (order.reward_id && order.reward_id !== reward_id) {
-    const { data: oldReward } = await supabase
-      .from('loyalty_rewards')
-      .select('points_required')
-      .eq('id', order.reward_id)
-      .eq('establishment_id', profile.establishment_id)
-      .single()
-    oldPointsRequired = oldReward?.points_required ?? 0
+  if (order.reward_id) {
+    if (order.reward_id === reward_id) {
+      oldPointsRequired = reward.points_required ?? 0
+    } else {
+      const { data: oldReward } = await supabase
+        .from('loyalty_rewards')
+        .select('points_required')
+        .eq('id', order.reward_id)
+        .eq('establishment_id', profile.establishment_id)
+        .single()
+      oldPointsRequired = oldReward?.points_required ?? 0
+    }
   }
   const rawPointsDiff = (reward.points_required ?? 0) - oldPointsRequired
   if (rawPointsDiff > 0 && customer.points < rawPointsDiff) {

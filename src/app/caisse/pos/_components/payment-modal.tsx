@@ -358,6 +358,13 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
             splitPayments.push({ method: 'card', amount: p.amount })
           }
         }
+        // Absorb any 1-cent floating-point gap between client-computed amounts and the
+        // server-authoritative splitOrderTotal so the API never rejects sum ≠ amount.
+        const splitSum = r2(splitPayments.reduce((acc, sp) => acc + sp.amount, 0))
+        const splitDiff = r2(splitOrderTotal - splitSum)
+        if (splitDiff !== 0 && Math.abs(splitDiff) <= 0.05) {
+          splitPayments[splitPayments.length - 1].amount = r2(splitPayments[splitPayments.length - 1].amount + splitDiff)
+        }
         const payRes = await fetch(`/api/orders/${splitOrderId}/pay`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
