@@ -363,7 +363,18 @@ export function PaymentModal({ ticket, session, cashierId, isOffline, linkedCust
         const splitSum = r2(splitPayments.reduce((acc, sp) => acc + sp.amount, 0))
         const splitDiff = r2(splitOrderTotal - splitSum)
         if (splitDiff !== 0 && Math.abs(splitDiff) <= 0.05) {
-          splitPayments[splitPayments.length - 1].amount = r2(splitPayments[splitPayments.length - 1].amount + splitDiff)
+          const last = splitPayments[splitPayments.length - 1]
+          const newAmount = r2(last.amount + splitDiff)
+          // When the last payment is cash with exact change (cash_given === amount) and
+          // splitDiff > 0, the adjusted amount would exceed cash_given, failing server
+          // validation (cash_given < amount). Bump cash_given to cover the new amount.
+          splitPayments[splitPayments.length - 1] = {
+            ...last,
+            amount: newAmount,
+            cash_given: (last.method === 'cash' && last.cash_given != null && splitDiff > 0)
+              ? Math.max(last.cash_given, newAmount)
+              : last.cash_given,
+          }
         }
         const payRes = await fetch(`/api/orders/${splitOrderId}/pay`, {
           method: 'POST',
