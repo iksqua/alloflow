@@ -329,8 +329,7 @@ export function PosShell({
           linkedCustomer={linkedCustomer}
           linkedReward={linkedReward}
           onClose={() => setShowPayment(false)}
-          onSuccess={(order) => {
-            setCompletedOrder(order)
+          onSuccess={() => {
             setShowPayment(false)
             // PaymentModal's confirm step already handles receipt (email/SMS/invoice);
             // clear the ticket immediately so the POS is ready for the next order.
