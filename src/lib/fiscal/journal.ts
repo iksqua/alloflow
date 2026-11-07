@@ -12,7 +12,7 @@ export function computeEntryHash(
   occurredAt: string
 ): string {
   return createHash('sha256')
-    .update(`${previousHash}|${establishmentId}|${sequenceNo}|${eventType}|${orderId}|${cashierId}|${amountTtc}|${occurredAt}`)
+    .update(`${previousHash}|${establishmentId}|${sequenceNo}|${eventType}|${orderId}|${cashierId}|${amountTtc.toFixed(2)}|${occurredAt}`)
     .digest('hex')
 }
 
