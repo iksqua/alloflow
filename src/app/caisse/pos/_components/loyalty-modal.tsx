@@ -130,7 +130,12 @@ export function LoyaltyModal({ open, orderTotal, onClose, onConfirm, onSkip }: P
           opt_in_email: newOptInEmail,
         }),
       })
-      if (!res.ok) { const j = await res.json(); throw new Error(j.error ?? 'Erreur') }
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        // j.error may be a Zod flatten object when server-side validation fails (e.g. invalid email format)
+        const errMsg = typeof j.error === 'string' ? j.error : (j.message ?? 'Erreur de validation — vérifiez les champs')
+        throw new Error(errMsg)
+      }
       const customer: LoyaltyCustomer = await res.json()
       onConfirm(customer, null)
     } catch (err) {
