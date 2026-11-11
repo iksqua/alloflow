@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { toast } from 'sonner'
 import './print-receipt.css'
 import type { Order, LoyaltyCustomer } from '../types'
@@ -23,11 +23,14 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
   const [email, setEmail] = useState(linkedCustomer?.email ?? '')
   const [phone, setPhone] = useState(linkedCustomer?.phone ?? '')
   const [sending, setSending] = useState<'email' | 'sms' | null>(null)
+  const inFlightRef = useRef(false)
 
   const handlePrint = () => window.print()
 
   const handleEmail = async () => {
     if (!email) return
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setSending('email')
     try {
       const res = await fetch(`/api/receipts/${order.id}/email`, {
@@ -46,12 +49,15 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
     } catch {
       toast.error('Erreur envoi email')
     } finally {
+      inFlightRef.current = false
       setSending(null)
     }
   }
 
   const handleSms = async () => {
     if (!phone) return
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setSending('sms')
     try {
       const res = await fetch(`/api/receipts/${order.id}/sms`, {
@@ -70,6 +76,7 @@ export function ReceiptModal({ order, linkedCustomer, establishmentInfo, onClose
     } catch {
       toast.error('Erreur envoi SMS')
     } finally {
+      inFlightRef.current = false
       setSending(null)
     }
   }

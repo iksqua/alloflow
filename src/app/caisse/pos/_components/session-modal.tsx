@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import type { CashSession } from '../types'
 
@@ -88,6 +88,7 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
   const [loading, setLoading] = useState(false)
   const [duration, setDuration] = useState(() => session ? formatDuration(session.opened_at) : '')
   const [zReport, setZReport] = useState<{ session: CashSession; summary: ZReportSummary } | null>(null)
+  const inFlightRef = useRef(false)
   const isManager = userRole !== 'caissier'
   const hasOpenSession = !!session
 
@@ -99,6 +100,8 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
   }, [session])
 
   const handleOpen = async () => {
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setLoading(true)
     try {
       const res = await fetch('/api/cash-sessions', {
@@ -113,12 +116,15 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
     } catch {
       toast.error('Erreur ouverture session')
     } finally {
+      inFlightRef.current = false
       setLoading(false)
     }
   }
 
   const handleClose = async () => {
     if (!session) return
+    if (inFlightRef.current) return
+    inFlightRef.current = true
     setLoading(true)
     try {
       const res = await fetch(`/api/cash-sessions/${session.id}`, {
@@ -171,6 +177,7 @@ export function SessionModal({ session, onOpen, onClose, onDismiss, userRole }: 
     } catch {
       toast.error('Erreur clôture session')
     } finally {
+      inFlightRef.current = false
       setLoading(false)
     }
   }
